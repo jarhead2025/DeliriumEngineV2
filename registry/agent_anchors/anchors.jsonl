@@ -1,0 +1,13 @@
+{"kind": "forbid", "text": "Never invent legacy/, utils/, cuda/, or random demo projects during engine repair.", "scope": "engine", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "forbid", "text": "Never use #include <CL/cl.hpp>; use CL/cl.h C API only.", "scope": "opencl", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "invariant", "text": "Public headers live under engine/include/delirium/; includes should be delirium/....", "scope": "engine", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "precondition", "text": "Before LLM rewrite of engine/src/*, try bulk include fix and reference restore.", "scope": "repair", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "parallel", "text": "PatternLibrary.h missing \u2194 same class as Editor.h / PSFBody.h under engine/include/delirium/.", "scope": "include", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "postcondition", "text": "After include fix, file must compile with -I engine/include.", "scope": "repair", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "snippet", "text": "#include \"delirium/psf/PatternLibrary.h\"  // not bare PatternLibrary.h", "scope": "include", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "forbid", "text": "Do not replace a missing-header fix with unrelated OpenCL or Cholesky rewrites.", "scope": "repair", "agent": "pipeline", "ts": "2026-09-08T05:09:39"}
+{"kind": "parallel", "text": "engine/src/core/Scene.cpp: Scene.h -> \"delirium/core/Scene.h\"; ../psf/PSFBody.h -> \"delirium/psf/PSFBody.h\"", "scope": "include", "agent": "pipeline", "ts": "2026-09-10T10:36:41"}
+{"kind": "parallel", "text": "engine/src/core/Scene.cpp: Scene.h -> \"delirium/core/Scene.h\"; ../render/SplatRenderer.h -> \"delirium/render/SplatRenderer.h\"", "scope": "include", "agent": "pipeline", "ts": "2026-09-10T11:15:36"}
+{"kind": "parallel", "text": "engine/src/core/GameObject.cpp: GameObject.h -> \"delirium/core/GameObject.h\"; PSFBody.h -> \"delirium/psf/PSFBody.h\"", "scope": "include", "agent": "pipeline", "ts": "2026-09-10T11:32:57"}
+{"kind": "parallel", "text": "engine/src/core/Scene.cpp: Scene.h -> \"delirium/core/Scene.h\"; GameObject.h -> \"delirium/core/GameObject.h\"", "scope": "include", "agent": "pipeline", "ts": "2026-09-10T11:32:57"}
+{"kind": "parallel", "text": "engine/src/physics/PhysicsWorld.cpp: deliRium/physics/PhysicsWorld.h -> \"delirium/physics/PhysicsWorld.h\"", "scope": "include", "agent": "pipeline", "ts": "2026-09-10T18:39:55"}

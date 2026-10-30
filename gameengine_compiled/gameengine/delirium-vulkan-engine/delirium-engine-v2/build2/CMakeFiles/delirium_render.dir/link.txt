@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_render.a CMakeFiles/delirium_render.dir/render/opengl_context.cpp.o CMakeFiles/delirium_render.dir/render/shader_program.cpp.o CMakeFiles/delirium_render.dir/render/surfel_renderer.cpp.o CMakeFiles/delirium_render.dir/render/camera.cpp.o
+/usr/bin/ranlib libdelirium_render.a

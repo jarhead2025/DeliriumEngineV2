@@ -1,0 +1,69 @@
+=== PROJECT SCOPE MAP (read before writing any code) ===
+Script cwd: /home/josias/Desktop/Tartarus
+Project workspace: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+cwd==workspace: False
+Workspace top-level: CMakeLists.txt, README.md, assets, body, config, docs, engine, examples, include, kernels, legacy, registry, scripts, shaders, src, tests, tools, tools_cpp, training
+engine/**/*.cpp count: 31
+engine/**/*.h count: 37
+engine sources (sample):
+  - engine/src/scene/SplatView.cpp
+  - engine/src/servers/RenderServer.cpp
+  - engine/src/servers/PhysicsServer.cpp
+  - engine/src/io/PSFFile.cpp
+  - engine/src/core/Scene.cpp
+  - engine/src/core/Editor.cpp
+  - engine/src/core/SceneTree.cpp
+  - engine/src/core/GameObject.cpp
+  - engine/src/core/Node.cpp
+  - engine/src/core/Engine.cpp
+  - engine/src/physics/CollisionAnalytic.cpp
+  - engine/src/physics/LocalFEM.cpp
+  - engine/src/physics/PhysicsWorld.cpp
+  - engine/src/physics/ModalDynamics.cpp
+  - engine/src/psf/PSFBody.cpp
+  - engine/src/psf/ProceduralDetail.cpp
+  - engine/src/psf/Patch.cpp
+  - engine/src/psf/PatchColorField.cpp
+  - engine/src/psf/TreeFormat.cpp
+  - engine/src/psf/SeamGraph.cpp
+  - engine/src/psf/AnchorPool.cpp
+  - engine/src/psf/SeamBridge.cpp
+  - engine/src/psf/AnchorPool_snapped.cpp
+  - engine/src/psf/AnchorPhysics.cpp
+  - engine/src/psf/CageSurface.cpp
+GUTTED engine .cpp (0):
+Priority write list (generate these FILEPATHs, not GPUManager sandbox):
+  [OK (4745 chars)] engine/src/core/Engine.cpp
+  [OK (746 chars)] engine/src/core/Scene.cpp
+  [OK (1155 chars)] engine/src/core/GameObject.cpp
+  [OK (9067 chars)] engine/src/render/SplatRenderer.cpp
+  [OK (3871 chars)] engine/src/render/SurfelRasterizer.cpp
+  [OK (468 chars)] engine/src/physics/PhysicsWorld.cpp
+  [OK (904 chars)] engine/src/physics/LocalFEM.cpp
+  [OK (844 chars)] engine/src/physics/ModalDynamics.cpp
+  [OK (3270 chars)] engine/src/psf/PSFBody.cpp
+  [OK (4148 chars)] engine/src/io/PSFFile.cpp
+examples/01_torus_deform/main.cpp: yes
+CMake: m0=True m1=True nested_ok=True
+Milestones:
+  DONE M0: delirium_m0_probe ran OK
+  DONE M1: extra binaries: ['delirium_m1_torus', 'delirium_g3_frame']
+  DONE M2: SplatRenderer real=True m2-ish bin=False
+  DONE M3: kernels_cl=True opencl_in_splat=True
+  DONE M4: pattern=True seam=True
+  DONE M5: modal=True
+  DONE M6: bones_or_anchors=True
+  TODO M7: polish_markers=False
+  DONE G0: SceneTree.cpp=True
+  DONE G1: RenderServer=True
+  DONE G2: PhysicsServer
+  DONE G3: g3_bin=True main=True
+  DONE E1: Engine_Run_real=True
+  DONE E2: SDL_code=True cmake=True
+  DONE E3: Splat_substantial=True
+  DONE E4: visible_splat=True
+HARD RULES FOR AGENTS:
+  - Output // FILEPATH: engine/... only (allowlist). Never src/core/GPUManager.cpp sandbox.
+  - Never prose-only final answers. Every task ends with complete FILEPATH code blocks.
+  - Match header APIs under engine/include/delirium/.
+  - Use tools: list_project_files, read_project_file, search_project_code, write_project_file.

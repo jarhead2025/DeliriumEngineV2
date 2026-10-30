@@ -1,0 +1,205 @@
+{
+  "objects": {
+    "src/core/OpenCLManager.cpp": {
+      "obj": "registry/build_cache/obj/src__core__OpenCLManager.cpp.o",
+      "mtime": 1788851157.7484808
+    },
+    "src/material/MaterialProfile.cpp": {
+      "obj": "registry/build_cache/obj/src__material__MaterialProfile.cpp.o",
+      "mtime": 1788772091.4813821
+    },
+    "src/math/CholeskyDecomposition.cpp": {
+      "obj": "registry/build_cache/obj/src__math__CholeskyDecomposition.cpp.o",
+      "mtime": 1788854103.2650816
+    },
+    "src/physics/StructuralLimitEquations.cpp": {
+      "obj": "registry/build_cache/obj/src__physics__StructuralLimitEquations.cpp.o",
+      "mtime": 1788772091.6873863
+    },
+    "src/opencl_probe.cpp": {
+      "obj": "registry/build_cache/obj/src__opencl_probe.cpp.o",
+      "mtime": 1788830393.2807975
+    },
+    "tools/march_gpu_interactive.cpp": {
+      "obj": "registry/build_cache/obj/tools__march_gpu_interactive.cpp.o",
+      "mtime": 1788792215.617131
+    },
+    "tools/march_gpu_render.cpp": {
+      "obj": "registry/build_cache/obj/tools__march_gpu_render.cpp.o",
+      "mtime": 1788792216.066141
+    },
+    "engine/src/core/Engine.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__Engine.cpp.o",
+      "mtime": 1789407837.6882653
+    },
+    "engine/src/core/GameObject.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__GameObject.cpp.o",
+      "mtime": 1789482027.2051077
+    },
+    "engine/src/core/Scene.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__Scene.cpp.o",
+      "mtime": 1789380425.1148047
+    },
+    "engine/src/io/PSFFile.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__io__PSFFile.cpp.o",
+      "mtime": 1789482027.632111
+    },
+    "engine/src/physics/CollisionAnalytic.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__physics__CollisionAnalytic.cpp.o",
+      "mtime": 1788830629.5901072
+    },
+    "engine/src/physics/LocalFEM.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__physics__LocalFEM.cpp.o",
+      "mtime": 1789196371.8928406
+    },
+    "engine/src/physics/ModalDynamics.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__physics__ModalDynamics.cpp.o",
+      "mtime": 1789107337.2465854
+    },
+    "engine/src/physics/PhysicsWorld.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__physics__PhysicsWorld.cpp.o",
+      "mtime": 1789107338.594613
+    },
+    "engine/src/psf/AnchorPhysics.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__AnchorPhysics.cpp.o",
+      "mtime": 1789196372.1468458
+    },
+    "engine/src/psf/AnchorPool.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__AnchorPool.cpp.o",
+      "mtime": 1788830849.2860422
+    },
+    "engine/src/psf/AnchorPool_snapped.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__AnchorPool_snapped.cpp.o",
+      "mtime": 1788849247.8372781
+    },
+    "engine/src/psf/CageSurface.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__CageSurface.cpp.o",
+      "mtime": 1788849194.035883
+    },
+    "engine/src/psf/PatchColorField.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__PatchColorField.cpp.o",
+      "mtime": 1788849316.1657438
+    },
+    "engine/src/psf/PatternLibrary.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__PatternLibrary.cpp.o",
+      "mtime": 1789183866.3264039
+    },
+    "engine/src/psf/ProceduralDetail.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__ProceduralDetail.cpp.o",
+      "mtime": 1788849448.351848
+    },
+    "engine/src/psf/SeamBridge.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__SeamBridge.cpp.o",
+      "mtime": 1788849642.778002
+    },
+    "engine/src/psf/SeamGraph.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__SeamGraph.cpp.o",
+      "mtime": 1788854102.888073
+    },
+    "engine/src/psf/SurfaceTypeLibrary.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__SurfaceTypeLibrary.cpp.o",
+      "mtime": 1788849736.7647324
+    },
+    "engine/src/psf/TreeFormat.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__TreeFormat.cpp.o",
+      "mtime": 1788849741.4625878
+    },
+    "engine/src/render/Camera.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__render__Camera.cpp.o",
+      "mtime": 1788849887.0509193
+    },
+    "engine/src/render/SurfelRasterizer.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__render__SurfelRasterizer.cpp.o",
+      "mtime": 1788849966.8188403
+    },
+    "examples/01_torus_deform/main.cpp": {
+      "obj": "registry/build_cache/obj/examples__01_torus_deform__main.cpp.o",
+      "mtime": 1788833504.6700091
+    },
+    "src/math/cholesky_decompose.cpp": {
+      "obj": "registry/build_cache/obj/src__math__cholesky_decompose.cpp.o",
+      "mtime": 1788957604.8080254
+    },
+    "engine/src/psf/Reconstructor.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__Reconstructor.cpp.o",
+      "mtime": 1789482028.1051147
+    },
+    "examples/05_pipeline/main.cpp": {
+      "obj": "registry/build_cache/obj/examples__05_pipeline__main.cpp.o",
+      "mtime": 1788833956.3321102
+    },
+    "src/math/cholesky_eigen.cpp": {
+      "obj": "registry/build_cache/obj/src__math__cholesky_eigen.cpp.o",
+      "mtime": 1788957607.1510715
+    },
+    "engine/src/core/Editor.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__Editor.cpp.o",
+      "mtime": 1789482026.5821025
+    },
+    "engine/src/psf/PSFBody.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__PSFBody.cpp.o",
+      "mtime": 1789404162.9164858
+    },
+    "engine/src/psf/Patch.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__psf__Patch.cpp.o",
+      "mtime": 1789051998.121857
+    },
+    "engine/src/render/SplatRenderer.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__render__SplatRenderer.cpp.o",
+      "mtime": 1789482028.5901186
+    },
+    "src/cl_manager.cpp": {
+      "obj": "registry/build_cache/obj/src__cl_manager.cpp.o",
+      "mtime": 1788840292.7543428
+    },
+    "src/gl_manager.cpp": {
+      "obj": "registry/build_cache/obj/src__gl_manager.cpp.o",
+      "mtime": 1788840775.9669962
+    },
+    "src/math/cholesky_solver.cpp": {
+      "obj": "registry/build_cache/obj/src__math__cholesky_solver.cpp.o",
+      "mtime": 1788854105.8271403
+    },
+    "src/core/Settings.cpp": {
+      "obj": "registry/build_cache/obj/src__core__Settings.cpp.o",
+      "mtime": 1788851157.951485
+    },
+    "src/core/TaskManager.cpp": {
+      "obj": "registry/build_cache/obj/src__core__TaskManager.cpp.o",
+      "mtime": 1788851158.1834896
+    },
+    "src/core/Utils.cpp": {
+      "obj": "registry/build_cache/obj/src__core__Utils.cpp.o",
+      "mtime": 1788851158.3664932
+    },
+    "src/core/VersionManager.cpp": {
+      "obj": "registry/build_cache/obj/src__core__VersionManager.cpp.o",
+      "mtime": 1788851158.5294964
+    },
+    "src/math/solvers.cpp": {
+      "obj": "registry/build_cache/obj/src__math__solvers.cpp.o",
+      "mtime": 1788937009.5708282
+    },
+    "engine/src/core/Node.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__Node.cpp.o",
+      "mtime": 1789333457.1701102
+    },
+    "engine/src/core/SceneTree.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__core__SceneTree.cpp.o",
+      "mtime": 1789333457.4211152
+    },
+    "engine/src/scene/SplatView.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__scene__SplatView.cpp.o",
+      "mtime": 1789333458.138129
+    },
+    "engine/src/servers/PhysicsServer.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__servers__PhysicsServer.cpp.o",
+      "mtime": 1789333458.496136
+    },
+    "engine/src/servers/RenderServer.cpp": {
+      "obj": "registry/build_cache/obj/engine__src__servers__RenderServer.cpp.o",
+      "mtime": 1789333458.910144
+    }
+  },
+  "last_full_ok": true
+}

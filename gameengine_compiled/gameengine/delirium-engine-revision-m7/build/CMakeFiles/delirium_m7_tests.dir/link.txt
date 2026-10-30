@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/delirium_m7_tests.dir/tests/m7_tests.cpp.o -o delirium_m7_tests  libdelirium_m7_core.a 

@@ -1,0 +1,11 @@
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/delirium_core.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/delirium_render.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/delirium_ai.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_visual.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_basis.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_ai.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_seam.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_physics.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/demo_render.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/edit_cache.dir
+/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build4/CMakeFiles/rebuild_cache.dir

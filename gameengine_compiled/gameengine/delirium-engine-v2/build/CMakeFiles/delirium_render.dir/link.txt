@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_render.a CMakeFiles/delirium_render.dir/src/delirium/render/surfel/surfel_cache.cpp.o CMakeFiles/delirium_render.dir/src/delirium/render/renderer.cpp.o
+/usr/bin/ranlib libdelirium_render.a

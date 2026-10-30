@@ -1,0 +1,2 @@
+/home/josias/Desktop/Tartarus/build_delirium/CMakeFiles/edit_cache.dir
+/home/josias/Desktop/Tartarus/build_delirium/CMakeFiles/rebuild_cache.dir

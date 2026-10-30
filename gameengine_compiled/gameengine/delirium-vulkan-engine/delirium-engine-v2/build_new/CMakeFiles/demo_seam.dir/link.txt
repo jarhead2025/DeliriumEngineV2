@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/demo_seam.dir/demo_seam.cpp.o -o demo_seam  libdelirium_core.a 

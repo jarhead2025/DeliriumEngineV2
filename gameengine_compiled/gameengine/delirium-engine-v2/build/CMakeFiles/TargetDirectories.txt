@@ -1,0 +1,14 @@
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/delirium_geometry.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/delirium_render.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/delirium_physics.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/delirium_core.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/delirium_demo.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/test_math.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/test_geometry.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/test.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/edit_cache.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/rebuild_cache.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/list_install_components.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/install.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/install/local.dir
+/home/josias/Desktop/gameengine/delirium-engine-v2/build/CMakeFiles/install/strip.dir

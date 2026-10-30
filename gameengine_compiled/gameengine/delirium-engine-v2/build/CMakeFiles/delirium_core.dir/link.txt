@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_core.a CMakeFiles/delirium_core.dir/src/delirium/core/engine.cpp.o CMakeFiles/delirium_core.dir/src/delirium/core/scene.cpp.o
+/usr/bin/ranlib libdelirium_core.a

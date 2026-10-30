@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/delirium_engine.dir/main.cpp.o -o delirium_engine  libdelirium_scene.a m8/libdelirium_m8_core.a libdelirium_core.a m8/libdelirium_m8_core.a /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libSDL2.so 

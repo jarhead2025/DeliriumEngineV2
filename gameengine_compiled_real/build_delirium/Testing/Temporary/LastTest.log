@@ -1,0 +1,419 @@
+Start testing: Oct 29 19:17 -03
+----------------------------------------------------------
+1/19 Testing: m0_opencl_probe
+1/19 Test: m0_opencl_probe
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/delirium_m0_probe" "--quiet"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium
+"m0_opencl_probe" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"m0_opencl_probe" end time: Oct 29 19:17 -03
+"m0_opencl_probe" time elapsed: 00:00:00
+----------------------------------------------------------
+
+2/19 Testing: validate_bridge
+2/19 Test: validate_bridge
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_bridge"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_bridge" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+seams: 1981, first needing bridge: 391
+C) detection: 290 seams need bridging OK
+A) boundary: bridge-to-edge gap 0.00000% diag OK
+B) G1: worst 1-cos tangent 0.0000 OK
+D) generative: midline bulge 0.4872% diag OK (informational)
+BRIDGE VALIDATION PASSED
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"validate_bridge" end time: Oct 29 19:17 -03
+"validate_bridge" time elapsed: 00:00:00
+----------------------------------------------------------
+
+3/19 Testing: validate_cage
+3/19 Test: validate_cage
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_cage"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_cage" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) seam gap (cage, no weld/stitch): 0.0000% diag OK
+B) derived normal unit-length (consistent by construction): worst dev 0.0000 OK
+C) fidelity vs current: RMS 0.150% diag (detail to migrate into cage) OK (informational)
+CAGE VALIDATION PASSED
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"validate_cage" end time: Oct 29 19:17 -03
+"validate_cage" time elapsed: 00:00:00
+----------------------------------------------------------
+
+4/19 Testing: validate_dent
+4/19 Test: validate_dent
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_dent"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_dent" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) depth: requested 0.0466, measured 0.0466 (err 0.1%) OK
+B) locality: max far-field motion 0.00e+00 (0.0000% diag) OK
+C) seams: max gap 0.0379% diag (budget 0.05%) OK
+D) refine: 544 -> 592 patches, stitch blob OK
+DENT VALIDATION PASSED
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"validate_dent" end time: Oct 29 19:17 -03
+"validate_dent" time elapsed: 00:00:00
+----------------------------------------------------------
+
+5/19 Testing: validate_detail
+5/19 Test: validate_detail
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_detail"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_detail" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) gradient: worst rel err vs finite-diff 2.28e-02 OK
+B) codec: amp 0.0500->0.0502 oct 5->5 per 8->8 seed 7->7 OK
+C) zero-cost: max |detail| 0.0153 in 0 extra bytes OK
+D) determinism+continuity: repeat eq=1, step delta 9.83e-08 OK
+DETAIL VALIDATION PASSED
+<end of output>
+Test time =   0.00 sec
+----------------------------------------------------------
+Test Passed.
+"validate_detail" end time: Oct 29 19:17 -03
+"validate_detail" time elapsed: 00:00:00
+----------------------------------------------------------
+
+6/19 Testing: validate_eval
+6/19 Test: validate_eval
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_eval"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_eval" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+loaded assets/torus.psf: 544 patches
+dumped 13600 samples to cpp_eval.bin
+analytic vs finite-diff normal: worst 1-cos = 5.722e-06 (OK)
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"validate_eval" end time: Oct 29 19:17 -03
+"validate_eval" time elapsed: 00:00:00
+----------------------------------------------------------
+
+7/19 Testing: validate_fem
+7/19 Test: validate_fem
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_fem"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_fem" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+region: 86 patches, 818 DOFs
+A) assembly: 86 patches -> 818 DOFs OK
+C) static rest: energy 0.000e+00 -> 0.000e+00 OK
+B) stability: E0 2.177e-03 -> Emax 2.177e-03 -> Ef 1.065e-08, rises 0 OK
+D) seams after writeback: 0.0379% diag (budget 0.05%) OK
+FEM VALIDATION PASSED
+<end of output>
+Test time =   1.67 sec
+----------------------------------------------------------
+Test Passed.
+"validate_fem" end time: Oct 29 19:17 -03
+"validate_fem" time elapsed: 00:00:01
+----------------------------------------------------------
+
+8/19 Testing: validate_gameplay
+8/19 Test: validate_gameplay
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_gameplay"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_gameplay" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) morph: avg luma delta 0.8976 OK
+B) fracture: 544 -> body 413 + fragment 131 (sum 544) OK
+C) fragment integrity: anchors self-contained OK
+D) setpose: near anchor moved 0.1941, far moved 0.0000 OK
+GAMEPLAY VALIDATION PASSED
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"validate_gameplay" end time: Oct 29 19:17 -03
+"validate_gameplay" time elapsed: 00:00:00
+----------------------------------------------------------
+
+9/19 Testing: validate_gpu_flush
+9/19 Test: validate_gpu_flush
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_gpu_flush"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_gpu_flush" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+loaded: 615 anchors, 544 surfaces, 4352 stitch bytes
+OpenCL device: Intel(R) Arc(TM) A770 Graphics
+A) full re-upload on growth: caps 39360/34816/4352, blobs match, flags cleared OK
+B) partial surface: 3 records edited, device blob matches, dirty cleared OK
+C) anchor dirty: anchor blob re-uploaded (yes), surface blob untouched (yes), flag cleared OK
+D) growth after split: 544 -> 547 surfaces, re-alloc + full re-upload, all blobs match OK
+E) no-op guards: null state + incomplete state left dirty flags untouched OK
+GPU FLUSH VALIDATION PASSED
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"validate_gpu_flush" end time: Oct 29 19:17 -03
+"validate_gpu_flush" time elapsed: 00:00:00
+----------------------------------------------------------
+
+10/19 Testing: validate_gpu_split
+10/19 Test: validate_gpu_split
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_gpu_split"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_gpu_split" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+loaded: 615 anchors, 544 surfaces, patch 42
+OpenCL device: Intel(R) Arc(TM) A770 Graphics
+B) bookkeeping: heads 615->620 anc / 544->547 surf, stitch zeroed yes, child anchors distinct+in-range yes
+A) fidelity: worst GPU child-vs-parent deviation 0.0178% diag (budget 0.15%) OK
+D) seams: max gap 0.0379% diag (budget 0.05%) OK
+C) parity: worst anchor dev 0.0000% diag (budget 0.05%), worst coef dev 2.726e-07 (budget 1e-3) OK
+GPU SPLIT VALIDATION PASSED
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"validate_gpu_split" end time: Oct 29 19:17 -03
+"validate_gpu_split" time elapsed: 00:00:00
+----------------------------------------------------------
+
+11/19 Testing: validate_liveweld
+11/19 Test: validate_liveweld
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_liveweld"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_liveweld" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A/B) gap 6.5936% -> 6.4197% diag over 60 frames, decreasing frames 1 OK
+D) shape: diagonal +0.000% OK
+C) pacing (same debt): Fluid 8 frames, Brittle 19 OK
+LIVEWELD VALIDATION PASSED
+<end of output>
+Test time =   0.56 sec
+----------------------------------------------------------
+Test Passed.
+"validate_liveweld" end time: Oct 29 19:17 -03
+"validate_liveweld" time elapsed: 00:00:00
+----------------------------------------------------------
+
+12/19 Testing: validate_merge
+12/19 Test: validate_merge
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_merge"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_merge" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) roundtrip: merged=yes, surface dev 0.0001% diag OK
+B) count: 544 -> split 547 -> merge 544 OK
+C) guard: merge with sub-detail rejected (count 547->547) OK
+D) region: 544 -refine-> 643 -coarsen(33)-> 544 | gap 0.0379%->0.0379% OK
+MERGE VALIDATION PASSED
+<end of output>
+Test time =   0.07 sec
+----------------------------------------------------------
+Test Passed.
+"validate_merge" end time: Oct 29 19:17 -03
+"validate_merge" time elapsed: 00:00:00
+----------------------------------------------------------
+
+13/19 Testing: validate_modal
+13/19 Test: validate_modal
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_modal"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_modal" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+modes: 12, f0 = 55.01 Hz
+A) period: wd measured 345.864 vs expected 345.500 rad/s (err 0.11%) OK
+B) damping: peak ratio vs exp(-2 pi z/sqrt(1-z^2))=0.8281, worst err 0.01% OK
+C) seams: rest gap 0.0008%, deformed gap 0.0024% of diag (budget 0.05%) OK
+MODAL VALIDATION PASSED
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"validate_modal" end time: Oct 29 19:17 -03
+"validate_modal" time elapsed: 00:00:00
+----------------------------------------------------------
+
+14/19 Testing: validate_physics
+14/19 Test: validate_physics
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_physics"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_physics" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+modes loaded: yes (12 modes)
+A) volume: analytic 2.4151 vs closed-form 2.4181 (err 0.12%) OK
+B1) penetration: max 0.0033 (tol 0.025) OK
+B2) bounces: apex1 1.200 apex2 0.428, settled at t=2.98s OK
+B3) impact->modal energy: injected OK
+C) rest height: 0.3500 (expect ~0.35) OK
+PHYSICS VALIDATION PASSED
+<end of output>
+Test time =   2.69 sec
+----------------------------------------------------------
+Test Passed.
+"validate_physics" end time: Oct 29 19:17 -03
+"validate_physics" time elapsed: 00:00:02
+----------------------------------------------------------
+
+15/19 Testing: validate_query
+15/19 Test: validate_query
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_query"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_query" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+A) closest: worst foot error 0.0000% diag, misses 0 OK
+B) raycast: misses 0, max lateness 0.000e+00 (tol 1e-3 diag) OK
+C) poke: near-point motion 1.860e-03 (0.0479% diag) OK  [n.(0.16 0.81 0.56)]
+QUERY VALIDATION PASSED
+<end of output>
+Test time =   0.04 sec
+----------------------------------------------------------
+Test Passed.
+"validate_query" end time: Oct 29 19:17 -03
+"validate_query" time elapsed: 00:00:00
+----------------------------------------------------------
+
+16/19 Testing: validate_reconstruction
+16/19 Test: validate_reconstruction
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_reconstruction"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_reconstruction" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+== element-system reconstruction gate ==
+  A: bump raises center above plane              OK 
+      (center z=0.1000, edge z=0.0438)
+  A: bump fades toward the edge                  OK 
+  A: normal stays near +Z                        OK 
+  B: Bake() succeeds                             OK 
+  B: patch count == (n-1)^2                      OK 
+  B: anchor count == n^2                         OK 
+  B: Validate() passes                           OK 
+  C: BakeBody() returns a body                   OK 
+  C: body patch count                            OK 
+  C: body anchor count                           OK 
+  C: bbox span sane                              OK 
+      (worst closest-point residual 0.00000 over 144 samples, diag=1.732)
+  D: body reproduces field < 2% diag             OK 
+  E: NeuralReconstructor('bump_node') builds a body OK 
+  E: reconstructed body has patches              OK 
+  F: ellipsoid bakes to a body                   OK 
+      (worst ellipsoid residual 0.02812)
+  F: body near analytic ellipsoid (<0.06)        OK 
+RECONSTRUCTION VALIDATION PASSED
+<end of output>
+Test time =   0.02 sec
+----------------------------------------------------------
+Test Passed.
+"validate_reconstruction" end time: Oct 29 19:17 -03
+"validate_reconstruction" time elapsed: 00:00:00
+----------------------------------------------------------
+
+17/19 Testing: validate_split
+17/19 Test: validate_split
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_split"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_split" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+loaded: 544 patches, 615 anchors, 1120 seams, max gap 0.0379% diag
+A) fidelity: worst child-vs-parent deviation 0.0313% diag OK
+B) seams: max gap 0.0379% -> 0.0379% diag (budget 0.05%) OK
+C) bookkeeping: 544->559 patches, 615->640 anchors OK
+D) recursion: nested split dev 0.0040% diag OK
+SPLIT VALIDATION PASSED
+<end of output>
+Test time =   0.01 sec
+----------------------------------------------------------
+Test Passed.
+"validate_split" end time: Oct 29 19:17 -03
+"validate_split" time elapsed: 00:00:00
+----------------------------------------------------------
+
+18/19 Testing: validate_weldcat
+18/19 Test: validate_weldcat
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/validate_weldcat"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"validate_weldcat" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+  Rigid   : gap remaining 33.5%, shape change 0.000%
+  Elastic : gap remaining 30.3%, shape change 0.000%
+  Soft    : gap remaining 35.5%, shape change 0.000%
+  Fluid   : gap remaining 40.7%, shape change 0.000%
+  Brittle : gap remaining 60.5%, shape change 0.000%
+A) shape preserved (all <2% diag): OK
+B) sealers all <45% (max 41%) and brittle distinct (spread 30%): OK
+C) Brittle 60% keeps most crack (sealers 30-41%): OK
+WELDCAT VALIDATION PASSED
+<end of output>
+Test time =   0.11 sec
+----------------------------------------------------------
+Test Passed.
+"validate_weldcat" end time: Oct 29 19:17 -03
+"validate_weldcat" time elapsed: 00:00:00
+----------------------------------------------------------
+
+19/19 Testing: perf_engine
+19/19 Test: perf_engine
+Command: "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/perf_engine"
+Directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
+"perf_engine" start time: Oct 29 19:17 -03
+Output:
+----------------------------------------------------------
+== DeliRium engine performance report ==
+asset: assets/torus.psf  (615 anchors, 544 surfaces, diag 3.882)
+modes: loaded (12 modes)
+A) load: 0.878 ms (psf + modes)
+  eval           3.498 ms total |    44064 ops |    0.0001 ms/op |    12.60 Mop/s
+  closest      103.008 ms total |     2000 ops |    0.0515 ms/op |     0.02 Mop/s
+        (hit rate 2000/2000)
+  raycast      192.026 ms total |     2000 ops |    0.0960 ms/op |     0.01 Mop/s
+        (hit rate 2000/2000)
+  modal         14.160 ms total |      600 ops |    0.0236 ms/op |     0.04 Mop/s
+  amr         1491.447 ms total |       40 ops |   37.2862 ms/op |     0.00 Mop/s
+        (final: 544 surfaces, 840 total merges)
+  refit         58.197 ms total |       50 ops |    1.1639 ms/op |     0.00 Mop/s
+  seams        449.253 ms total |      200 ops |    2.2463 ms/op |     0.00 Mop/s
+        (max gap 0.1219% diag, 1120 seams)
+  device: Intel(R) Arc(TM) A770 Graphics
+  flush_full      2.493 ms total |       20 ops |    0.1246 ms/op |     0.01 Mop/s
+        (1.57 MB total, 630.1 MB/s)
+  flush_part      0.840 ms total |       20 ops |    0.0420 ms/op |     0.02 Mop/s
+  flush_anch      2.000 ms total |       20 ops |    0.1000 ms/op |     0.01 Mop/s
+== report complete ==
+<end of output>
+Test time =   2.44 sec
+----------------------------------------------------------
+Test Passed.
+"perf_engine" end time: Oct 29 19:17 -03
+"perf_engine" time elapsed: 00:00:02
+----------------------------------------------------------
+
+End testing: Oct 29 19:17 -03

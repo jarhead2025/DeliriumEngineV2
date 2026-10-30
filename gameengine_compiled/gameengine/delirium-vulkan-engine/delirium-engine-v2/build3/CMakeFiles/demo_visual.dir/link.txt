@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/demo_visual.dir/demo_main.cpp.o CMakeFiles/demo_visual.dir/demo_scene.cpp.o -o demo_visual  libdelirium_core.a /usr/lib/x86_64-linux-gnu/libSDL2.so /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so 

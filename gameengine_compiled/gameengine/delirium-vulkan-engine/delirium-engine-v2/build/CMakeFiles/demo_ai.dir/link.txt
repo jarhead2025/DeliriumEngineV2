@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/demo_ai.dir/demo_ai.cpp.o -o demo_ai  libdelirium_ai.a libdelirium_core.a 

@@ -1,0 +1,56 @@
+[
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/math/basis.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/math/basis.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/math/basis.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/math/basis.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/geometry/patch.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/geometry/patch.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/geometry/patch.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/geometry/patch.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/geometry/body.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/geometry/body.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/geometry/body.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/geometry/body.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/render/ray_marcher.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/render/ray_marcher.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/render/ray_marcher.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/render/ray_marcher.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/render/surfel_cache.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/render/surfel_cache.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/render/surfel_cache.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/render/surfel_cache.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/core/engine.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/engine.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/core/engine.cpp",
+  "output": "CMakeFiles/delirium_core.dir/core/engine.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/delirium_core.dir/scene/scene.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/scene/scene.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/scene/scene.cpp",
+  "output": "CMakeFiles/delirium_core.dir/scene/scene.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/test_core.dir/tests/test_basis.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/tests/test_basis.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/tests/test_basis.cpp",
+  "output": "CMakeFiles/test_core.dir/tests/test_basis.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2 -O3 -DNDEBUG -std=gnu++17 -Wall -Wextra -O2 -march=native -o CMakeFiles/demo.dir/demo_main.cpp.o -c /home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/demo_main.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-vulkan-engine/delirium-engine-v2/demo_main.cpp",
+  "output": "CMakeFiles/demo.dir/demo_main.cpp.o"
+}
+]

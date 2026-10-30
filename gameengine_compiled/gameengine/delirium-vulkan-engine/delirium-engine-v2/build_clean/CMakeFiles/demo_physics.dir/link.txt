@@ -1,0 +1,1 @@
+/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/demo_physics.dir/demo_physics.cpp.o -o demo_physics  libdelirium_core.a 

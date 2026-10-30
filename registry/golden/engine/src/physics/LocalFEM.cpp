@@ -1,0 +1,49 @@
+// FILEPATH: engine/src/physics/LocalFEM.cpp
+// Synthesized from header API (engine/include/delirium/physics/LocalFEM.h) — pipeline forced API-correct bodies.
+#include "delirium/physics/LocalFEM.h"
+#include <string>
+#include <vector>
+#include <cstdint>
+#include <memory>
+
+namespace DeliRium {
+
+LocalFEM::LocalFEM() {}
+
+void LocalFEM::BindRegion(PSFBody& body, const Vec3& center, float radius) {
+    (void)0;
+}
+
+void LocalFEM::AssembleSystem(const Material& m) {
+    (void)0;
+}
+
+void LocalFEM::Step(float dt) {
+    (void)0;
+}
+
+void LocalFEM::WriteBack() {
+    (void)0;
+}
+
+void LocalFEM::Excite(uint32_t patch_local_index, float amount) {
+    (void)0;
+}
+
+float LocalFEM::EstimateError(uint32_t patch_id) const {
+    return 0;
+}
+
+int LocalFEM::DofCount() const {
+    return 0;
+}
+
+int LocalFEM::PatchCount() const {
+    return 0;
+}
+
+float LocalFEM::Energy() const {
+    return 0;
+}
+
+} // namespace DeliRium

@@ -1,0 +1,477 @@
+#include "delirium/psf/Seam.h"
+#include "delirium/psf/PSFBody.h"
+#include "delirium/psf/SeamBridge.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <cmath>
+#include <algorithm>
+
+namespace DeliRium {
+
+// edge slot -> anchor corner slots (t runs first->second)
+static const int EP[4][2] = {{0,3},{1,2},{0,1},{3,2}};
+static void edge_uv(int e, float t, float& u, float& v) {
+    switch (e) { case 0: u=t; v=0; break; case 1: u=t; v=1; break;
+                 case 2: u=0; v=t; break; default: u=1; v=t; }
+}
+static uint64_t pair_key(uint16_t a, uint16_t b) {
+    if (a > b) std::swap(a, b);
+    return (uint64_t(a) << 16) | b;
+}
+
+void SeamGraph::Build(const PSFBody& body) {
+    seams.clear();
+    const auto& S = body.SurfaceBlob();
+    struct ERef { uint32_t s; uint8_t e; uint16_t a0, a1; };
+    std::vector<ERef> all;
+    std::unordered_map<uint64_t, std::vector<int>> by_pair;
+    std::unordered_map<uint16_t, std::vector<int>> by_anchor;
+    for (uint32_t s = 0; s < S.size(); ++s)
+        for (uint8_t e = 0; e < 4; ++e) {
+            ERef r{ s, e, S[s].anchor_idx[EP[e][0]], S[s].anchor_idx[EP[e][1]] };
+            by_pair[pair_key(r.a0, r.a1)].push_back((int)all.size());
+            by_anchor[r.a0].push_back((int)all.size());
+            by_anchor[r.a1].push_back((int)all.size());
+            all.push_back(r);
+        }
+
+    std::unordered_set<int> used;
+    // 1) full matches: same anchor pair, two owners
+    for (auto& [k, lst] : by_pair) {
+        if (lst.size() != 2) continue;
+        const ERef& A = all[lst[0]]; const ERef& B = all[lst[1]];
+        const bool same_dir = (A.a0 == B.a0);
+        seams.push_back({A.s, B.s, A.e, B.e,
+                         same_dir ? 0.f : 1.f, same_dir ? 1.f : 0.f, false});
+        used.insert(lst[0]); used.insert(lst[1]);
+    }
+    // 2) T-junctions: coarse (A,B) vs fine (A,M)+(M,B)
+    for (int ci = 0; ci < (int)all.size(); ++ci) {
+        if (used.count(ci)) continue;
+        const ERef& C = all[ci];
+        for (int fi : by_anchor[C.a0]) {
+            if (fi == ci || used.count(fi)) continue;
+            const ERef& F1 = all[fi];
+            const uint16_t M = (F1.a0 == C.a0) ? F1.a1 : F1.a0;
+            if (M == C.a1) continue;
+            auto it = by_pair.find(pair_key(M, C.a1));
+            if (it == by_pair.end()) continue;
+            int f2 = -1;
+            for (int cand : it->second)
+                if (!used.count(cand) && cand != ci) { f2 = cand; break; }
+            if (f2 < 0) continue;
+            // coarse param of an anchor on edge C: a0->0, a1->1, M->0.5
+            auto cpar = [&](uint16_t x) {
+                return x == C.a0 ? 0.f : (x == C.a1 ? 1.f : 0.5f); };
+            const ERef& F2 = all[f2];
+            // GEOMETRIC verification: M must sit at the midpoint of the
+            // coarse edge C (a0..a1). Index adjacency alone produces false
+            // T-junctions between unrelated patches that happen to share
+            // an anchor; require the position to confirm the split.
+            {
+                auto& pool = body.AnchorsConst();
+                const Vec3 ca0 = pool.Position(C.a0);
+                const Vec3 ca1 = pool.Position(C.a1);
+                const Vec3 pm  = pool.Position(M);
+                const Vec3 mid{0.5f*(ca0.x+ca1.x), 0.5f*(ca0.y+ca1.y),
+                               0.5f*(ca0.z+ca1.z)};
+                const Vec3 spv = body.BBoxSpan();
+                const float dg = std::sqrt(spv.x*spv.x+spv.y*spv.y+spv.z*spv.z);
+                const float dd = std::sqrt((pm.x-mid.x)*(pm.x-mid.x)
+                               + (pm.y-mid.y)*(pm.y-mid.y)
+                               + (pm.z-mid.z)*(pm.z-mid.z));
+                if (dd > 0.05f*dg) continue;        // M not a real midpoint
+            }
+            seams.push_back({F1.s, C.s, F1.e, C.e,
+                             cpar(F1.a0), cpar(F1.a1), true});
+            seams.push_back({F2.s, C.s, F2.e, C.e,
+                             cpar(F2.a0), cpar(F2.a1), true});
+            used.insert(ci); used.insert(fi); used.insert(f2);
+            break;
+        }
+    }
+
+    // 3) CROSS-CHART seams: edges left unmatched by index (the exporter's
+    // directional charts don't share anchors at their borders). Match by
+    // ENDPOINT POSITION: two free edges whose endpoint pairs coincide in
+    // space (within a quantization-scale tolerance) are the same physical
+    // edge seen from two charts. This sews the overlap borders that were
+    // the asteroid's visible artifact.
+    auto& pool = body.AnchorsConst();
+    const Vec3 sp = body.BBoxSpan();
+    const float diag = std::sqrt(sp.x*sp.x + sp.y*sp.y + sp.z*sp.z);
+    const float wtol = 0.004f * diag;            // ~2 quantization steps
+    auto qkey = [&](const Vec3& p)->uint64_t {
+        const float cell = 0.004f * diag;        // bucket by tolerance
+        auto qc = [&](float x){ return (long long)std::llround(x / cell); };
+        return (uint64_t(uint32_t(qc(p.x))) * 73856093u)
+             ^ (uint64_t(uint32_t(qc(p.y))) * 19349663u)
+             ^ (uint64_t(uint32_t(qc(p.z))) * 83492791u);
+    };
+    // bucket free edges by the (rounded) midpoint of their endpoints, so
+    // two charts' versions of an edge land together regardless of winding
+    std::unordered_map<uint64_t, std::vector<int>> by_mid;
+    for (int i = 0; i < (int)all.size(); ++i) {
+        if (used.count(i)) continue;
+        const Vec3 p0 = pool.Position(all[i].a0);
+        const Vec3 p1 = pool.Position(all[i].a1);
+        const Vec3 mid{0.5f*(p0.x+p1.x), 0.5f*(p0.y+p1.y), 0.5f*(p0.z+p1.z)};
+        by_mid[qkey(mid)].push_back(i);
+    }
+    auto dist = [&](const Vec3& a, const Vec3& b){
+        return std::sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y)
+                        +(a.z-b.z)*(a.z-b.z)); };
+    for (auto& [k, lst] : by_mid) {
+        for (size_t ii = 0; ii < lst.size(); ++ii) {
+            if (used.count(lst[ii])) continue;
+            const ERef& A = all[lst[ii]];
+            const Vec3 a0 = pool.Position(A.a0), a1 = pool.Position(A.a1);
+            for (size_t jj = ii+1; jj < lst.size(); ++jj) {
+                if (used.count(lst[jj])) continue;
+                const ERef& B = all[lst[jj]];
+                if (A.s == B.s) continue;
+                const Vec3 b0 = pool.Position(B.a0), b1 = pool.Position(B.a1);
+                const bool same = dist(a0,b0) < wtol && dist(a1,b1) < wtol;
+                const bool flip = dist(a0,b1) < wtol && dist(a1,b0) < wtol;
+                if (!same && !flip) continue;
+                // endpoints coincide, but two charts meeting at an angle
+                // reconstruct the same border with DIFFERENT interior
+                // shape. Only sew if the edges agree along the WHOLE span
+                // (5 interior samples within tolerance); otherwise this is
+                // genuine geometric disagreement -> leave as overlap (the
+                // splatter handles overlapping coverage without artifact).
+                bool agree = true;
+                for (int q = 1; q <= 5 && agree; ++q) {
+                    const float ta = q / 6.0f;
+                    const float tbq = same ? ta : (1.0f - ta);
+                    float ua, va, ub, vb;
+                    edge_uv(A.e, ta,  ua, va);
+                    edge_uv(B.e, tbq, ub, vb);
+                    const Vec3 pa = body.Patches()[A.s].Evaluate(ua, va);
+                    const Vec3 pb = body.Patches()[B.s].Evaluate(ub, vb);
+                    if (dist(pa, pb) > 2.5f*wtol) agree = false;
+                }
+                if (!agree) continue;
+                // matched: A's t in [0,1] maps to B's [tb0,tb1]
+                seams.push_back({A.s, B.s, A.e, B.e,
+                                 same ? 0.f : 1.f, same ? 1.f : 0.f, false});
+                used.insert(lst[ii]); used.insert(lst[jj]);
+                break;
+            }
+        }
+    }
+}
+
+static const int SAMP = 9;
+
+static float seam_gap(const PSFBody& body, const Seam& s, float* d_out,
+                      Vec3* n_out) {
+    const Patch& A = body.Patches()[s.patch_a];
+    const Patch& B = body.Patches()[s.patch_b];
+    float gmax = 0;
+    for (int i = 0; i < SAMP; ++i) {
+        const float t = (i + 0.5f) / SAMP;       // interior points
+        const float tb = s.tb0 + (s.tb1 - s.tb0) * t;
+        float ua, va, ub, vb;
+        edge_uv(s.edge_a, t, ua, va);
+        edge_uv(s.edge_b, tb, ub, vb);
+        const Vec3 pa = A.Evaluate(ua, va), pb = B.Evaluate(ub, vb);
+        const Vec3 g  = { pa.x-pb.x, pa.y-pb.y, pa.z-pb.z };
+        const float gl = std::sqrt(g.x*g.x + g.y*g.y + g.z*g.z);
+        if (gl > gmax) gmax = gl;
+        if (d_out) {
+            // signed gap along A's edge normal direction (shared field)
+            const Vec3 n = n_out[i];
+            d_out[i] = g.x*n.x + g.y*n.y + g.z*n.z;
+        }
+    }
+    return gmax;
+}
+
+void SeamGraph::FitSeam(PSFBody& body, const Seam& s,
+                        std::unordered_set<uint64_t>& edge_used,
+                        float strength) {
+    // an edge is identified by (patch<<3 | edge); skip if either side's
+    // stitch is already owned by a previously fitted seam
+    const uint64_t ea_key = (uint64_t(s.patch_a) << 3) | s.edge_a;
+    const uint64_t eb_key = (uint64_t(s.patch_b) << 3) | s.edge_b;
+    const bool wa_writes = !s.a_is_finer || true;   // A side always writes
+    const bool wb_writes = !s.a_is_finer;           // equal-split writes B
+    if (wa_writes && edge_used.count(ea_key)) return;
+    if (wb_writes && edge_used.count(eb_key)) return;
+
+    Patch& A = body.MutablePatches()[s.patch_a];
+    Patch& B = body.MutablePatches()[s.patch_b];
+    // edge normal field of A (anchor normals interpolated along the edge)
+    Vec3 n[SAMP];
+    for (int i = 0; i < SAMP; ++i) {
+        float ua, va;
+        edge_uv(s.edge_a, (i + 0.5f) / SAMP, ua, va);
+        n[i] = A.EvaluateNormalField(ua, va);
+    }
+    float d[SAMP];
+    const float before = seam_gap(body, s, d, n);
+
+    // who corrects: T-junction -> fine side full; equal-split -> the A
+    // side absorbs the FULL normal correction. (Half-and-half leaves the
+    // asymmetric part of the gap uncorrected when one patch's edge bows
+    // far more than the other's, which is the common high-frequency case;
+    // letting one side carry all of it closes the gap completely.)
+    const float wa = -1.0f;
+    const float wb =  0.0f;
+
+    int8_t* sta = body.StitchOf(s.patch_a) + s.edge_a * 2;
+    int8_t* stb = body.StitchOf(s.patch_b) + s.edge_b * 2;
+    const int8_t keep_a0 = sta[0], keep_a1 = sta[1];
+    const int8_t keep_b0 = stb[0], keep_b1 = stb[1];
+    const float ss = body.StitchScale();
+
+    auto fit_side = [&](float w, float tb_lin0, float tb_lin1, int8_t* st) {
+        if (w == 0.0f || ss <= 0) return;
+        // minimize sum (w d_i - t(1-t)(a + b t))^2 over the side's own t
+        double m00=0, m01=0, m11=0, r0=0, r1=0;
+        for (int i = 0; i < SAMP; ++i) {
+            const float ta = (i + 0.5f) / SAMP;
+            const float t  = tb_lin0 + (tb_lin1 - tb_lin0) * ta; // own param
+            const double b0 = t*(1-t), b1 = t*t*(1-t);
+            m00 += b0*b0; m01 += b0*b1; m11 += b1*b1;
+            r0  += b0 * w * d[i]; r1 += b1 * w * d[i];
+        }
+        const double det = m00*m11 - m01*m01;
+        if (std::fabs(det) < 1e-18) return;
+        const double a = (( m11*r0 - m01*r1) / det) * strength;
+        const double b = ((-m01*r0 + m00*r1) / det) * strength;
+        // s(t) = t(1-t)(a + b t) but our storage is (a', b') with
+        // s = t(1-t)(a' + b' t): identical form, quantize directly
+        auto q8 = [&](double x) {
+            int v = (int)std::lround(x / ss);
+            return (int8_t)(v < -127 ? -127 : (v > 127 ? 127 : v)); };
+        st[0] = (int8_t)(st[0] + q8(a));   // accumulate over existing
+        st[1] = (int8_t)(st[1] + q8(b));
+    };
+    fit_side(wa, 0.f, 1.f, sta);
+    fit_side(wb, s.tb0, s.tb1, stb);
+
+    (void)A; (void)B;
+    const float after = seam_gap(body, s, nullptr, nullptr);
+    // float32 relative noise at this gap magnitude: a stitch on a shared
+    // patch can perturb an already-large gap by ~1e-6 of its size. Use a
+    // relative guard so we don't revert a genuine improvement over noise.
+    const float guard = 1e-9f + 1e-5f * before;
+    if (after > before + guard) {        // revert only on real worsening
+        sta[0] = keep_a0; sta[1] = keep_a1;
+        stb[0] = keep_b0; stb[1] = keep_b1;
+    } else {                             // accepted: reserve the edges
+        if (wa_writes) edge_used.insert(ea_key);
+        if (wb_writes) edge_used.insert(eb_key);
+    }
+}
+
+void SeamGraph::RestitchAround(PSFBody& body, const std::vector<uint32_t>& ids) {
+    std::unordered_set<uint32_t> set(ids.begin(), ids.end());
+    std::unordered_set<uint64_t> edge_used;
+    for (const Seam& s : seams)
+        if (set.count(s.patch_a) || set.count(s.patch_b))
+            FitSeam(body, s, edge_used);
+}
+
+void SeamGraph::FitAll(PSFBody& body) {
+    // each patch-edge carries ONE stitch; a given edge must be fitted by
+    // at most one seam, else a later seam overwrites an earlier one and
+    // can worsen it. Reserve edges as they are consumed.
+    std::unordered_set<uint64_t> edge_used;
+    for (const Seam& s : seams) FitSeam(body, s, edge_used);
+}
+
+// ---------------------------------------------------------------------------
+// HarmonicWeld - global, simultaneous seam reconstruction.
+//
+// Local stitching closes each seam in isolation; the order matters and
+// neighboring seams fight. This instead treats ALL shared anchors as one
+// coupled system and relaxes them together toward the configuration that
+// makes the surface continuous AND smooth across every seam at once.
+//
+// For each shared anchor we accumulate, from every seam edge that touches
+// it, the midpoint of the two sides' surface positions (the "where the
+// surface wants this anchor to be" target) plus a Laplacian smoothing pull
+// toward the average of its graph neighbors. Moving every anchor a damped
+// step toward that blended target, repeatedly, is a Jacobi relaxation of
+// the discrete Laplace equation with seam-continuity boundary terms -- the
+// harmonic solution. Many surfaces converge together; the form emerges.
+//
+// Returns the max seam gap after relaxation (fraction handled by caller).
+// ---------------------------------------------------------------------------
+float SeamGraph::HarmonicWeld(PSFBody& body, int iterations, float smooth) {
+    WeldProfile p = WeldProfileFor(WeldCategory::Elastic);
+    p.iterations = iterations; p.smooth = smooth;
+    return HarmonicWeld(body, p);
+}
+
+float SeamGraph::HarmonicWeld(PSFBody& body, const WeldProfile& profile) {
+    static const int EPL[4][2] = {{0,3},{1,2},{0,1},{3,2}};
+    auto& pool = body.Anchors();
+    const auto& S = body.SurfaceBlob();
+    const uint32_t na = (uint32_t)body.AnchorBlob().size();
+    const float relax = profile.relax;
+    const float cap_frac = profile.cap_frac;
+    const int iters = profile.iterations;
+
+    // partners: anchors that must meet across a seam (see header note)
+    std::vector<std::vector<uint16_t>> partners(na);
+    auto pair = [&](uint16_t a, uint16_t b){
+        if (a==b) return;
+        for (uint16_t x : partners[a]) if (x==b) return;
+        partners[a].push_back(b); partners[b].push_back(a);
+    };
+    // smoothing graph: along-seam neighbors (each edge's own endpoints)
+    std::vector<std::vector<uint16_t>> sm(na);
+    auto smooth_link = [&](uint16_t a, uint16_t b){
+        if (a==b) return;
+        for (uint16_t x : sm[a]) if (x==b) return;
+        sm[a].push_back(b); sm[b].push_back(a);
+    };
+    for (const Seam& s : seams) {
+        const uint16_t a0 = S[s.patch_a].anchor_idx[EPL[s.edge_a][0]];
+        const uint16_t a1 = S[s.patch_a].anchor_idx[EPL[s.edge_a][1]];
+        const uint16_t b0 = S[s.patch_b].anchor_idx[EPL[s.edge_b][0]];
+        const uint16_t b1 = S[s.patch_b].anchor_idx[EPL[s.edge_b][1]];
+        const bool flip = (s.tb0 > s.tb1);
+        pair(a0, flip ? b1 : b0);
+        pair(a1, flip ? b0 : b1);
+        smooth_link(a0, a1);            // along-seam smoothing edge
+    }
+
+    float gmax = 0;
+    for (int it = 0; it < iters; ++it) {
+        std::vector<Vec3> np(na);
+        for (uint16_t a = 0; a < na; ++a) {
+            const Vec3 pa = pool.Position(a);
+            if (partners[a].empty()) { np[a] = pa; continue; }
+            // continuity target: midpoint with weld partners
+            Vec3 mean = pa; float w = 1.0f;
+            for (uint16_t b : partners[a]) {
+                const Vec3 pb = pool.Position(b);
+                mean.x += pb.x; mean.y += pb.y; mean.z += pb.z; w += 1.0f;
+            }
+            const float inv = 1.0f / w;
+            mean = Vec3{mean.x*inv, mean.y*inv, mean.z*inv};
+            // optional along-seam smoothing pull (material-dependent),
+            // blended in by profile.smooth -> melts edges for soft/fluid
+            if (profile.smooth > 0 && !sm[a].empty()) {
+                Vec3 savg{0,0,0}; float sw=0;
+                for (uint16_t b : sm[a]) { const Vec3 pb=pool.Position(b);
+                    savg.x+=pb.x; savg.y+=pb.y; savg.z+=pb.z; sw+=1.0f; }
+                savg = Vec3{savg.x/sw, savg.y/sw, savg.z/sw};
+                mean = Vec3{ mean.x + profile.smooth*(savg.x-mean.x),
+                             mean.y + profile.smooth*(savg.y-mean.y),
+                             mean.z + profile.smooth*(savg.z-mean.z) };
+            }
+            Vec3 step{ relax*(mean.x-pa.x), relax*(mean.y-pa.y),
+                       relax*(mean.z-pa.z) };
+            // cap step (fraction of nearest partner distance) to bound
+            // cumulative shrink -- rigid materials cap hard, fluids loose
+            float near2 = 1e30f;
+            for (uint16_t b : partners[a]) {
+                const Vec3 pb = pool.Position(b);
+                const float d2=(pb.x-pa.x)*(pb.x-pa.x)+(pb.y-pa.y)*(pb.y-pa.y)
+                             +(pb.z-pa.z)*(pb.z-pa.z);
+                near2 = std::fmin(near2, d2);
+            }
+            const float cap = cap_frac*std::sqrt(near2);
+            const float sl = std::sqrt(step.x*step.x+step.y*step.y+step.z*step.z);
+            if (sl > cap && sl > 1e-12f) {
+                const float k = cap/sl;
+                step = Vec3{step.x*k, step.y*k, step.z*k};
+            }
+            np[a] = Vec3{ pa.x+step.x, pa.y+step.y, pa.z+step.z };
+        }
+        for (uint16_t a = 0; a < na; ++a) pool.SetPosition(a, np[a]);
+    }
+    body.MarkAnchorsDirty();
+    std::unordered_set<uint64_t> edge_used;
+    for (const Seam& s : seams) FitSeam(body, s, edge_used, profile.stitch);
+    for (const Seam& s : seams)
+        gmax = std::fmax(gmax, seam_gap(body, s, nullptr, nullptr));
+    return gmax;
+}
+
+float SeamGraph::MaxGap(const PSFBody& body) const {
+    float g = 0;
+    for (const Seam& s : seams)
+        g = std::fmax(g, seam_gap(body, s, nullptr, nullptr));
+    return g;
+}
+
+} // namespace DeliRium
+
+namespace DeliRium {
+
+std::vector<uint32_t> SeamGraph::BridgeSeams(const PSFBody& body,
+                                             float tol) const {
+    std::vector<uint32_t> out;
+    for (uint32_t i = 0; i < seams.size(); ++i)
+        if (SeamBridge::NeedsBridge(body, seams[i], tol))
+            out.push_back(i);
+    return out;
+}
+
+} // namespace DeliRium
+
+namespace DeliRium {
+
+// coefs that control each edge's bow (see EvaluateHeight basis):
+//   edge 0 (v=0): {0,4}   edge 1 (v=1): {1,5}
+//   edge 2 (u=0): {2,6}   edge 3 (u=1): {3,7}
+static void edge_coefs(int e, int& c0, int& c1) {
+    switch (e) {
+        case 0: c0=0; c1=4; break;
+        case 1: c0=1; c1=5; break;
+        case 2: c0=2; c1=6; break;
+        default:c0=3; c1=7; break;
+    }
+}
+
+float SeamGraph::HarmonizeEdgeCoefs(PSFBody& body) {
+    static const int EPL[4][2]={{0,3},{1,2},{0,1},{3,2}};
+    const auto& S = body.SurfaceBlob();
+    for (const Seam& s : seams) {
+        // only index-shared edges (same corner anchors) -- those are the
+        // ones whose shared edge SHOULD be one curve. Cross-chart seams
+        // are handled by the bridge, not here.
+        const uint16_t a0=S[s.patch_a].anchor_idx[EPL[s.edge_a][0]];
+        const uint16_t a1=S[s.patch_a].anchor_idx[EPL[s.edge_a][1]];
+        const uint16_t b0=S[s.patch_b].anchor_idx[EPL[s.edge_b][0]];
+        const uint16_t b1=S[s.patch_b].anchor_idx[EPL[s.edge_b][1]];
+        const bool flip=(s.tb0>s.tb1);
+        const bool ish=(a0==(flip?b1:b0))&&(a1==(flip?b0:b1));
+        if (!ish) continue;
+
+        Patch& A = body.MutablePatches()[s.patch_a];
+        Patch& B = body.MutablePatches()[s.patch_b];
+        int ac0,ac1, bc0,bc1;
+        edge_coefs(s.edge_a, ac0, ac1);
+        edge_coefs(s.edge_b, bc0, bc1);
+        // The two edges run in possibly opposite parametric directions.
+        // The "constant" bow coef (ac0/bc0, the symmetric t(1-t) term) is
+        // orientation-independent; the "linear" bow coef (ac1/bc1, the
+        // antisymmetric t(1-t)(2t-1) term) flips sign when the edge runs
+        // backwards. Average the symmetric part; average the antisymmetric
+        // part accounting for the flip so both edges become one curve.
+        const float as0=A.GetCoefficient(ac0), as1=A.GetCoefficient(ac1);
+        const float bs0=B.GetCoefficient(bc0), bs1=B.GetCoefficient(bc1);
+        const float sym = 0.5f*(as0+bs0);
+        // if edges run opposite, B's antisymmetric term is negated relative
+        // to A's; bring to common frame, average, then send back
+        const float bsign = flip ? -1.0f : 1.0f;
+        const float anti = 0.5f*(as1 + bsign*bs1);
+        A.SetCoefficient(ac0, sym);  A.SetCoefficient(ac1, anti);
+        B.SetCoefficient(bc0, sym);  B.SetCoefficient(bc1, bsign*anti);
+    }
+    body.MarkAnchorsDirty();
+    float gmax=0;
+    for (const Seam& s : seams)
+        gmax = std::fmax(gmax, seam_gap(body, s, nullptr, nullptr));
+    return gmax;
+}
+
+} // namespace DeliRium

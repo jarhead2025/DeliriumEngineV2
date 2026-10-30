@@ -1,0 +1,817 @@
+{
+  "by_file": {
+    "kernels/surfel_march.cl": {
+      "count": 10,
+      "kinds": {
+        "invent_path": 10
+      },
+      "last": "kernel contains host CL/cl.h include"
+    },
+    "engine/src/core/Scene.cpp": {
+      "count": 45,
+      "kinds": {
+        "api_mismatch": 30,
+        "patch_reject": 5,
+        "m1_link_body": 10
+      },
+      "last": "wrote torus-compatible minimal body (GameObject needs 3-arg ctor)"
+    },
+    "(global)": {
+      "count": 939,
+      "kinds": {
+        "api_mismatch": 62,
+        "compile_reject": 467,
+        "strategy_fail": 153,
+        "session_start": 56,
+        "early_stop": 3,
+        "m1_build_fail": 14,
+        "scaffold_milestone": 25,
+        "complete_block_cap": 1,
+        "logic_map": 89,
+        "m1_build_ok": 69
+      },
+      "last": "mode=extend milestone=E4 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real"
+    },
+    "src/core/Scene.h": {
+      "count": 28,
+      "kinds": {
+        "placeholder": 28
+      },
+      "last": "placeholder/stub language in patch"
+    },
+    "engine/src/physics/PhysicsWorld.cpp": {
+      "count": 40,
+      "kinds": {
+        "api_mismatch": 40
+      },
+      "last": "patch only defines unknown methods ['AddBody', 'GetBodies', 'PhysicsWorld', 'RemoveBody', 'remove']; header has ['AddPlane', 'PromoteToFEM', 'Register', 'RequestWeld', 'Step']"
+    },
+    "engine/src/render/SplatRenderer.cpp": {
+      "count": 231,
+      "kinds": {
+        "api_mismatch": 11,
+        "placeholder": 14,
+        "journal_fix": 145,
+        "patch_reject": 57,
+        "header_synth": 1,
+        "m7_polish": 2,
+        "splat_visible": 1
+      },
+      "last": "injected LOD/temporal/multi-body markers"
+    },
+    "engine/src/physics/ModalDynamics.cpp": {
+      "count": 7,
+      "kinds": {
+        "api_mismatch": 7
+      },
+      "last": "patch only defines unknown methods ['ComputeModes', 'ModalDynamics']; header has ['ApplyImpulseAt', 'LoadModes', 'ModeCount', 'Reset', 'SetAmplitude', 'SetDampingFromMaterial', 'Step', 'TotalEnergy', "
+    },
+    "engine/src/core/Engine.cpp": {
+      "count": 136,
+      "kinds": {
+        "patch_reject": 19,
+        "journal_fix": 11,
+        "m1_link_body": 91,
+        "header_synth": 10,
+        "engine_product": 5
+      },
+      "last": "milestone=E3 written=0"
+    },
+    "engine/src/psf/PatternLibrary.cpp": {
+      "count": 11,
+      "kinds": {
+        "placeholder": 10,
+        "journal_fix": 1
+      },
+      "last": "rewrote from header after journal pattern match"
+    },
+    "engine/src/core/Editor.cpp": {
+      "count": 94,
+      "kinds": {
+        "gutted": 93,
+        "line_sanitize": 1
+      },
+      "last": "self-heal restored"
+    },
+    "engine/src/psf/Reconstructor.cpp": {
+      "count": 130,
+      "kinds": {
+        "gutted": 92,
+        "journal_fix": 38
+      },
+      "last": "self-heal restored"
+    },
+    "engine/src/physics/LocalFEM.cpp": {
+      "count": 1,
+      "kinds": {
+        "line_sanitize": 1
+      },
+      "last": "in-situ illegal C++ pattern rewrite"
+    },
+    "engine/src/psf/AnchorPhysics.cpp": {
+      "count": 1,
+      "kinds": {
+        "line_sanitize": 1
+      },
+      "last": "in-situ illegal C++ pattern rewrite"
+    },
+    "engine/src/core/GameObject.cpp": {
+      "count": 209,
+      "kinds": {
+        "m1_link_body": 98,
+        "placeholder": 1,
+        "journal_fix": 99,
+        "gutted": 11
+      },
+      "last": "self-heal restored"
+    },
+    "examples/g3_frame/main.cpp": {
+      "count": 8,
+      "kinds": {
+        "godotlike_seed": 8
+      },
+      "last": "milestone=G3 written=14 build_ok"
+    },
+    "engine/src/io/PSFFile.cpp": {
+      "count": 11,
+      "kinds": {
+        "gutted": 11
+      },
+      "last": "self-heal restored"
+    },
+    "engine/src/psf/PSFBody.cpp": {
+      "count": 5,
+      "kinds": {
+        "line_sanitize": 3,
+        "journal_fix": 2
+      },
+      "last": "in-situ illegal C++ pattern rewrite"
+    }
+  },
+  "by_kind": {
+    "invent_path": 10,
+    "api_mismatch": 150,
+    "compile_reject": 467,
+    "strategy_fail": 153,
+    "placeholder": 53,
+    "session_start": 56,
+    "patch_reject": 81,
+    "early_stop": 3,
+    "journal_fix": 296,
+    "gutted": 207,
+    "line_sanitize": 6,
+    "m1_build_fail": 14,
+    "m1_link_body": 199,
+    "scaffold_milestone": 25,
+    "header_synth": 11,
+    "complete_block_cap": 1,
+    "logic_map": 89,
+    "m1_build_ok": 69,
+    "m7_polish": 2,
+    "godotlike_seed": 8,
+    "engine_product": 5,
+    "splat_visible": 1
+  },
+  "recent": [
+    {
+      "ts": "2026-09-13T20:41:44+00:00",
+      "kind": "godotlike_seed",
+      "file": "examples/g3_frame/main.cpp",
+      "detail": "milestone=G0 files\u22480 src=None",
+      "agent": "pipeline",
+      "strategy": "ensure_godotlike_engine"
+    },
+    {
+      "ts": "2026-09-13T20:41:44+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:41:44+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:41:54+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:41:54+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:41:57+00:00",
+      "kind": "godotlike_seed",
+      "file": "examples/g3_frame/main.cpp",
+      "detail": "milestone=G0 files\u22480 src=None",
+      "agent": "pipeline",
+      "strategy": "ensure_godotlike_engine"
+    },
+    {
+      "ts": "2026-09-13T20:41:59+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=G0 loops=24 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-13T20:41:59+00:00",
+      "kind": "godotlike_seed",
+      "file": "examples/g3_frame/main.cpp",
+      "detail": "milestone=G0 files\u22480 src=None",
+      "agent": "pipeline",
+      "strategy": "ensure_godotlike_engine"
+    },
+    {
+      "ts": "2026-09-13T20:41:59+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:41:59+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:42:08+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T20:42:08+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T21:04:10+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=G3 loops=24 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-13T21:04:10+00:00",
+      "kind": "godotlike_seed",
+      "file": "examples/g3_frame/main.cpp",
+      "detail": "milestone=G3 written=14 build_ok",
+      "agent": "pipeline",
+      "strategy": "ensure_godotlike_engine"
+    },
+    {
+      "ts": "2026-09-13T21:04:11+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T21:04:11+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T21:04:22+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-13T21:04:22+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:09+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=E1 loops=24 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-14T10:00:09+00:00",
+      "kind": "engine_product",
+      "file": "engine/src/core/Engine.cpp",
+      "detail": "milestone=E1 written=1",
+      "agent": "pipeline",
+      "strategy": "ensure_engine_product_path"
+    },
+    {
+      "ts": "2026-09-14T10:00:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:14+00:00",
+      "kind": "line_sanitize",
+      "file": "engine/src/psf/PSFBody.cpp",
+      "detail": "in-situ illegal C++ pattern rewrite",
+      "agent": "pipeline",
+      "strategy": "sanitize_illegal_cpp_line_patterns"
+    },
+    {
+      "ts": "2026-09-14T10:00:14+00:00",
+      "kind": "journal_fix",
+      "file": "engine/src/psf/PSFBody.cpp",
+      "detail": "rewrote/created from header after journal/gutted match",
+      "agent": "pipeline",
+      "strategy": "apply_journal_driven_fixes"
+    },
+    {
+      "ts": "2026-09-14T10:00:23+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:23+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:23+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:00:23+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:06:55+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=E1 loops=24 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-14T10:06:55+00:00",
+      "kind": "engine_product",
+      "file": "engine/src/core/Engine.cpp",
+      "detail": "milestone=E1 written=0",
+      "agent": "pipeline",
+      "strategy": "ensure_engine_product_path"
+    },
+    {
+      "ts": "2026-09-14T10:06:57+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:06:57+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:06:57+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:06:57+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:07:00+00:00",
+      "kind": "line_sanitize",
+      "file": "engine/src/psf/PSFBody.cpp",
+      "detail": "in-situ illegal C++ pattern rewrite",
+      "agent": "pipeline",
+      "strategy": "sanitize_illegal_cpp_line_patterns"
+    },
+    {
+      "ts": "2026-09-14T10:07:00+00:00",
+      "kind": "journal_fix",
+      "file": "engine/src/psf/PSFBody.cpp",
+      "detail": "rewrote/created from header after journal/gutted match",
+      "agent": "pipeline",
+      "strategy": "apply_journal_driven_fixes"
+    },
+    {
+      "ts": "2026-09-14T10:07:09+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:07:09+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:07:09+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T10:07:09+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:35:10+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=M0 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-14T16:35:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:35:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:35:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:35:10+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:34+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=E2 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-14T16:42:34+00:00",
+      "kind": "engine_product",
+      "file": "engine/src/core/Engine.cpp",
+      "detail": "milestone=E2 written=0",
+      "agent": "pipeline",
+      "strategy": "ensure_engine_product_path"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "kind": "line_sanitize",
+      "file": "engine/src/psf/PSFBody.cpp",
+      "detail": "in-situ illegal C++ pattern rewrite",
+      "agent": "pipeline",
+      "strategy": "sanitize_illegal_cpp_line_patterns"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:43:47+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=E2 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-14T17:43:47+00:00",
+      "kind": "engine_product",
+      "file": "engine/src/core/Engine.cpp",
+      "detail": "milestone=E2 written=2",
+      "agent": "pipeline",
+      "strategy": "ensure_engine_product_path"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "kind": "session_start",
+      "file": "",
+      "detail": "mode=extend milestone=E4 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real",
+      "agent": "pipeline",
+      "strategy": ""
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "kind": "splat_visible",
+      "file": "engine/src/render/SplatRenderer.cpp",
+      "detail": "milestone=E4 written=1",
+      "agent": "pipeline",
+      "strategy": "ensure_splat_visible_path"
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "kind": "engine_product",
+      "file": "engine/src/core/Engine.cpp",
+      "detail": "milestone=E3 written=0",
+      "agent": "pipeline",
+      "strategy": "ensure_engine_product_path"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "kind": "gutted",
+      "file": "engine/src/io/PSFFile.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/Editor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "kind": "gutted",
+      "file": "engine/src/core/GameObject.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "kind": "gutted",
+      "file": "engine/src/psf/Reconstructor.cpp",
+      "detail": "self-heal restored",
+      "agent": "pipeline",
+      "strategy": "integration_self_heal"
+    },
+    {
+      "ts": "2026-09-15T14:20:35+00:00",
+      "kind": "m7_polish",
+      "file": "engine/src/render/SplatRenderer.cpp",
+      "detail": "injected LOD/temporal/multi-body markers",
+      "agent": "pipeline",
+      "strategy": "ensure_m7_polish_slice"
+    }
+  ]
+}

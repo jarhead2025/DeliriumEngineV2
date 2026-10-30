@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_m1_core.a CMakeFiles/delirium_m1_core.dir/src/body_topology.cpp.o CMakeFiles/delirium_m1_core.dir/src/body_runtime.cpp.o CMakeFiles/delirium_m1_core.dir/src/articulation.cpp.o
+/usr/bin/ranlib libdelirium_m1_core.a

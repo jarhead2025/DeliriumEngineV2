@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/demo_render.dir/demo_render.cpp.o -o demo_render  libdelirium_core.a 

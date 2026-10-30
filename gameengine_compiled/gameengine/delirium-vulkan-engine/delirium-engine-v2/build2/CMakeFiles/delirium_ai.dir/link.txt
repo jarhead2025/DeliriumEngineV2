@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_ai.a CMakeFiles/delirium_ai.dir/ai/domain_classifier.cpp.o CMakeFiles/delirium_ai.dir/ai/material_science.cpp.o CMakeFiles/delirium_ai.dir/ai/organic_generator.cpp.o CMakeFiles/delirium_ai.dir/ai/inorganic_generator.cpp.o CMakeFiles/delirium_ai.dir/ai/generator.cpp.o
+/usr/bin/ranlib libdelirium_ai.a

@@ -1,0 +1,5 @@
+/home/josias/Desktop/DESKTOPstuff/gameengine/delirium-engine-revision-m2/build/CMakeFiles/delirium_m2_core.dir
+/home/josias/Desktop/DESKTOPstuff/gameengine/delirium-engine-revision-m2/build/CMakeFiles/delirium_m2_tests.dir
+/home/josias/Desktop/DESKTOPstuff/gameengine/delirium-engine-revision-m2/build/CMakeFiles/test.dir
+/home/josias/Desktop/DESKTOPstuff/gameengine/delirium-engine-revision-m2/build/CMakeFiles/edit_cache.dir
+/home/josias/Desktop/DESKTOPstuff/gameengine/delirium-engine-revision-m2/build/CMakeFiles/rebuild_cache.dir

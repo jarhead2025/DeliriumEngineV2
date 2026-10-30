@@ -1,0 +1,62 @@
+[
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -std=gnu++20 -o CMakeFiles/delirium_geometry.dir/src/delirium/geometry/patch/patch.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/geometry/patch/patch.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/geometry/patch/patch.cpp",
+  "output": "CMakeFiles/delirium_geometry.dir/src/delirium/geometry/patch/patch.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -isystem /usr/include/SDL2 -std=gnu++20 -o CMakeFiles/delirium_render.dir/src/delirium/render/surfel/surfel_cache.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/render/surfel/surfel_cache.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/render/surfel/surfel_cache.cpp",
+  "output": "CMakeFiles/delirium_render.dir/src/delirium/render/surfel/surfel_cache.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -isystem /usr/include/SDL2 -std=gnu++20 -o CMakeFiles/delirium_render.dir/src/delirium/render/renderer.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/render/renderer.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/render/renderer.cpp",
+  "output": "CMakeFiles/delirium_render.dir/src/delirium/render/renderer.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -std=gnu++20 -o CMakeFiles/delirium_physics.dir/src/delirium/physics/modal/modal_solver.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/physics/modal/modal_solver.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/physics/modal/modal_solver.cpp",
+  "output": "CMakeFiles/delirium_physics.dir/src/delirium/physics/modal/modal_solver.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -std=gnu++20 -o CMakeFiles/delirium_physics.dir/src/delirium/physics/collision/collision_detector.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/physics/collision/collision_detector.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/physics/collision/collision_detector.cpp",
+  "output": "CMakeFiles/delirium_physics.dir/src/delirium/physics/collision/collision_detector.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -isystem /usr/include/SDL2 -std=gnu++20 -o CMakeFiles/delirium_core.dir/src/delirium/core/engine.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/core/engine.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/core/engine.cpp",
+  "output": "CMakeFiles/delirium_core.dir/src/delirium/core/engine.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -isystem /usr/include/SDL2 -std=gnu++20 -o CMakeFiles/delirium_core.dir/src/delirium/core/scene.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/core/scene.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/src/delirium/core/scene.cpp",
+  "output": "CMakeFiles/delirium_core.dir/src/delirium/core/scene.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -isystem /usr/include/SDL2 -std=gnu++20 -Wall -Wextra -o CMakeFiles/delirium_demo.dir/main.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/main.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/main.cpp",
+  "output": "CMakeFiles/delirium_demo.dir/main.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -std=gnu++20 -o CMakeFiles/test_math.dir/tests/math/test_basis.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/tests/math/test_basis.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/tests/math/test_basis.cpp",
+  "output": "CMakeFiles/test_math.dir/tests/math/test_basis.cpp.o"
+},
+{
+  "directory": "/home/josias/Desktop/gameengine/delirium-engine-v2/build",
+  "command": "/usr/bin/c++  -I/home/josias/Desktop/gameengine/delirium-engine-v2/src -std=gnu++20 -o CMakeFiles/test_geometry.dir/tests/geometry/test_patch.cpp.o -c /home/josias/Desktop/gameengine/delirium-engine-v2/tests/geometry/test_patch.cpp",
+  "file": "/home/josias/Desktop/gameengine/delirium-engine-v2/tests/geometry/test_patch.cpp",
+  "output": "CMakeFiles/test_geometry.dir/tests/geometry/test_patch.cpp.o"
+}
+]

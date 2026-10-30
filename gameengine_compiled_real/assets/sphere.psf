@@ -1,0 +1,50 @@
+# DeliRium PSF — parametric equation surface (not triangles)
+# Shape: unit-ish sphere via SPHERICAL basis + anchors
+# Core idea: geometry = sum(coeff_i * basis_i); color = sum(pattern_j * RGB_j)
+#
+# MAGIC
+PSF1
+VERSION 1
+NAME sphere
+
+# --- Surface types used (library ids) ---
+# 0 = SPHERICAL   r = c0 + c1*Y00 + higher terms (here: pure sphere)
+# 1 = FLAT
+# 2 = CORRUGATED
+SURFACE_TYPES SPHERICAL FLAT CORRUGATED
+
+# --- Geometry: one closed spherical patch ---
+# type index, then coefficients (c0 = radius scale, rest reserved / modal)
+PATCH 0
+  TYPE SPHERICAL
+  # c0 = base radius, c1.. = optional modal / deformation (0 = perfect sphere)
+  COEFFS 1.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+  # World-space center and optional axis (identity)
+  CENTER 0.0 0.0 0.0
+  AXIS 0.0 1.0 0.0
+  # UV domain for sampling (full sphere in parametric sense)
+  U_RANGE 0.0 6.28318530718
+  V_RANGE 0.0 3.14159265359
+
+# --- Anchors: pin orientation / bone hooks (at least 4 for a patch) ---
+# index  x y z   weight
+ANCHORS 6
+  0   1.0  0.0  0.0  1.0
+  1  -1.0  0.0  0.0  1.0
+  2   0.0  1.0  0.0  1.0
+  3   0.0 -1.0  0.0  1.0
+  4   0.0  0.0  1.0  1.0
+  5   0.0  0.0 -1.0  1.0
+
+# --- Color field: Taylor-style pattern sum × RGB ---
+# pattern id, strength, R G B
+# SOLID = constant; STRIPE / SPOT = simple procedural basis
+COLOR_PATTERNS 2
+  SOLID   1.0   0.25 0.55 0.95
+  SPOT    0.15  1.00 1.00 1.00
+
+# --- Optional modal modes (for PhysicsServer / live deform) ---
+MODES 8
+  0.0 0.0 0.0 0.0 0.0 0.0 0.0 0.0
+
+END

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_m3_core.a CMakeFiles/delirium_m3_core.dir/src/body_topology.cpp.o CMakeFiles/delirium_m3_core.dir/src/basis_functions.cpp.o CMakeFiles/delirium_m3_core.dir/src/welded_seam.cpp.o CMakeFiles/delirium_m3_core.dir/src/spatial_grid.cpp.o CMakeFiles/delirium_m3_core.dir/src/surfel_cache.cpp.o CMakeFiles/delirium_m3_core.dir/src/body_runtime.cpp.o
+/usr/bin/ranlib libdelirium_m3_core.a

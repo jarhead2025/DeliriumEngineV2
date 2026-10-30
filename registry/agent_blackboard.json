@@ -1,0 +1,1578 @@
+{
+  "notes": [
+    {
+      "ts": "2026-09-14T16:35:14+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m4_seams_patterns.md"
+    },
+    {
+      "ts": "2026-09-14T16:35:14+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m5_live_modal.md"
+    },
+    {
+      "ts": "2026-09-14T16:35:14+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m6_bones_anchors.md"
+    },
+    {
+      "ts": "2026-09-14T16:35:14+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m7_polish.md"
+    },
+    {
+      "ts": "2026-09-14T16:35:18+00:00",
+      "agent": "pipeline",
+      "topic": "engine_binary",
+      "text": "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/delirium_m1_torus"
+    },
+    {
+      "ts": "2026-09-14T16:42:34+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:session_start",
+      "text": "(global): mode=extend milestone=E2 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real"
+    },
+    {
+      "ts": "2026-09-14T16:42:34+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:engine_product",
+      "text": "engine/src/core/Engine.cpp: milestone=E2 written=0"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:35+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:37+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/1 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "eigen",
+      "text": "available flags=['-I/usr/include/eigen3']"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/eigen_llt.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m3_opencl_hit_fill.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m4_seams_patterns.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m5_live_modal.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m6_bones_anchors.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m7_polish.md"
+    },
+    {
+      "ts": "2026-09-14T16:42:38+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:line_sanitize",
+      "text": "engine/src/psf/PSFBody.cpp: in-situ illegal C++ pattern rewrite"
+    },
+    {
+      "ts": "2026-09-14T16:42:43+00:00",
+      "agent": "pipeline",
+      "topic": "engine_binary",
+      "text": "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/delirium_m1_torus"
+    },
+    {
+      "ts": "2026-09-14T16:42:43+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:46+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T16:42:49+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T16:42:49+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/2 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-14T17:43:47+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:session_start",
+      "text": "(global): mode=extend milestone=E2 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real"
+    },
+    {
+      "ts": "2026-09-14T17:43:47+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:engine_product",
+      "text": "engine/src/core/Engine.cpp: milestone=E2 written=2"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:43:50+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:43:53+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T17:43:53+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/1 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "eigen",
+      "text": "available flags=['-I/usr/include/eigen3']"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/eigen_llt.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m3_opencl_hit_fill.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m4_seams_patterns.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m5_live_modal.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m6_bones_anchors.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:54+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m7_polish.md"
+    },
+    {
+      "ts": "2026-09-14T17:43:59+00:00",
+      "agent": "pipeline",
+      "topic": "engine_binary",
+      "text": "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/delirium_m0_probe"
+    },
+    {
+      "ts": "2026-09-14T17:43:59+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:44:02+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-14T17:44:05+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-14T17:44:05+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/2 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:session_start",
+      "text": "(global): mode=extend milestone=E4 loops=20 workspace=/home/josias/Desktop/Tartarus/gameengine_compiled_real"
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:splat_visible",
+      "text": "engine/src/render/SplatRenderer.cpp: milestone=E4 written=1"
+    },
+    {
+      "ts": "2026-09-15T14:20:19+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:engine_product",
+      "text": "engine/src/core/Engine.cpp: milestone=E3 written=0"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:20+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/1 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "eigen",
+      "text": "available flags=['-I/usr/include/eigen3']"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/eigen_llt.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m3_opencl_hit_fill.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m4_seams_patterns.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m5_live_modal.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m6_bones_anchors.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:23+00:00",
+      "agent": "pipeline",
+      "topic": "doc:cheatsheets",
+      "text": "wrote cheatsheets/m7_polish.md"
+    },
+    {
+      "ts": "2026-09-15T14:20:28+00:00",
+      "agent": "pipeline",
+      "topic": "engine_binary",
+      "text": "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/delirium_m1_torus"
+    },
+    {
+      "ts": "2026-09-15T14:20:29+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/io/PSFFile.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/Editor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/core/GameObject.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:32+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:gutted",
+      "text": "engine/src/psf/Reconstructor.cpp: self-heal restored"
+    },
+    {
+      "ts": "2026-09-15T14:20:35+00:00",
+      "agent": "pipeline",
+      "topic": "golden",
+      "text": "promoted 159 files"
+    },
+    {
+      "ts": "2026-09-15T14:20:35+00:00",
+      "agent": "pipeline",
+      "topic": "integration_self_heal",
+      "text": "=== INTEGRATION SELF-HEAL ===\n-- round 1/2 --\nrestored engine/src/io/PSFFile.cpp\nrestored engine/src/core/Editor.cpp\nrestored engine/src/core/GameObject.cpp\nrestored engine/src/psf/Reconstructor.cpp\nrestored_files=4\nbulk_includes=0\ncmake_build=OK\nM0 probe PASS\nmath_harness=PASS\nSELF-HEAL SUCCESS"
+    },
+    {
+      "ts": "2026-09-15T14:20:35+00:00",
+      "agent": "pipeline",
+      "topic": "mistake:m7_polish",
+      "text": "engine/src/render/SplatRenderer.cpp: injected LOD/temporal/multi-body markers"
+    }
+  ],
+  "include_map": {
+    "Tensors.h": "../memory_management/Tensors.h",
+    "StructuralLimitEquations.h": "../memory_management/StructuralLimitEquations.h",
+    "cholesky_decomposition": "CholeskyDecomposition.h",
+    "delirium/core/Editor.h": "../../engine/include/delirium/core/Editor.h",
+    "delirium/core/Scene.h": "../../engine/include/delirium/core/Scene.h",
+    "delirium/physics/PhysicsWorld.h": "../../include/delirium/physics/PhysicsWorld.h",
+    "delirium/core/Engine.h": "../../engine/include/delirium/core/Engine.h",
+    "delirium/core/GameObject.h": "../../include/delirium/core/GameObject.h",
+    "delirium/io/PSFFile.h": "../../include/delirium/io/PSFFile.h",
+    "delirium/physics/CollisionAnalytic.h": "../../include/delirium/physics/CollisionAnalytic.h",
+    "delirium/physics/LocalFEM.h": "../../include/delirium/physics/LocalFEM.h",
+    "delirium/physics/ModalDynamics.h": "../../include/delirium/physics/ModalDynamics.h",
+    "delirium/psf/Seam.h": "../../include/delirium/psf/Seam.h",
+    "delirium/psf/AnchorPhysics.h": "../../engine/include/delirium/psf/AnchorPhysics.h",
+    "delirium/psf/AnchorPool.h": "../../include/delirium/psf/AnchorPool.h",
+    "delirium/psf/Patch.h": "../../include/delirium/psf/Patch.h",
+    "delirium/psf/CageSurface.h": "../../include/delirium/psf/CageSurface.h",
+    "delirium/psf/PSFBody.h": "../../include/delirium/psf/PSFBody.h",
+    "delirium/psf/ProceduralDetail.h": "../../include/delirium/psf/ProceduralDetail.h",
+    "delirium/psf/PatternLibrary.h": "../../include/delirium/psf/PatternLibrary.h",
+    "delirium/psf/PatchColorField.h": "../../include/delirium/psf/PatchColorField.h",
+    "delirium/psf/Reconstructor.h": "../../engine/include/delirium/psf/Reconstructor.h",
+    "delirium/psf/SeamBridge.h": "../../include/delirium/psf/SeamBridge.h",
+    "delirium/psf/SurfaceTypeLibrary.h": "../../include/delirium/psf/SurfaceTypeLibrary.h",
+    "delirium/psf/TreeFormat.h": "../../engine/include/delirium/psf/TreeFormat.h",
+    "delirium/render/Camera.h": "../../include/delirium/render/Camera.h",
+    "delirium/render/SplatRenderer.h": "../../include/delirium/render/SplatRenderer.h",
+    "delirium/render/SurfelRasterizer.h": "../../include/delirium/render/SurfelRasterizer.h",
+    "Editor.h": "delirium/core/Editor.h",
+    "Engine.h": "../../engine/include/delirium/core/Engine.h",
+    "GameObject.h": "../../include/delirium/core/GameObject.h",
+    "Scene.h": "../../engine/include/delirium/core/Scene.h",
+    "PSFFile.h": "../../engine/include/delirium/io/PSFFile.h",
+    "CollisionAnalytic.h": "../../include/delirium/physics/CollisionAnalytic.h",
+    "delirium/psf/SpectralObject.h": "../include/SpectralObject.h",
+    "cl_manager.h": "memory_management/cl_manager.h",
+    "AnchorPool_snapped.h": "../../../src/memory_management/AnchorPool_snapped.h",
+    "CageSurface.h": "../../include/delirium/psf/CageSurface.h",
+    "PSFBody.h": "delirium/psf/PSFBody.h",
+    "Patch.h": "delirium/psf/Patch.h",
+    "PatchColorField.h": "../../include/delirium/psf/PatchColorField.h",
+    "PatternLibrary.h": "delirium/psf/PatternLibrary.h",
+    "ProceduralDetail.h": "../../include/delirium/psf/ProceduralDetail.h",
+    "Reconstructor.h": "delirium/psf/Reconstructor.h",
+    "SeamBridge.h": "../../include/delirium/psf/SeamBridge.h",
+    "SurfaceTypeLibrary.h": "../../include/delirium/psf/SurfaceTypeLibrary.h",
+    "TreeFormat.h": "../../include/delirium/psf/TreeFormat.h",
+    "Camera.h": "../../include/delirium/render/Camera.h",
+    "SplatRenderer.h": "delirium/render/SplatRenderer.h",
+    "SurfelRasterizer.h": "../../include/delirium/render/SurfelRasterizer.h",
+    "OpenCLManager.h": "core/OpenCLManager.h",
+    "PSFBody": "engine/include/delirium/psf/Seam.h",
+    "Reconstructor": "../../include/delirium/core/Engine.h",
+    "Splat": "../../include/delirium/render/SurfelRasterizer.h",
+    "delirium/psf/SpectralPrimitive.h": "SpectralPrimitive.h"
+  },
+  "created_files": [
+    "src/memory_management/Tensors.h",
+    "src/memory_management/StructuralLimitEquations.h",
+    "src/memory_management/cl_manager.h",
+    "src/memory_management/AnchorPool_snapped.h"
+  ],
+  "failed_strategies": [
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:109:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  109 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:108:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  108 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:105:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  105 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:108:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  108 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    },
+    {
+      "strategy": "llm_structure_full",
+      "detail": "9d403fafe5296ef0: Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemOb"
+    }
+  ],
+  "last_errors": [
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:27",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:34",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:43",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:44",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:45",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:46",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:47",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:48",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:54",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:57",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:58",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:62",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:77",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:78",
+    "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:95",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:27:37: error: invalid conversion from ‘void*’ to ‘cl_context’ {aka ‘_cl_context*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:34:29: error: invalid conversion from ‘void*’ to ‘cl_context’ {aka ‘_cl_context*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:43:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:44:21: error: invalid conversion from ‘void*’ to ‘cl_kernel’ {aka ‘_cl_kernel*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:45:21: error: invalid conversion from ‘void*’ to ‘cl_kernel’ {aka ‘_cl_kernel*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:46:22: error: invalid conversion from ‘void*’ to ‘cl_program’ {aka ‘_cl_program*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:47:27: error: invalid conversion from ‘void*’ to ‘cl_command_queue’ {aka ‘_cl_command_queue*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:48:22: error: invalid conversion from ‘void*’ to ‘cl_context’ {aka ‘_cl_context*’} [-fpermissive]",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:54:53: error: invalid use of incomplete type ‘const struct delirium::camera’",
+    "/home/josias/desktop/tartarus/gameengine_compiled_real/engine/src/render/splatrenderer.cpp:57:20: error: invalid conversion from ‘void*’ to ‘cl_kernel’ {aka ‘_cl_kernel*’} [-fpermissive]"
+  ],
+  "strategy_outcomes": [
+    {
+      "ts": "2026-09-11T10:16:26+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T10:16:27+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T10:16:45+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T10:17:01+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T10:17:02+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T10:17:19+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T10:17:35+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T10:17:36+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T10:17:53+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T12:11:25+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T12:11:26+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T12:11:48+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T12:11:54+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T12:11:55+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T12:12:12+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T12:12:27+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T12:12:28+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T12:12:47+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T12:13:02+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T12:13:03+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T12:13:21+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-11T12:13:37+00:00",
+      "sig": "894946b80e6652fc",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::IReconstructor& DeliRium::Engine::Reconstructor()’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:37:13: error: cannot allocate an object of abstract type ‘DeliRium::IReconstructor’\n   37 |     return {};\n      |            "
+    },
+    {
+      "ts": "2026-09-11T12:13:38+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp:12:65: error: cannot declare member function ‘static float DeliRium::PatternLibrary::Eval(uint32_t, float, float)’ to have static linkage [-fpermissive]\n   12 | static float PatternLibrary::Eval(uint32_t idx, float u, float v) {\n      |                                                "
+    },
+    {
+      "ts": "2026-09-11T12:13:55+00:00",
+      "sig": "001e9d1989c5ee8e",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "no output"
+    },
+    {
+      "ts": "2026-09-12T07:00:08+00:00",
+      "sig": "bcdb9cf7c9e35c62",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rejected (header API mismatch, synth failed): patch only defines unknown methods ['Create']; header has ['addObject', 'addPrimitive']"
+    },
+    {
+      "ts": "2026-09-12T07:00:13+00:00",
+      "sig": "bcdb9cf7c9e35c62",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rejected (header API mismatch, synth failed): patch only defines unknown methods ['Create']; header has ['addObject', 'addPrimitive']"
+    },
+    {
+      "ts": "2026-09-12T07:00:18+00:00",
+      "sig": "bcdb9cf7c9e35c62",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rejected (header API mismatch, synth failed): patch only defines unknown methods ['Create']; header has ['addObject', 'addPrimitive']"
+    },
+    {
+      "ts": "2026-09-12T07:00:23+00:00",
+      "sig": "bcdb9cf7c9e35c62",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rejected (header API mismatch, synth failed): patch only defines unknown methods ['Create']; header has ['addObject', 'addPrimitive']"
+    },
+    {
+      "ts": "2026-09-12T07:00:29+00:00",
+      "sig": "bcdb9cf7c9e35c62",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rejected (header API mismatch, synth failed): patch only defines unknown methods ['Create']; header has ['addObject', 'addPrimitive']"
+    },
+    {
+      "ts": "2026-09-12T12:35:23+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\neScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:30: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     Scene* scene = new Scene();\n      |                              ^\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:35:41+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\nm::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:18: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     static Scene scene;\n      |                  ^~~~~\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:35:58+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\nm::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:18: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     static Scene scene;\n      |                  ^~~~~\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:36:15+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T12:36:32+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\neScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:30: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     Scene* scene = new Scene();\n      |                              ^\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:36:39+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any necessary con"
+    },
+    {
+      "ts": "2026-09-12T12:36:56+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T12:37:12+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\nm::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:18: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     static Scene scene;\n      |                  ^~~~~\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:37:29+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T12:37:46+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\neScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:30: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     Scene* scene = new Scene();\n      |                              ^\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:37:53+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T12:38:09+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T12:38:26+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\neScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:30: error: no matching function for call to ‘DeliRium::Scene::Scene()’\n   21 |     Scene* scene = new Scene();\n      |                              ^\nIn file included from /home/josias/Desktop/Tartarus/gameeng"
+    },
+    {
+      "ts": "2026-09-12T12:38:33+00:00",
+      "sig": "8cb1f28755fe0dcf",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp: In member function ‘DeliRium::Scene* DeliRium::Engine::CreateScene(const std::string&)’:\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp:21:5: error: cannot declare static function inside another function\n   21 |     static Scene scene(/* any required para"
+    },
+    {
+      "ts": "2026-09-12T13:17:32+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:17:33+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:17:50+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:17:51+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:18:09+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:18:10+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:18:28+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:18:30+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:18:42+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:18:44+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:19:04+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "debate_repair",
+      "success": true,
+      "detail": "reviewed"
+    },
+    {
+      "ts": "2026-09-12T13:19:06+00:00",
+      "sig": "ea271e432e33708b",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp:14:25: error: definition of implicitly-declared ‘DeliRium::GameObject::~GameObject()’\n   14 | GameObject::~GameObject() = default;\n      |                         ^\n"
+    },
+    {
+      "ts": "2026-09-12T13:25:14+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T13:43:52+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T13:55:58+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T18:11:45+00:00",
+      "sig": "e8e63b96de96ea53",
+      "strategy": "deterministic_common",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n       ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemObject(cl_mem)’\n 1154 | clReleaseMemObject(cl_mem memobj) CL_API_SUFFIX__VERSION_1_0;\n      |                    ~~~~~~~^~~~~~\n/home/josias/Desktop/Tartar"
+    },
+    {
+      "ts": "2026-09-12T18:12:05+00:00",
+      "sig": "e8e63b96de96ea53",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n       ^~~~~~\n      |                        |\n      |                        void*\n/usr/include/CL/cl.h:1154:27: note:   initializing argument 1 of ‘cl_int clReleaseMemObject(cl_mem)’\n 1154 | clReleaseMemObject(cl_mem memobj) CL_API_SUFFIX__VERSION_1_0;\n      |                    ~~~~~~~^~~~~~\n/home/josias/Desktop/Tartar"
+    },
+    {
+      "ts": "2026-09-12T18:12:36+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T18:13:19+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\nt height, void* sdl_renderer,\n      |          ^~~~~~~~~~\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/render/SplatRenderer.h:19:7: note: ‘class DeliRium::SplatRenderer’ defined here\n   19 | class SplatRenderer {\n      |       ^~~~~~~~~~~~~\n/home/josias/Desktop/Tartarus/gameengine_compiled_real/"
+    },
+    {
+      "ts": "2026-09-12T18:13:53+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T18:14:27+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T18:15:00+00:00",
+      "sig": "da8ea4af75d8396f",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "fn no output"
+    },
+    {
+      "ts": "2026-09-12T18:53:30+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:53:58+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:54:26+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:54:55+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:55:24+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:55:52+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:56:21+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:56:49+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:102:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  102 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:57:18+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:57:47+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:58:16+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:58:44+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:59:13+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T18:59:41+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:00:10+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:00:40+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:109:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  109 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:01:08+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:01:39+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:108:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  108 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:02:07+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:02:35+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:03:04+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:03:33+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:04:01+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T19:04:30+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:08:10+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:08:59+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:09:51+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:10:40+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:11:35+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:12:24+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T20:13:18+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:22:03+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:22:31+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:22:59+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:23:29+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:23:57+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:24:27+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:24:55+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:25:24+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:25:53+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:26:22+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:103:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  103 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:26:51+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:27:19+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:27:48+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:28:17+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:28:46+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:105:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  105 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:29:15+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:29:43+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:30:11+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:30:40+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:31:11+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:108:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  108 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:31:40+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:32:09+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:32:37+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    },
+    {
+      "ts": "2026-09-12T22:33:05+00:00",
+      "sig": "9d403fafe5296ef0",
+      "strategy": "llm_structure_full",
+      "success": false,
+      "detail": "Rolled back (incremental): [... output truncated; showing final portion ...]\n/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp:101:24: error: invalid conversion from ‘void*’ to ‘cl_mem’ {aka ‘_cl_mem*’} [-fpermissive]\n  101 |     clReleaseMemObject(buf_fb);\n      |                        ^~~~~~\n      |                        |\n      |                        void*\n/usr/"
+    }
+  ]
+}

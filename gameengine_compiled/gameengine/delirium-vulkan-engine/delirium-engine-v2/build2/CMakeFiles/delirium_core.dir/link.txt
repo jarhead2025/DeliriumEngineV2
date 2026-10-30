@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_core.a CMakeFiles/delirium_core.dir/core/body_topology.cpp.o CMakeFiles/delirium_core.dir/core/basis_functions.cpp.o CMakeFiles/delirium_core.dir/core/material_registry.cpp.o CMakeFiles/delirium_core.dir/core/surfel_cache.cpp.o CMakeFiles/delirium_core.dir/core/modal_system.cpp.o CMakeFiles/delirium_core.dir/core/body_runtime.cpp.o CMakeFiles/delirium_core.dir/core/scene.cpp.o CMakeFiles/delirium_core.dir/core/engine.cpp.o
+/usr/bin/ranlib libdelirium_core.a

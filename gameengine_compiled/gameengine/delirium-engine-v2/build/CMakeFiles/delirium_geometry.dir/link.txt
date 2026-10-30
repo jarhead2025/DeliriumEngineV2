@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_geometry.a CMakeFiles/delirium_geometry.dir/src/delirium/geometry/patch/patch.cpp.o
+/usr/bin/ranlib libdelirium_geometry.a

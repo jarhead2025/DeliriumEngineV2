@@ -1,0 +1,20 @@
+m0_opencl_probe 2 0.00633648
+validate_bridge 2 0.00483062
+validate_cage 2 0.00734772
+validate_dent 2 0.00962497
+validate_detail 2 0.000924342
+validate_eval 2 0.00339043
+validate_fem 2 0.834977
+validate_gameplay 2 0.0118275
+validate_gpu_flush 2 0.0101099
+validate_gpu_split 2 0.0202381
+validate_liveweld 2 0.280753
+validate_merge 2 0.0327681
+validate_modal 2 0.00387535
+validate_physics 2 1.34535
+validate_query 2 0.0182125
+validate_reconstruction 2 0.0113957
+validate_split 2 0.0054083
+validate_weldcat 2 0.0533617
+perf_engine 2 1.21773
+---

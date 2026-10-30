@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/delirium_demo.dir/main.cpp.o -o delirium_demo  libdelirium_core.a libdelirium_render.a /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libSDL2.so libdelirium_physics.a libdelirium_geometry.a 

@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_physics.a CMakeFiles/delirium_physics.dir/src/delirium/physics/modal/modal_solver.cpp.o CMakeFiles/delirium_physics.dir/src/delirium/physics/collision/collision_detector.cpp.o
+/usr/bin/ranlib libdelirium_physics.a

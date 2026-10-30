@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_render.a CMakeFiles/delirium_render.dir/core/opengl/context.cpp.o CMakeFiles/delirium_render.dir/core/opengl/shader.cpp.o CMakeFiles/delirium_render.dir/core/opengl/buffer.cpp.o CMakeFiles/delirium_render.dir/core/window/window.cpp.o CMakeFiles/delirium_render.dir/core/window/input.cpp.o CMakeFiles/delirium_render.dir/core/render/raymarch_renderer.cpp.o CMakeFiles/delirium_render.dir/core/render/compute_renderer.cpp.o
+/usr/bin/ranlib libdelirium_render.a

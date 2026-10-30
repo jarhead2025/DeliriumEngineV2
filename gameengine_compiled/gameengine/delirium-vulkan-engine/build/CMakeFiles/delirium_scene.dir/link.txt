@@ -1,0 +1,2 @@
+/usr/bin/ar qc libdelirium_scene.a CMakeFiles/delirium_scene.dir/scene/surfel_renderer.cpp.o CMakeFiles/delirium_scene.dir/scene/raymarch_renderer.cpp.o CMakeFiles/delirium_scene.dir/scene/demo_scene.cpp.o
+/usr/bin/ranlib libdelirium_scene.a

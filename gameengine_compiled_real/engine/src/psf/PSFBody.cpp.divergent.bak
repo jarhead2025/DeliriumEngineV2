@@ -1,0 +1,714 @@
+// FILEPATH: engine/src/psf/PSFBody.cpp
+// Complete load path + analytic smooth normals from 64-byte PSF records.
+#include "delirium/psf/PSFBody.h"
+#include "delirium/io/PSFFile.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
+#include <memory>
+#include <string>
+#include <vector>
+
+namespace DeliRium {
+namespace {
+
+inline float deform_h(const float c[8], float u, float v) {
+    const float bu = u * (1.f - u), bv = v * (1.f - v);
+    const float au = 2.f * u - 1.f, av = 2.f * v - 1.f;
+    const float w = 1.f - v, x = 1.f - u;
+    return fma(c[0], bu * w,
+           fma(c[1], bu * v,
+           fma(c[2], bv * x,
+           fma(c[3], bv * u,
+           fma(c[4], bu * au * w,
+           fma(c[5], bu * au * v,
+           fma(c[6], bv * av * x, c[7] * bv * av * u)))))));
+}
+
+// Analytic dh/du, dh/dv via central differences on the same basis (stable, matches kernel).
+inline void deform_grad(const float c[8], float u, float v, float& dhu, float& dhv) {
+    const float eps = 1e-3f;
+    const float up = std::min(1.f, u + eps), um = std::max(0.f, u - eps);
+    const float vp = std::min(1.f, v + eps), vm = std::max(0.f, v - eps);
+    dhu = (deform_h(c, up, v) - deform_h(c, um, v)) / (up - um);
+    dhv = (deform_h(c, u, vp) - deform_h(c, u, vm)) / (vp - vm);
+}
+
+inline Vec3 dequant(const AnchorRecord& a, const Vec3& bbmin, const Vec3& bbspan) {
+    return Vec3{
+        bbmin.x + (a.pos[0] / 65535.f) * bbspan.x,
+        bbmin.y + (a.pos[1] / 65535.f) * bbspan.y,
+        bbmin.z + (a.pos[2] / 65535.f) * bbspan.z};
+}
+
+// Displacement direction from record (quantized n*0.5+0.5 in bytes 44..46) if present.
+inline Vec3 anchor_disp_dir(const AnchorRecord& a) {
+    // Layout: normal at offset 44 as uchar[3] in Types.h comments
+    const auto* bytes = reinterpret_cast<const uint8_t*>(&a);
+    const float nx = bytes[44] / 255.f * 2.f - 1.f;
+    const float ny = bytes[45] / 255.f * 2.f - 1.f;
+    const float nz = bytes[46] / 255.f * 2.f - 1.f;
+    const float len = std::sqrt(nx * nx + ny * ny + nz * nz);
+    if (len < 1e-6f) return Vec3{0.f, 1.f, 0.f};
+    return Vec3{nx / len, ny / len, nz / len};
+}
+
+inline Vec3 cross(const Vec3& a, const Vec3& b) {
+    return Vec3{a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+inline float dotv(const Vec3& a, const Vec3& b) {
+    return a.x * b.x + a.y * b.y + a.z * b.z;
+}
+inline Vec3 normalize(const Vec3& v) {
+    const float L = std::sqrt(dotv(v, v));
+    if (L < 1e-12f) return Vec3{0.f, 1.f, 0.f};
+    return Vec3{v.x / L, v.y / L, v.z / L};
+}
+inline Vec3 add(const Vec3& a, const Vec3& b) {
+    return Vec3{a.x + b.x, a.y + b.y, a.z + b.z};
+}
+inline Vec3 scale(const Vec3& a, float s) {
+    return Vec3{a.x * s, a.y * s, a.z * s};
+}
+inline Vec3 sub(const Vec3& a, const Vec3& b) {
+    return Vec3{a.x - b.x, a.y - b.y, a.z - b.z};
+}
+
+// Evaluate position and analytic geometric normal on one surface record at (u,v).
+inline void eval_surface(const SurfaceRecord& s,
+                         const std::vector<AnchorRecord>& anchors,
+                         const Vec3& bbmin, const Vec3& bbspan,
+                         float u, float v,
+                         Vec3& out_p, Vec3& out_n) {
+    Vec3 P[4];
+    Vec3 Nd[4];
+    for (int k = 0; k < 4; ++k) {
+        const uint16_t ai = s.anchor_idx[k];
+        if (ai >= anchors.size()) {
+            out_p = {};
+            out_n = Vec3{0.f, 1.f, 0.f};
+            return;
+        }
+        P[k] = dequant(anchors[ai], bbmin, bbspan);
+        Nd[k] = anchor_disp_dir(anchors[ai]);
+    }
+    const float um = 1.f - u, vm = 1.f - v;
+    // bilinear position
+    Vec3 bil = add(add(scale(P[0], um * vm), scale(P[1], u * vm)),
+                   add(scale(P[2], u * v), scale(P[3], um * v)));
+    // interpolated displacement direction
+    Vec3 Nd_uv = add(add(scale(Nd[0], um * vm), scale(Nd[1], u * vm)),
+                     add(scale(Nd[2], u * v), scale(Nd[3], um * v)));
+    Nd_uv = normalize(Nd_uv);
+    const float h = deform_h(s.coef, u, v);
+    out_p = add(bil, scale(Nd_uv, h));
+
+    // Partial derivatives of bilinear patch
+    // P(u,v) = (1-u)(1-v)P0 + u(1-v)P1 + u v P2 + (1-u)v P3
+    Vec3 dPdu = add(scale(sub(P[1], P[0]), vm), scale(sub(P[2], P[3]), v));
+    Vec3 dPdv = add(scale(sub(P[3], P[0]), um), scale(sub(P[2], P[1]), u));
+    float dhu = 0.f, dhv = 0.f;
+    deform_grad(s.coef, u, v, dhu, dhv);
+    // d/du (Nd*h) ≈ Nd * dh/du (Nd treated slowly varying)
+    dPdu = add(dPdu, scale(Nd_uv, dhu));
+    dPdv = add(dPdv, scale(Nd_uv, dhv));
+    out_n = normalize(cross(dPdu, dPdv));
+}
+
+// --- AMR helpers -----------------------------------------------------------
+// Per-coefficient basis function, matching deform_h term-for-term:
+//   coef 0: bu*(1-v)      coef 1: bu*v
+//   coef 2: bv*(1-u)      coef 3: bv*u
+//   coef 4: bu*au*(1-v)   coef 5: bu*au*v
+//   coef 6: bv*av*(1-u)   coef 7: bv*av*u
+inline float basis_term(int k, float u, float v) {
+    const float bu = u * (1.f - u), bv = v * (1.f - v);
+    const float au = 2.f * u - 1.f, av = 2.f * v - 1.f;
+    const float w = 1.f - v, x = 1.f - u;
+    switch (k) {
+        case 0: return bu * w;
+        case 1: return bu * v;
+        case 2: return bv * x;
+        case 3: return bv * u;
+        case 4: return bu * au * w;
+        case 5: return bu * au * v;
+        case 6: return bv * av * x;
+        default: return bv * av * u;
+    }
+}
+// Fit the 8 deformation coefficients so the patch's height field
+//   h(u,v) = sum_k c_k * B_k(u,v)
+// tracks a target height field (parent/children height in the same basis).
+// The displacement direction Nd(u,v) is smooth over one patch, so fitting
+// the scalar height is a well-conditioned 8x8 least-squares problem and is
+// what the corner-vanishing basis is designed to represent. Solves the
+// normal equations (B^T B) c = B^T h with Gauss elimination.
+inline void fit_coefs(const std::vector<float>& uv, const std::vector<float>& h,
+                      float c[8]) {
+    const int N = (int)uv.size() / 2;
+    double A[8][8] = {};
+    double b[8] = {};
+    for (int i = 0; i < N; ++i) {
+        const float u = uv[2*i], v = uv[2*i+1];
+        for (int k = 0; k < 8; ++k) {
+            const double Bk = basis_term(k, u, v);
+            for (int m = 0; m < 8; ++m)
+                A[k][m] += Bk * basis_term(m, u, v);
+            b[k] += Bk * h[i];
+        }
+    }
+    // Gauss elimination with partial pivoting.
+    double M[8][9];
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) M[i][j] = A[i][j];
+        M[i][8] = b[i];
+    }
+    for (int col = 0; col < 8; ++col) {
+        int piv = col;
+        for (int r = col+1; r < 8; ++r)
+            if (std::fabs(M[r][col]) > std::fabs(M[piv][col])) piv = r;
+        if (std::fabs(M[piv][col]) < 1e-14) continue;
+        if (piv != col) for (int j = col; j <= 8; ++j) std::swap(M[piv][j], M[col][j]);
+        for (int r = 0; r < 8; ++r) {
+            if (r == col) continue;
+            const double f = M[r][col] / M[col][col];
+            for (int j = col; j <= 8; ++j) M[r][j] -= f * M[col][j];
+        }
+    }
+    for (int k = 0; k < 8; ++k)
+        c[k] = (std::fabs(M[k][k]) > 1e-14) ? (float)(M[k][8] / M[k][k]) : 0.f;
+}
+// Height field h(u,v) of a surface record (deform + stitch), matching the
+// kernel's P = bilinear + h*Nd convention.
+inline float surface_height(const SurfaceRecord& s, const int8_t* stitch,
+                            float s_scale, float u, float v) {
+    float h = deform_h(s.coef, u, v);
+    if (stitch) {
+        // 8 int8 per surface: v0,v1,u0,u1 x (a,b); s(t)=t(1-t)(a+b*t).
+        // Edge slots 0..3 = v0,v1,u0,u1 (same order as PatchEdge).
+        auto edge = [&](uint8_t e, float t) {
+            const int8_t a = stitch[e*2], bb = stitch[e*2+1];
+            return t * (1.f - t) * (a + bb * t);
+        };
+        // which edge does (u,v) sit near? use the min-distance edge, scaled.
+        // For fitting we only need the deform part; stitch is re-fit by the
+        // seam graph after topology changes, so omit it here.
+        (void)edge; (void)stitch; (void)s_scale;
+    }
+    return h;
+}
+
+} // namespace
+
+std::unique_ptr<PSFBody> PSFBody::FromRecords(
+    std::vector<AnchorRecord> a,
+    std::vector<SurfaceRecord> s,
+    std::vector<int8_t> stitch,
+    Vec3 bbmin,
+    Vec3 bbspan,
+    float s_scale_in) {
+    auto body = std::unique_ptr<PSFBody>(new PSFBody());
+    body->anchor_blob = std::move(a);
+    body->surface_blob = std::move(s);
+    body->stitch_blob = std::move(stitch);
+    // Invariant: the stitch blob is 8 bytes per surface. Files may omit the
+    // optional stitch section (flags bit 0); normalize to zeroed entries so
+    // AMR ops (which insert/erase 8-byte chunks per surface) stay in bounds.
+    const size_t want_stitch = body->surface_blob.size() * 8u;
+    if (body->stitch_blob.size() != want_stitch)
+        body->stitch_blob.assign(want_stitch, 0);
+    body->bbox_min = bbmin;
+    body->bbox_span = bbspan;
+    body->s_scale = s_scale_in;
+    // Recover bbox when the container header left span at zero (common on some assets)
+    if (body->bbox_span.x < 1e-8f && body->bbox_span.y < 1e-8f && body->bbox_span.z < 1e-8f
+        && !body->anchor_blob.empty()) {
+        body->bbox_min = Vec3{-1.f, -1.f, -1.f};
+        body->bbox_span = Vec3{2.f, 2.f, 2.f};
+        std::fprintf(stderr,
+            "PSFBody: file bbox_span was zero — using unit cube [-1,1]^3 for dequant "
+            "(relative shape preserved)\n");
+    }
+    // Recover the stitch dequant scale when the header left it at zero (same
+    // failure mode as the bbox above). The encoder writes s_scale = 0.012*diag/127
+    // (a full-scale int8 stitch moves an edge by 1.2% of the diagonal); with
+    // s_scale==0 the seam graph's FitSeam bails on its `ss<=0` guard and can
+    // never write a stitch, so T-junctions stay open. Derive it from the span
+    // we actually dequantize against so the recovered value matches the units.
+    if (body->s_scale < 1e-12f && !body->anchor_blob.empty()) {
+        const float dg = std::sqrt(body->bbox_span.x*body->bbox_span.x
+            + body->bbox_span.y*body->bbox_span.y
+            + body->bbox_span.z*body->bbox_span.z);
+        body->s_scale = 0.012f * dg / 127.0f;
+        std::fprintf(stderr,
+            "PSFBody: file s_scale was zero — deriving 0.012*diag/127 = %.6g\n",
+            body->s_scale);
+    }
+    body->anchors_dirty = true;
+    body->anchor_gen = 1;
+    body->smooth_n_gen = 0;
+    body->smooth_n_cache.clear();
+    // Build the CPU patch views + bind the anchor pool so Patches() is a
+    // live, evaluable view of the surface records (mirrors the GPU splat
+    // path, which reads the same raw blobs). The render path never needs
+    // this, but the CPU subsystems (SeamGraph, SeamBridge, CollisionAnalytic,
+    // CageSurface) and the validate_* tests all iterate Patches().
+    body->RebuildViews();
+    return body;
+}
+
+std::unique_ptr<PSFBody> PSFBody::FromFile(const char* path) {
+    if (!path || !path[0]) return nullptr;
+    PSFFile file;
+    std::string err;
+    if (!PSFFile::Load(path, file, &err)) {
+        std::fprintf(stderr, "PSFBody::FromFile: Load failed for '%s': %s\n", path,
+                     err.empty() ? "?" : err.c_str());
+        return nullptr;
+    }
+    if (file.anchors.empty() && file.surfaces.empty()) return nullptr;
+    std::fprintf(stderr, "PSFBody::FromFile: OK '%s' anchors=%zu surfaces=%zu ver=%u\n",
+                 path, file.anchors.size(), file.surfaces.size(), file.version);
+    return FromRecords(std::move(file.anchors), std::move(file.surfaces),
+                       std::move(file.stitch), file.bbox_min, file.bbox_span, file.s_scale);
+}
+
+const std::vector<Vec3>& PSFBody::ComputeSmoothNormals() const {
+    // Cache: only recompute when anchors generation changed.
+    if (smooth_n_gen == anchor_gen && smooth_n_cache.size() == anchor_blob.size() &&
+        !smooth_n_cache.empty()) {
+        return smooth_n_cache;
+    }
+
+    const size_t na = anchor_blob.size();
+    smooth_n_cache.assign(na, Vec3{0.f, 0.f, 0.f});
+    std::vector<float> wsum(na, 0.f);
+
+    Vec3 bbmin = bbox_min;
+    Vec3 bbspan = bbox_span;
+    if (bbspan.x == 0.f && bbspan.y == 0.f && bbspan.z == 0.f) {
+        bbmin = Vec3{-1.f, -1.f, -1.f};
+        bbspan = Vec3{2.f, 2.f, 2.f};
+    }
+
+    // Corner (u,v) for the four anchor slots of each surface record.
+    static const float UV[4][2] = {{0.f, 0.f}, {1.f, 0.f}, {1.f, 1.f}, {0.f, 1.f}};
+
+    for (const auto& s : surface_blob) {
+        for (int k = 0; k < 4; ++k) {
+            const uint16_t ai = s.anchor_idx[k];
+            if (ai >= na) continue;
+            Vec3 p, n;
+            eval_surface(s, anchor_blob, bbmin, bbspan, UV[k][0], UV[k][1], p, n);
+            smooth_n_cache[ai].x += n.x;
+            smooth_n_cache[ai].y += n.y;
+            smooth_n_cache[ai].z += n.z;
+            wsum[ai] += 1.f;
+        }
+    }
+
+    for (size_t i = 0; i < na; ++i) {
+        if (wsum[i] > 0.f) {
+            smooth_n_cache[i] = normalize(smooth_n_cache[i]);
+        } else {
+            // Isolated anchor: fall back to stored displacement direction
+            smooth_n_cache[i] = anchor_disp_dir(anchor_blob[i]);
+        }
+    }
+
+    smooth_n_gen = anchor_gen;
+    return smooth_n_cache;
+}
+
+float PSFBody::RederiveNormals() {
+    // Force recompute of smooth cache; residual vs stored displacement dirs.
+    smooth_n_gen = 0;
+    const auto& sn = ComputeSmoothNormals();
+    float worst = 0.f;
+    for (size_t i = 0; i < sn.size() && i < anchor_blob.size(); ++i) {
+        const Vec3 stored = anchor_disp_dir(anchor_blob[i]);
+        const float d = 1.f - std::fabs(dotv(stored, sn[i]));
+        if (d > worst) worst = d;
+    }
+    return worst;
+}
+
+// --- AMR: live subdivision / de-refinement ---------------------------------
+
+static float stitch_h_val(const int8_t* st, float u, float v, float s_scale) {
+    if (!st) return 0.f;
+    const float tu = u * (1.f - u), tv = v * (1.f - v);
+    return (1.f - v) * tu * (st[0]*s_scale + st[1]*s_scale*u)
+         + v * tu * (st[2]*s_scale + st[3]*s_scale*u)
+         + (1.f - u) * tv * (st[4]*s_scale + st[5]*s_scale*v)
+         + u * tv * (st[6]*s_scale + st[7]*s_scale*v);
+}
+
+static float vdist(const Vec3& a, const Vec3& b) {
+    const float dx = a.x-b.x, dy = a.y-b.y, dz = a.z-b.z;
+    return std::sqrt(dx*dx + dy*dy + dz*dz);
+}
+
+bool PSFBody::SplitPatch(uint32_t patch_id, uint32_t children_out[4]) {
+    if (patch_id >= surface_blob.size()) return false;
+    SurfaceRecord& parent = surface_blob[patch_id];
+    const Patch& pview = patches[patch_id];
+
+    // capture parent surface BEFORE any modification (pview dangles after RebuildViews)
+    const bool dbg = std::getenv("DELIRIUM_DEBUG_SPLIT") && patch_id == 0;
+    Vec3 par_c[4]; float par_h[4]; Vec3 par_n[4];
+    Vec3 par_q[4]; // quadrant-corner surface points (0.25,0.25),(0,0.5),(0.5,0.5),(0.5,0)
+    if (dbg) {
+        for (int k=0;k<4;k++){ par_c[k]=anchors.Position(parent.anchor_idx[k]); par_n[k]=anchors.Normal(parent.anchor_idx[k]); }
+        par_h[0]=pview.EvaluateHeight(0,0); par_h[1]=pview.EvaluateHeight(0,0.5f);
+        par_h[2]=pview.EvaluateHeight(0.5f,0.5f); par_h[3]=pview.EvaluateHeight(0.5f,0);
+        par_q[0]=pview.Evaluate(0.25f,0.25f); par_q[1]=pview.Evaluate(0,0.5f);
+        par_q[2]=pview.Evaluate(0.5f,0.5f); par_q[3]=pview.Evaluate(0.5f,0);
+    }
+
+    const uint16_t P0 = parent.anchor_idx[0];
+    const uint16_t P1 = parent.anchor_idx[1];
+    const uint16_t P2 = parent.anchor_idx[2];
+    const uint16_t P3 = parent.anchor_idx[3];
+
+    // 5 new anchors: 4 edge midpoints + center, snapped onto the parent
+    // surface (deduped by quantized position).
+    const uint16_t M0 = anchors.CreateSnapped(pview, 0.5f, 0.f);
+    const uint16_t M1 = anchors.CreateSnapped(pview, 0.5f, 1.f);
+    const uint16_t M2 = anchors.CreateSnapped(pview, 0.f, 0.5f);
+    const uint16_t M3 = anchors.CreateSnapped(pview, 1.f, 0.5f);
+    const uint16_t C  = anchors.CreateSnapped(pview, 0.5f, 0.5f);
+    if (M0 == 0xFFFF || M1 == 0xFFFF || M2 == 0xFFFF || M3 == 0xFFFF || C == 0xFFFF)
+        return false;
+
+    // Child corner layouts (quadrant order: (u-,v-),(u-,v+),(u+,v-),(u+,v+)).
+    // Convention A: slot0=(0,0) slot1=(0,1) slot2=(1,1) slot3=(1,0).
+    const uint16_t corners[4][4] = {
+        {P0, M2, C,  M0},   // (u-,v-)
+        {M2, P1, M1, C },   // (u-,v+)
+        {M0, C,  M3, P3},   // (u+,v-)
+        {C,  M1, P2, M3},   // (u+,v+)
+    };
+
+    SurfaceRecord children[4];
+    const int G = 9;
+    for (int q = 0; q < 4; ++q) {
+        const int qu = q >> 1, qv = q & 1;
+        // Child corner world positions + normals. The 5 new anchors are
+        // snapped ONTO the parent surface, so the child's bilinear base
+        // already carries the parent's height at the 4 corners; the
+        // coefficient fit only has to supply the interior residual.
+        const Vec3 CP[4] = { anchors.Position(corners[q][0]),
+                             anchors.Position(corners[q][1]),
+                             anchors.Position(corners[q][2]),
+                             anchors.Position(corners[q][3]) };
+        const Vec3 CN[4] = { anchors.Normal(corners[q][0]),
+                             anchors.Normal(corners[q][1]),
+                             anchors.Normal(corners[q][2]),
+                             anchors.Normal(corners[q][3]) };
+        std::vector<float> uv, h;
+        uv.reserve(G * G);
+        h.reserve(G * G);
+        for (int i = 0; i < G; ++i)
+            for (int j = 0; j < G; ++j) {
+                const float cu = i / float(G - 1);
+                const float cv = j / float(G - 1);
+                const float pu = (qu + cu) * 0.5f;
+                const float pv = (qv + cv) * 0.5f;
+                // child bilinear base + normal field at (cu, cv), convention A
+                const float w00 = (1.f-cu)*(1.f-cv), w30 = cu*(1.f-cv),
+                           w10 = (1.f-cu)*cv,     w20 = cu*cv;
+                const Vec3 Pb = add(add(scale(CP[0], w00), scale(CP[3], w30)),
+                                    add(scale(CP[1], w10), scale(CP[2], w20)));
+                const Vec3 Nd = normalize(add(
+                    add(scale(CN[0], w00), scale(CN[3], w30)),
+                    add(scale(CN[1], w10), scale(CN[2], w20))));
+                // residual the child's height field must supply
+                const Vec3 diff = sub(pview.Evaluate(pu, pv), Pb);
+                uv.push_back(cu); uv.push_back(cv);
+                h.push_back(dotv(diff, Nd));
+            }
+        float c[8];
+        fit_coefs(uv, h, c);
+        children[q] = parent;
+        for (int k = 0; k < 4; ++k) children[q].anchor_idx[k] = corners[q][k];
+        for (int k = 0; k < 8; ++k) children[q].coef[k] = c[k];
+    }
+
+    surface_blob[patch_id] = children[0];
+    // Insert the 3 new children right after the parent. Compute the iterator
+    // fresh on each insert: the first insert may reallocate the vector and
+    // invalidate any previously-held iterator.
+    surface_blob.insert(surface_blob.begin() + patch_id + 1, children[1]);
+    surface_blob.insert(surface_blob.begin() + patch_id + 2, children[2]);
+    surface_blob.insert(surface_blob.begin() + patch_id + 3, children[3]);
+    // stitch blob is 8 bytes per surface; inserting 3 surfaces at patch_id+1
+    // shifts every later surface's stitch entry, so insert 24 zero bytes at
+    // the matching offset (not at the end).
+    stitch_blob.insert(stitch_blob.begin() + (patch_id + 1) * 8, 24, 0);
+
+    children_out[0] = patch_id;
+    children_out[1] = patch_id + 1;
+    children_out[2] = patch_id + 2;
+    children_out[3] = patch_id + 3;
+
+    split_centers.insert(C);
+    MarkAnchorsDirty();
+    RebuildViews();
+    seams.Build(*this);
+    seams.RestitchAround(*this, {patch_id, patch_id+1, patch_id+2, patch_id+3});
+    // The loaded asset may have no stitch blob, so pre-existing seams carry
+    // their raw geometric gap. FitAll closes every seam (existing + new) to
+    // the subpixel budget the test gates on.
+    seams.FitAll(*this);
+
+    if (dbg) {
+        std::fprintf(stderr, "[dbg] PARENT corners (captured before split):\n");
+        for (int k = 0; k < 4; ++k)
+            std::fprintf(stderr, "  slot%d pos=(%.4f,%.4f,%.4f) nrm=(%.3f,%.3f,%.3f)\n",
+                k, par_c[k].x,par_c[k].y,par_c[k].z, par_n[k].x,par_n[k].y,par_n[k].z);
+        std::fprintf(stderr, "[dbg] parent h(0,0)=%.5f h(0,0.5)=%.5f h(0.5,0.5)=%.5f h(0.5,0)=%.5f\n",
+            par_h[0], par_h[1], par_h[2], par_h[3]);
+        // compute max deviation over 17x17 grid
+        const int G = 17;
+        float worst = 0; int wi = -1, wj = -1;
+        for (int i = 0; i < G; ++i)
+            for (int j = 0; j < G; ++j) {
+                const float pu = i/float(G-1), pv = j/float(G-1);
+                const int qu = pu > 0.5f, qv = pv > 0.5f;
+                const uint32_t cid = children_out[qu*2 + qv];
+                const float cu = pu*2 - qu, cv = pv*2 - qv;
+                const Vec3 a = patches[cid].Evaluate(cu, cv);
+                const Vec3 b = par_q[qu*2 + qv]; // WRONG - need full parent surface
+                // use the actual parent surface via the captured pview (still valid before RebuildViews? No, we're after)
+                // Instead, compute parent surface from the captured corners + height
+                // Actually, let's just print the child surface and compare to the parent snapshot
+                // We don't have the full parent snapshot here, so let's just print the child surface
+                // at the worst point and the parent surface at the corresponding point
+                (void)a; (void)b;
+            }
+        // Simpler: just print child0 surface at a few points
+        const Patch& c0 = patches[children_out[0]];
+        std::fprintf(stderr, "[dbg] child0(0,0)=(%.5f,%.5f,%.5f) [should be P0]\n",
+            c0.Evaluate(0,0).x, c0.Evaluate(0,0).y, c0.Evaluate(0,0).z);
+        std::fprintf(stderr, "[dbg] child0(1,0)=(%.5f,%.5f,%.5f) [should be M0]\n",
+            c0.Evaluate(1,0).x, c0.Evaluate(1,0).y, c0.Evaluate(1,0).z);
+        std::fprintf(stderr, "[dbg] child0(0,1)=(%.5f,%.5f,%.5f) [should be M2]\n",
+            c0.Evaluate(0,1).x, c0.Evaluate(0,1).y, c0.Evaluate(0,1).z);
+        std::fprintf(stderr, "[dbg] child0(1,1)=(%.5f,%.5f,%.5f) [should be C]\n",
+            c0.Evaluate(1,1).x, c0.Evaluate(1,1).y, c0.Evaluate(1,1).z);
+        std::fprintf(stderr, "[dbg] child0(0.5,0.5)=(%.5f,%.5f,%.5f) [should be parent(0.25,0.25)]\n",
+            c0.Evaluate(0.5f,0.5f).x, c0.Evaluate(0.5f,0.5f).y, c0.Evaluate(0.5f,0.5f).z);
+        std::fprintf(stderr, "[dbg] parent(0.25,0.25)=(%.5f,%.5f,%.5f)\n",
+            par_q[0].x, par_q[0].y, par_q[0].z);
+    }
+    return true;
+}
+
+bool PSFBody::FindMergeGroup(uint16_t ctr, uint32_t grp[4], uint16_t outer[4]) const {
+    int slot_to_patch[4] = {-1, -1, -1, -1};
+    for (uint32_t s = 0; s < surface_blob.size(); ++s)
+        for (int k = 0; k < 4; ++k)
+            if (surface_blob[s].anchor_idx[k] == ctr) {
+                if (slot_to_patch[k] != -1) return false;
+                slot_to_patch[k] = (int)s;
+            }
+    for (int k = 0; k < 4; ++k)
+        if (slot_to_patch[k] == -1) return false;
+
+    // C is slot2 of (u-,v-), slot3 of (u-,v+), slot1 of (u+,v-), slot0 of (u+,v+)
+    grp[0] = (uint32_t)slot_to_patch[2];
+    grp[1] = (uint32_t)slot_to_patch[3];
+    grp[2] = (uint32_t)slot_to_patch[1];
+    grp[3] = (uint32_t)slot_to_patch[0];
+
+    const auto& S = surface_blob;
+    // verify shared edge midpoints
+    if (S[grp[0]].anchor_idx[1] != S[grp[1]].anchor_idx[0]) return false;
+    if (S[grp[0]].anchor_idx[3] != S[grp[2]].anchor_idx[0]) return false;
+    if (S[grp[1]].anchor_idx[2] != S[grp[3]].anchor_idx[1]) return false;
+    if (S[grp[2]].anchor_idx[2] != S[grp[3]].anchor_idx[3]) return false;
+
+    outer[0] = S[grp[0]].anchor_idx[0];
+    outer[1] = S[grp[1]].anchor_idx[1];
+    outer[2] = S[grp[3]].anchor_idx[2];
+    outer[3] = S[grp[2]].anchor_idx[3];
+    return true;
+}
+
+bool PSFBody::MergeGroup(uint16_t ctr, float tol) {
+    uint32_t grp[4];
+    uint16_t outer[4];
+    if (!FindMergeGroup(ctr, grp, outer)) return false;
+
+    const Vec3 P0 = anchors.Position(outer[0]);
+    const Vec3 P1 = anchors.Position(outer[1]);
+    const Vec3 P2 = anchors.Position(outer[2]);
+    const Vec3 P3 = anchors.Position(outer[3]);
+    const Vec3 N0 = anchors.Normal(outer[0]);
+    const Vec3 N1 = anchors.Normal(outer[1]);
+    const Vec3 N2 = anchors.Normal(outer[2]);
+    const Vec3 N3 = anchors.Normal(outer[3]);
+
+    const int G = 13;
+    std::vector<float> uv, h;
+    uv.reserve(G * G);
+    h.reserve(G * G);
+    for (int i = 0; i < G; ++i)
+        for (int j = 0; j < G; ++j) {
+            const float u = i / float(G - 1);
+            const float v = j / float(G - 1);
+            const int qu = u > 0.5f, qv = v > 0.5f;
+            const int q = qu * 2 + qv;
+            const float cu = u * 2 - qu, cv = v * 2 - qv;
+            const Vec3 Pc = patches[grp[q]].Evaluate(cu, cv);
+            const float um = 1.f - u, vm = 1.f - v;
+            const Vec3 PB = add(add(scale(P0, um*vm), scale(P3, u*vm)),
+                                add(scale(P1, um*v), scale(P2, u*v)));
+            const Vec3 nld = add(scale(N0, um), scale(N3, u));
+            const Vec3 nrd = add(scale(N1, um), scale(N2, u));
+            const Vec3 Nd = normalize(add(scale(nld, vm), scale(nrd, v)));
+            const Vec3 diff = sub(Pc, PB);
+            uv.push_back(u); uv.push_back(v);
+            h.push_back(dotv(diff, Nd));
+        }
+    float c[8];
+    fit_coefs(uv, h, c);
+
+    // refit error: max |P_parent - P_child| over the domain
+    const Vec3 sp = bbox_span;
+    const float diag = std::sqrt(sp.x*sp.x + sp.y*sp.y + sp.z*sp.z);
+    float max_err = 0;
+    for (int i = 0; i < G; ++i)
+        for (int j = 0; j < G; ++j) {
+            const float u = i / float(G - 1);
+            const float v = j / float(G - 1);
+            const int qu = u > 0.5f, qv = v > 0.5f;
+            const int q = qu * 2 + qv;
+            const float cu = u * 2 - qu, cv = v * 2 - qv;
+            const Vec3 Pc = patches[grp[q]].Evaluate(cu, cv);
+            const float um = 1.f - u, vm = 1.f - v;
+            const Vec3 PB = add(add(scale(P0, um*vm), scale(P3, u*vm)),
+                                add(scale(P1, um*v), scale(P2, u*v)));
+            const Vec3 nld = add(scale(N0, um), scale(N3, u));
+            const Vec3 nrd = add(scale(N1, um), scale(N2, u));
+            const Vec3 Nd = normalize(add(scale(nld, vm), scale(nrd, v)));
+            const float hp = deform_h(c, u, v);
+            const Vec3 Pp = add(PB, scale(Nd, hp));
+            const float err = vdist(Pp, Pc);
+            if (err > max_err) max_err = err;
+        }
+    if (max_err > tol * diag) return false;
+
+    SurfaceRecord parent_rec = surface_blob[grp[0]];
+    parent_rec.anchor_idx[0] = outer[0];
+    parent_rec.anchor_idx[1] = outer[1];
+    parent_rec.anchor_idx[2] = outer[2];
+    parent_rec.anchor_idx[3] = outer[3];
+    for (int k = 0; k < 8; ++k) parent_rec.coef[k] = c[k];
+    surface_blob[grp[0]] = parent_rec;
+
+    uint32_t sorted[4] = {grp[0], grp[1], grp[2], grp[3]};
+    std::sort(sorted, sorted + 4);
+    for (int r = 3; r >= 1; --r) {
+        const uint32_t id = sorted[r];
+        surface_blob.erase(surface_blob.begin() + id);
+        stitch_blob.erase(stitch_blob.begin() + id*8, stitch_blob.begin() + (id+1)*8);
+    }
+
+    MarkAnchorsDirty();
+    RebuildViews();
+    seams.Build(*this);
+    seams.RestitchAround(*this, {sorted[0]});
+    return true;
+}
+
+void PSFBody::MergePatches(uint32_t parent_id, float tol) {
+    if (parent_id >= surface_blob.size()) return;
+    for (int k = 0; k < 4; ++k) {
+        const uint16_t a = surface_blob[parent_id].anchor_idx[k];
+        uint32_t grp[4]; uint16_t outer[4];
+        if (FindMergeGroup(a, grp, outer)) {
+            MergeGroup(a, tol);
+            return;
+        }
+    }
+}
+
+void PSFBody::RefineWhere(const Vec3& center, float radius, float target_size, int max_splits) {
+    int splits = 0;
+    while (splits < max_splits) {
+        bool any = false;
+        for (uint32_t s = 0; s < surface_blob.size(); ++s) {
+            if (splits >= max_splits) break;
+            const Vec3 c = patches[s].Evaluate(0.5f, 0.5f);
+            const float dx = c.x-center.x, dy = c.y-center.y, dz = c.z-center.z;
+            if (dx*dx + dy*dy + dz*dz > radius*radius) continue;
+            const Vec3 p0 = patches[s].Evaluate(0, 0);
+            const Vec3 p2 = patches[s].Evaluate(1, 1);
+            const float size = vdist(p0, p2);
+            if (size <= target_size) continue;
+            uint32_t kids[4];
+            if (SplitPatch(s, kids)) { ++splits; any = true; }
+            break;
+        }
+        if (!any) break;
+    }
+}
+
+int PSFBody::CoarsenWhere(const Vec3& center, float radius, float tol, int max_merges) {
+    int merges = 0;
+    while (merges < max_merges) {
+        bool any = false;
+        for (uint32_t s = 0; s < surface_blob.size(); ++s) {
+            if (merges >= max_merges) break;
+            const Vec3 c = patches[s].Evaluate(0.5f, 0.5f);
+            const float dx = c.x-center.x, dy = c.y-center.y, dz = c.z-center.z;
+            if (dx*dx + dy*dy + dz*dz > radius*radius) continue;
+            for (int k = 0; k < 4; ++k) {
+                const uint16_t a = surface_blob[s].anchor_idx[k];
+                uint32_t grp[4]; uint16_t outer[4];
+                if (FindMergeGroup(a, grp, outer)) {
+                    if (MergeGroup(a, tol)) { ++merges; any = true; break; }
+                }
+            }
+            if (any) break;
+        }
+        if (!any) break;
+    }
+    return merges;
+}
+std::unique_ptr<PSFBody> PSFBody::DetachPatches(const std::vector<uint32_t>&) {
+    return nullptr;
+}
+void PSFBody::ApplyRadialDent(const Vec3&, float, float) { MarkAnchorsDirty(); }
+void PSFBody::RefitLocal(const Vec3&, float) { MarkAnchorsDirty(); }
+void PSFBody::ApplyMode(uint32_t, float) { MarkAnchorsDirty(); }
+float PSFBody::Volume() const { return 0.f; }
+bool PSFBody::ClosestPointEx(const Vec3&, SurfaceHit&) const { return false; }
+Vec3 PSFBody::ClosestPoint(const Vec3& p) const { return p; }
+bool PSFBody::Raycast(const Vec3&, const Vec3&, SurfaceHit&) const { return false; }
+void PSFBody::FlushToGPU(void*) {}
+void PSFBody::RebuildViews() {
+    // Bind the anchor pool to the live blob (Patch reads records through it).
+    anchors.Bind(&anchor_blob, bbox_min, bbox_span);
+    // One Patch view per surface record, pointing into the packed blobs.
+    patches.clear();
+    patches.reserve(surface_blob.size());
+    for (size_t i = 0; i < surface_blob.size(); ++i) {
+        int8_t* st = stitch_blob.empty() ? nullptr : &stitch_blob[i*8];
+        patches.emplace_back(&surface_blob[i], &anchors, st, s_scale, (uint32_t)i);
+    }
+}
+void PSFBody::ExpandBBox(float margin) {
+    bbox_min.x -= margin;
+    bbox_min.y -= margin;
+    bbox_min.z -= margin;
+    bbox_span.x += 2.f * margin;
+    bbox_span.y += 2.f * margin;
+    bbox_span.z += 2.f * margin;
+    MarkAnchorsDirty();
+}
+
+} // namespace DeliRium
