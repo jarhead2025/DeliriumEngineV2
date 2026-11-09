@@ -693,11 +693,21 @@ worth a second GPU pipeline, a second set of buffers, and a second source
 of truth for the split. It remains in the tree as a reference
 implementation; the register records why it is not launched.
 
-Gate: `tests/validate_seam_batch.cpp` — 21 checks, 0 failures. It compares
-the deferred body's surface count, anchor count, **evaluated surface
+Gate: `tests/validate_seam_batch.cpp` — 27 checks, 0 failures. It compares
+the deferred body's surface count, **anchor positions**, **evaluated surface
 points** and seam metrics against the eager path. Proven to catch the bug:
 removing the final rebuild makes the surface tear by **27.3% of the
 diagonal**.
+
+**The anchor COUNT is deliberately not an invariant.** `find_existing_mid`
+reuses a hanging anchor a *neighbouring* split already created; with a
+stale seam graph the deferred path creates a fresh one instead, snapped to
+the current (1-ULP-moved) parent surface, so the dedupe map misses it. The
+two bodies hold the same anchor **positions** with a different record
+**count** (712 vs 730 on 30 adjacent splits; every eager anchor has an
+exact position match). The tolerance is **derived from the
+representation's own resolution** (`bbox_span / 65535` = 4.12e-05), not
+guessed.
 
 → `procedural-surface-engine` → `references/amr-cost-structure.md`.
 

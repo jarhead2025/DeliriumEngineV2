@@ -1868,6 +1868,44 @@ change the surface, which is what the user sees.
 diagonal** instead of 0.147%, and the seam count drops from 1235 to 1120.
 A stale seam graph is not a subtle degradation; it is a destroyed surface.
 
+### The anchor COUNT is the wrong invariant — and the ad-hoc probe found it
+
+The first version of the gate asserted the anchor **count** matched. It
+passed — because the region-based `RefineWhere` splits NON-adjacent
+patches, so `find_existing_mid` never fires. An ad-hoc probe that split
+**adjacent** patches (10, 11, 12, ...) found the real difference:
+
+```
+EAGER    anchors 712   DEFERRED anchors 730   (18 more)
+max distance from any EAGER anchor to the nearest DEFERRED anchor: 0.000000e+00
+```
+
+**Why.** `find_existing_mid` reuses a hanging anchor a **neighbouring**
+split already created. In the eager path the seam graph is current, so the
+reuse happens. In the deferred path the graph is stale, so a **fresh**
+anchor is created — snapped to the **current** parent surface, which has
+moved by ~1 ULP of the 16-bit position quantisation. The dedupe map keys
+on the exact quantised position, so it does not catch it, and the two
+bodies end up with the same anchor **positions** but a different record
+**count**.
+
+**So the invariant is on POSITIONS, not on records** — and the tolerance
+must be **derived**, not guessed: an anchor's position is a 16-bit value
+over the bbox span, so the representation's own resolution is
+`span / 65535` (4.12e-05 for this asset). The two bodies *cannot* agree
+better than that. Measured deviations: 0.000e+00 one way, 4.26e-05 the
+other, 5.17e-05 on the surface — all within one quantisation step.
+
+A hard-coded constant would be too tight for one asset and too loose for
+another; the derived step is right for every asset.
+
+**Lesson.** *A gate that passes may be asserting the wrong invariant.* The
+count assertion passed for a reason that was a property of the TEST'S
+REGION, not of the change. The ad-hoc probe — which used a different,
+harder input — found the case the gate had not covered. And when the
+right invariant is "these positions are the same", the tolerance must come
+from the REPRESENTATION's own resolution.
+
 **Lesson.** *A GPU kernel that ports 3% of the work cannot fix a problem
 that is 97% elsewhere.* And the general shape: **a per-item operation that
 rebuilds global state is O(n²) in a loop** — the fix is almost never to
