@@ -1735,6 +1735,86 @@ works, the client is at fault; if `curl` is also slow, the machine is.
 
 ---
 
+## 59. A socket read timeout is not a truncated response (2026-11-09)
+
+The LLM client sets `SO_RCVTIMEO` on its socket, so a `recv` can fail with
+`EAGAIN`/`EWOULDBLOCK` — a **timeout** — instead of returning data. That is
+the EXPECTED case for a big prompt: the document system prompt is ~2,900
+tokens and the server thinks for *minutes* before the first token arrives.
+
+All three read paths treated any failure other than `EINTR` as "the data
+has arrived":
+
+| read path | old behaviour | symptom |
+|---|---|---|
+| headers | break out, report "no response headers" | a transport failure for a perfectly healthy server |
+| chunk-size line | break out, set a generic error, then store **`State::Done`** | a close was reported as a **successful empty reply** |
+| chunk body | break out, then `body.substr(pos, csize)` on a short buffer | a **truncated** buffer parsed as if complete |
+
+The chunk-size line was the worst: because the state was not already
+`Failed`, it stored `State::Done` — so a server that closed mid-response
+produced a "successful" response with an empty body, and every caller that
+checked `reply.empty()` reported "the model returned nothing".
+
+**The unified rule:** a read **timeout** is **retried** (the server may
+simply be thinking); a peer **close** is **named**; an **empty** response is
+a **failure** (an empty reply is not an answer); a **partial** answer that
+did arrive is **kept** and reported as finished.
+
+**Lesson.** *A timeout is not a disconnect, and a truncated buffer is not a
+response.* Every read path must distinguish "no data yet" from "the peer is
+gone", and must never parse a short buffer as if it were complete.
+
+**The gate** (`validate_llm_read`, 13 checks) runs **its own local HTTP
+server** with modes that stall before the headers, stall mid-chunk, and
+close early — a real Ollama cannot be made to misbehave on demand. It is
+**proven to catch the bug**: with the old behaviour reintroduced it fails on
+exactly "a closed connection must fail".
+
+Two harness traps worth keeping: a thread blocked in `accept()` on a closed
+descriptor may never return, so the test **hangs at exit** instead of
+failing (give the listening socket a short `SO_RCVTIMEO` so the accept loop
+polls); and a silently-failed `bind()` leaves the client connecting to port
+0, which looks exactly like a hung server.
+
+---
+
+## 60. The outer bound was SHORTER than the timeout it derived from (2026-11-09)
+
+The probe's outer wait loop was meant to be 30% above the client's socket
+timeout, so the CLIENT would always decide when a request was over. The
+arithmetic did the opposite:
+
+```cpp
+const int max_ticks = (c.timeout_seconds * 13) / 10;   // 100 ms per tick
+```
+
+On a 900 s timeout that is 1170 ticks — **117 seconds** — which is
+*shorter* than the socket timeout, not longer. The measured model time is
+~230 s, so **every request was cancelled by the probe's own loop at 117 s**
+and reported as a transport failure.
+
+**The comment described the opposite of what the code did.** The
+multiplication has to happen in SECONDS and be converted to ticks
+afterwards.
+
+**Lesson.** *Derive a bound in the unit it is expressed in.* "30% above the
+timeout" was a statement in seconds; the code computed it in ticks and
+never converted. When a constant is derived from another, the conversion
+is where the bug lives — and the comment is where it hides.
+
+**The companion defect: the failure path threw away the elapsed time.**
+`secs_out` was set only on success, so every failure printed **"0.0s"**.
+That number was actively misleading: the requests were dying at exactly
+117 s, and "0.0s" made them look like they had failed instantly. The
+elapsed time is the single most diagnostic number in a timeout
+investigation, and it was the one being thrown away.
+
+→ Class-level version: `procedural-surface-engine` →
+`references/llm-retrieval-corpus.md`.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

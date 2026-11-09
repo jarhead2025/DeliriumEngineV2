@@ -493,6 +493,13 @@ Gate: `tests/validate_retrieval.cpp` — 43 checks, 0 failures. It asserts the
 failures-never-offered, no-self-retrieval, corpus-reaches-the-normal-prompt,
 round-trip, legacy-log compatibility), not snapshots.
 
+**Live, end-to-end (still open).** The unit gates prove the retrieval
+*works*; the live claim — "the second document benefits from the first" —
+has been verified only in the unit gates. The live run keeps failing at the
+`transport` stage, and each failure turned out to be a *different* real
+defect in the client or the probe (see the FIXES_REGISTER entries 54, 58,
+59, 60). The last of those is fixed; the live run is in flight.
+
 ### G14. Exercise escalation against a real larger model — `WIP`
 The ladder is unit-tested against a stub and has never run against a second
 endpoint.
