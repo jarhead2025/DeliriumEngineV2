@@ -57,13 +57,23 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/josias/Desktop/Tartarus
+CMAKE_SOURCE_DIR = /home/josias/Desktop/Tartarus/gameengine_compiled_real
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/josias/Desktop/Tartarus/build_delirium
+CMAKE_BINARY_DIR = /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium
 
 #=============================================================================
 # Targets provided globally by CMake.
+
+# Special rule for the target test
+test:
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --cyan "Running tests..."
+	/usr/bin/ctest --force-new-ctest-process $(ARGS)
+.PHONY : test
+
+# Special rule for the target test
+test/fast: test
+.PHONY : test/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -87,9 +97,9 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/josias/Desktop/Tartarus/build_delirium/CMakeFiles /home/josias/Desktop/Tartarus/build_delirium//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/josias/Desktop/Tartarus/build_delirium/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -113,8 +123,2715 @@ preinstall/fast:
 
 # clear depends
 depend:
+	$(CMAKE_COMMAND) -P /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
+
+#=============================================================================
+# Target rules for targets named delirium_m0_probe
+
+# Build rule for target.
+delirium_m0_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_m0_probe
+.PHONY : delirium_m0_probe
+
+# fast build rule for target.
+delirium_m0_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m0_probe.dir/build.make CMakeFiles/delirium_m0_probe.dir/build
+.PHONY : delirium_m0_probe/fast
+
+#=============================================================================
+# Target rules for targets named delirium_m1_torus
+
+# Build rule for target.
+delirium_m1_torus: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_m1_torus
+.PHONY : delirium_m1_torus
+
+# fast build rule for target.
+delirium_m1_torus/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/build
+.PHONY : delirium_m1_torus/fast
+
+#=============================================================================
+# Target rules for targets named delirium_g3_frame
+
+# Build rule for target.
+delirium_g3_frame: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_g3_frame
+.PHONY : delirium_g3_frame
+
+# fast build rule for target.
+delirium_g3_frame/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/build
+.PHONY : delirium_g3_frame/fast
+
+#=============================================================================
+# Target rules for targets named delirium_engine_lib
+
+# Build rule for target.
+delirium_engine_lib: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_engine_lib
+.PHONY : delirium_engine_lib
+
+# fast build rule for target.
+delirium_engine_lib/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/build
+.PHONY : delirium_engine_lib/fast
+
+#=============================================================================
+# Target rules for targets named delirium_visual_stress
+
+# Build rule for target.
+delirium_visual_stress: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_visual_stress
+.PHONY : delirium_visual_stress
+
+# fast build rule for target.
+delirium_visual_stress/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_stress.dir/build.make CMakeFiles/delirium_visual_stress.dir/build
+.PHONY : delirium_visual_stress/fast
+
+#=============================================================================
+# Target rules for targets named delirium_visual_gallery
+
+# Build rule for target.
+delirium_visual_gallery: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_visual_gallery
+.PHONY : delirium_visual_gallery
+
+# fast build rule for target.
+delirium_visual_gallery/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_gallery.dir/build.make CMakeFiles/delirium_visual_gallery.dir/build
+.PHONY : delirium_visual_gallery/fast
+
+#=============================================================================
+# Target rules for targets named delirium_playground
+
+# Build rule for target.
+delirium_playground: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_playground
+.PHONY : delirium_playground
+
+# fast build rule for target.
+delirium_playground/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_playground.dir/build.make CMakeFiles/delirium_playground.dir/build
+.PHONY : delirium_playground/fast
+
+#=============================================================================
+# Target rules for targets named delirium_realtime_deform
+
+# Build rule for target.
+delirium_realtime_deform: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_realtime_deform
+.PHONY : delirium_realtime_deform
+
+# fast build rule for target.
+delirium_realtime_deform/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_realtime_deform.dir/build.make CMakeFiles/delirium_realtime_deform.dir/build
+.PHONY : delirium_realtime_deform/fast
+
+#=============================================================================
+# Target rules for targets named delirium_recon_window
+
+# Build rule for target.
+delirium_recon_window: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_recon_window
+.PHONY : delirium_recon_window
+
+# fast build rule for target.
+delirium_recon_window/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_window.dir/build.make CMakeFiles/delirium_recon_window.dir/build
+.PHONY : delirium_recon_window/fast
+
+#=============================================================================
+# Target rules for targets named delirium_torus_live
+
+# Build rule for target.
+delirium_torus_live: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_torus_live
+.PHONY : delirium_torus_live
+
+# fast build rule for target.
+delirium_torus_live/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_torus_live.dir/build.make CMakeFiles/delirium_torus_live.dir/build
+.PHONY : delirium_torus_live/fast
+
+#=============================================================================
+# Target rules for targets named delirium_recon_diag
+
+# Build rule for target.
+delirium_recon_diag: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_recon_diag
+.PHONY : delirium_recon_diag
+
+# fast build rule for target.
+delirium_recon_diag/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_diag.dir/build.make CMakeFiles/delirium_recon_diag.dir/build
+.PHONY : delirium_recon_diag/fast
+
+#=============================================================================
+# Target rules for targets named ui_font_probe
+
+# Build rule for target.
+ui_font_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ui_font_probe
+.PHONY : ui_font_probe
+
+# fast build rule for target.
+ui_font_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ui_font_probe.dir/build.make CMakeFiles/ui_font_probe.dir/build
+.PHONY : ui_font_probe/fast
+
+#=============================================================================
+# Target rules for targets named llm_probe
+
+# Build rule for target.
+llm_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 llm_probe
+.PHONY : llm_probe
+
+# fast build rule for target.
+llm_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llm_probe.dir/build.make CMakeFiles/llm_probe.dir/build
+.PHONY : llm_probe/fast
+
+#=============================================================================
+# Target rules for targets named delirium_workspace
+
+# Build rule for target.
+delirium_workspace: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 delirium_workspace
+.PHONY : delirium_workspace
+
+# fast build rule for target.
+delirium_workspace/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_workspace.dir/build.make CMakeFiles/delirium_workspace.dir/build
+.PHONY : delirium_workspace/fast
+
+#=============================================================================
+# Target rules for targets named ai_pipeline_probe
+
+# Build rule for target.
+ai_pipeline_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 ai_pipeline_probe
+.PHONY : ai_pipeline_probe
+
+# fast build rule for target.
+ai_pipeline_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ai_pipeline_probe.dir/build.make CMakeFiles/ai_pipeline_probe.dir/build
+.PHONY : ai_pipeline_probe/fast
+
+#=============================================================================
+# Target rules for targets named doc_learner_probe
+
+# Build rule for target.
+doc_learner_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 doc_learner_probe
+.PHONY : doc_learner_probe
+
+# fast build rule for target.
+doc_learner_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/doc_learner_probe.dir/build.make CMakeFiles/doc_learner_probe.dir/build
+.PHONY : doc_learner_probe/fast
+
+#=============================================================================
+# Target rules for targets named complex_scene
+
+# Build rule for target.
+complex_scene: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 complex_scene
+.PHONY : complex_scene
+
+# fast build rule for target.
+complex_scene/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/complex_scene.dir/build.make CMakeFiles/complex_scene.dir/build
+.PHONY : complex_scene/fast
+
+#=============================================================================
+# Target rules for targets named torus_probe
+
+# Build rule for target.
+torus_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 torus_probe
+.PHONY : torus_probe
+
+# fast build rule for target.
+torus_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/torus_probe.dir/build.make CMakeFiles/torus_probe.dir/build
+.PHONY : torus_probe/fast
+
+#=============================================================================
+# Target rules for targets named sphere_probe
+
+# Build rule for target.
+sphere_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 sphere_probe
+.PHONY : sphere_probe
+
+# fast build rule for target.
+sphere_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sphere_probe.dir/build.make CMakeFiles/sphere_probe.dir/build
+.PHONY : sphere_probe/fast
+
+#=============================================================================
+# Target rules for targets named closed_body_probe
+
+# Build rule for target.
+closed_body_probe: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 closed_body_probe
+.PHONY : closed_body_probe
+
+# fast build rule for target.
+closed_body_probe/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/closed_body_probe.dir/build.make CMakeFiles/closed_body_probe.dir/build
+.PHONY : closed_body_probe/fast
+
+#=============================================================================
+# Target rules for targets named validate_ai_parser
+
+# Build rule for target.
+validate_ai_parser: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_ai_parser
+.PHONY : validate_ai_parser
+
+# fast build rule for target.
+validate_ai_parser/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_ai_parser.dir/build.make CMakeFiles/validate_ai_parser.dir/build
+.PHONY : validate_ai_parser/fast
+
+#=============================================================================
+# Target rules for targets named validate_bridge
+
+# Build rule for target.
+validate_bridge: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_bridge
+.PHONY : validate_bridge
+
+# fast build rule for target.
+validate_bridge/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_bridge.dir/build.make CMakeFiles/validate_bridge.dir/build
+.PHONY : validate_bridge/fast
+
+#=============================================================================
+# Target rules for targets named validate_cage
+
+# Build rule for target.
+validate_cage: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_cage
+.PHONY : validate_cage
+
+# fast build rule for target.
+validate_cage/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_cage.dir/build.make CMakeFiles/validate_cage.dir/build
+.PHONY : validate_cage/fast
+
+#=============================================================================
+# Target rules for targets named validate_closed_body
+
+# Build rule for target.
+validate_closed_body: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_closed_body
+.PHONY : validate_closed_body
+
+# fast build rule for target.
+validate_closed_body/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_closed_body.dir/build.make CMakeFiles/validate_closed_body.dir/build
+.PHONY : validate_closed_body/fast
+
+#=============================================================================
+# Target rules for targets named validate_dent
+
+# Build rule for target.
+validate_dent: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_dent
+.PHONY : validate_dent
+
+# fast build rule for target.
+validate_dent/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_dent.dir/build.make CMakeFiles/validate_dent.dir/build
+.PHONY : validate_dent/fast
+
+#=============================================================================
+# Target rules for targets named validate_detail
+
+# Build rule for target.
+validate_detail: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_detail
+.PHONY : validate_detail
+
+# fast build rule for target.
+validate_detail/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_detail.dir/build.make CMakeFiles/validate_detail.dir/build
+.PHONY : validate_detail/fast
+
+#=============================================================================
+# Target rules for targets named validate_doc_learner
+
+# Build rule for target.
+validate_doc_learner: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_doc_learner
+.PHONY : validate_doc_learner
+
+# fast build rule for target.
+validate_doc_learner/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_doc_learner.dir/build.make CMakeFiles/validate_doc_learner.dir/build
+.PHONY : validate_doc_learner/fast
+
+#=============================================================================
+# Target rules for targets named validate_eval
+
+# Build rule for target.
+validate_eval: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_eval
+.PHONY : validate_eval
+
+# fast build rule for target.
+validate_eval/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_eval.dir/build.make CMakeFiles/validate_eval.dir/build
+.PHONY : validate_eval/fast
+
+#=============================================================================
+# Target rules for targets named validate_fem
+
+# Build rule for target.
+validate_fem: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_fem
+.PHONY : validate_fem
+
+# fast build rule for target.
+validate_fem/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_fem.dir/build.make CMakeFiles/validate_fem.dir/build
+.PHONY : validate_fem/fast
+
+#=============================================================================
+# Target rules for targets named validate_gameplay
+
+# Build rule for target.
+validate_gameplay: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_gameplay
+.PHONY : validate_gameplay
+
+# fast build rule for target.
+validate_gameplay/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gameplay.dir/build.make CMakeFiles/validate_gameplay.dir/build
+.PHONY : validate_gameplay/fast
+
+#=============================================================================
+# Target rules for targets named validate_gpu_flush
+
+# Build rule for target.
+validate_gpu_flush: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_gpu_flush
+.PHONY : validate_gpu_flush
+
+# fast build rule for target.
+validate_gpu_flush/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_flush.dir/build.make CMakeFiles/validate_gpu_flush.dir/build
+.PHONY : validate_gpu_flush/fast
+
+#=============================================================================
+# Target rules for targets named validate_gpu_split
+
+# Build rule for target.
+validate_gpu_split: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_gpu_split
+.PHONY : validate_gpu_split
+
+# fast build rule for target.
+validate_gpu_split/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_split.dir/build.make CMakeFiles/validate_gpu_split.dir/build
+.PHONY : validate_gpu_split/fast
+
+#=============================================================================
+# Target rules for targets named validate_liveweld
+
+# Build rule for target.
+validate_liveweld: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_liveweld
+.PHONY : validate_liveweld
+
+# fast build rule for target.
+validate_liveweld/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_liveweld.dir/build.make CMakeFiles/validate_liveweld.dir/build
+.PHONY : validate_liveweld/fast
+
+#=============================================================================
+# Target rules for targets named validate_merge
+
+# Build rule for target.
+validate_merge: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_merge
+.PHONY : validate_merge
+
+# fast build rule for target.
+validate_merge/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_merge.dir/build.make CMakeFiles/validate_merge.dir/build
+.PHONY : validate_merge/fast
+
+#=============================================================================
+# Target rules for targets named validate_modal
+
+# Build rule for target.
+validate_modal: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_modal
+.PHONY : validate_modal
+
+# fast build rule for target.
+validate_modal/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_modal.dir/build.make CMakeFiles/validate_modal.dir/build
+.PHONY : validate_modal/fast
+
+#=============================================================================
+# Target rules for targets named validate_move
+
+# Build rule for target.
+validate_move: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_move
+.PHONY : validate_move
+
+# fast build rule for target.
+validate_move/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_move.dir/build.make CMakeFiles/validate_move.dir/build
+.PHONY : validate_move/fast
+
+#=============================================================================
+# Target rules for targets named validate_physics
+
+# Build rule for target.
+validate_physics: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_physics
+.PHONY : validate_physics
+
+# fast build rule for target.
+validate_physics/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_physics.dir/build.make CMakeFiles/validate_physics.dir/build
+.PHONY : validate_physics/fast
+
+#=============================================================================
+# Target rules for targets named validate_query
+
+# Build rule for target.
+validate_query: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_query
+.PHONY : validate_query
+
+# fast build rule for target.
+validate_query/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_query.dir/build.make CMakeFiles/validate_query.dir/build
+.PHONY : validate_query/fast
+
+#=============================================================================
+# Target rules for targets named validate_reconstruction
+
+# Build rule for target.
+validate_reconstruction: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_reconstruction
+.PHONY : validate_reconstruction
+
+# fast build rule for target.
+validate_reconstruction/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_reconstruction.dir/build.make CMakeFiles/validate_reconstruction.dir/build
+.PHONY : validate_reconstruction/fast
+
+#=============================================================================
+# Target rules for targets named validate_split
+
+# Build rule for target.
+validate_split: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_split
+.PHONY : validate_split
+
+# fast build rule for target.
+validate_split/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_split.dir/build.make CMakeFiles/validate_split.dir/build
+.PHONY : validate_split/fast
+
+#=============================================================================
+# Target rules for targets named validate_weldcat
+
+# Build rule for target.
+validate_weldcat: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 validate_weldcat
+.PHONY : validate_weldcat
+
+# fast build rule for target.
+validate_weldcat/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_weldcat.dir/build.make CMakeFiles/validate_weldcat.dir/build
+.PHONY : validate_weldcat/fast
+
+#=============================================================================
+# Target rules for targets named perf_engine
+
+# Build rule for target.
+perf_engine: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 perf_engine
+.PHONY : perf_engine
+
+# fast build rule for target.
+perf_engine/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/perf_engine.dir/build.make CMakeFiles/perf_engine.dir/build
+.PHONY : perf_engine/fast
+
+engine/src/ai/DocLearner.o: engine/src/ai/DocLearner.cpp.o
+.PHONY : engine/src/ai/DocLearner.o
+
+# target to build an object file
+engine/src/ai/DocLearner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/DocLearner.cpp.o
+.PHONY : engine/src/ai/DocLearner.cpp.o
+
+engine/src/ai/DocLearner.i: engine/src/ai/DocLearner.cpp.i
+.PHONY : engine/src/ai/DocLearner.i
+
+# target to preprocess a source file
+engine/src/ai/DocLearner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/DocLearner.cpp.i
+.PHONY : engine/src/ai/DocLearner.cpp.i
+
+engine/src/ai/DocLearner.s: engine/src/ai/DocLearner.cpp.s
+.PHONY : engine/src/ai/DocLearner.s
+
+# target to generate assembly for a file
+engine/src/ai/DocLearner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/DocLearner.cpp.s
+.PHONY : engine/src/ai/DocLearner.cpp.s
+
+engine/src/ai/ElementSystem.o: engine/src/ai/ElementSystem.cpp.o
+.PHONY : engine/src/ai/ElementSystem.o
+
+# target to build an object file
+engine/src/ai/ElementSystem.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementSystem.cpp.o
+.PHONY : engine/src/ai/ElementSystem.cpp.o
+
+engine/src/ai/ElementSystem.i: engine/src/ai/ElementSystem.cpp.i
+.PHONY : engine/src/ai/ElementSystem.i
+
+# target to preprocess a source file
+engine/src/ai/ElementSystem.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementSystem.cpp.i
+.PHONY : engine/src/ai/ElementSystem.cpp.i
+
+engine/src/ai/ElementSystem.s: engine/src/ai/ElementSystem.cpp.s
+.PHONY : engine/src/ai/ElementSystem.s
+
+# target to generate assembly for a file
+engine/src/ai/ElementSystem.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementSystem.cpp.s
+.PHONY : engine/src/ai/ElementSystem.cpp.s
+
+engine/src/ai/ElementTreeParser.o: engine/src/ai/ElementTreeParser.cpp.o
+.PHONY : engine/src/ai/ElementTreeParser.o
+
+# target to build an object file
+engine/src/ai/ElementTreeParser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementTreeParser.cpp.o
+.PHONY : engine/src/ai/ElementTreeParser.cpp.o
+
+engine/src/ai/ElementTreeParser.i: engine/src/ai/ElementTreeParser.cpp.i
+.PHONY : engine/src/ai/ElementTreeParser.i
+
+# target to preprocess a source file
+engine/src/ai/ElementTreeParser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementTreeParser.cpp.i
+.PHONY : engine/src/ai/ElementTreeParser.cpp.i
+
+engine/src/ai/ElementTreeParser.s: engine/src/ai/ElementTreeParser.cpp.s
+.PHONY : engine/src/ai/ElementTreeParser.s
+
+# target to generate assembly for a file
+engine/src/ai/ElementTreeParser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ElementTreeParser.cpp.s
+.PHONY : engine/src/ai/ElementTreeParser.cpp.s
+
+engine/src/ai/ReconstructionModel.o: engine/src/ai/ReconstructionModel.cpp.o
+.PHONY : engine/src/ai/ReconstructionModel.o
+
+# target to build an object file
+engine/src/ai/ReconstructionModel.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ReconstructionModel.cpp.o
+.PHONY : engine/src/ai/ReconstructionModel.cpp.o
+
+engine/src/ai/ReconstructionModel.i: engine/src/ai/ReconstructionModel.cpp.i
+.PHONY : engine/src/ai/ReconstructionModel.i
+
+# target to preprocess a source file
+engine/src/ai/ReconstructionModel.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ReconstructionModel.cpp.i
+.PHONY : engine/src/ai/ReconstructionModel.cpp.i
+
+engine/src/ai/ReconstructionModel.s: engine/src/ai/ReconstructionModel.cpp.s
+.PHONY : engine/src/ai/ReconstructionModel.s
+
+# target to generate assembly for a file
+engine/src/ai/ReconstructionModel.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ai/ReconstructionModel.cpp.s
+.PHONY : engine/src/ai/ReconstructionModel.cpp.s
+
+engine/src/core/Editor.o: engine/src/core/Editor.cpp.o
+.PHONY : engine/src/core/Editor.o
+
+# target to build an object file
+engine/src/core/Editor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Editor.cpp.o
+.PHONY : engine/src/core/Editor.cpp.o
+
+engine/src/core/Editor.i: engine/src/core/Editor.cpp.i
+.PHONY : engine/src/core/Editor.i
+
+# target to preprocess a source file
+engine/src/core/Editor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Editor.cpp.i
+.PHONY : engine/src/core/Editor.cpp.i
+
+engine/src/core/Editor.s: engine/src/core/Editor.cpp.s
+.PHONY : engine/src/core/Editor.s
+
+# target to generate assembly for a file
+engine/src/core/Editor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Editor.cpp.s
+.PHONY : engine/src/core/Editor.cpp.s
+
+engine/src/core/Engine.o: engine/src/core/Engine.cpp.o
+.PHONY : engine/src/core/Engine.o
+
+# target to build an object file
+engine/src/core/Engine.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Engine.cpp.o
+.PHONY : engine/src/core/Engine.cpp.o
+
+engine/src/core/Engine.i: engine/src/core/Engine.cpp.i
+.PHONY : engine/src/core/Engine.i
+
+# target to preprocess a source file
+engine/src/core/Engine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Engine.cpp.i
+.PHONY : engine/src/core/Engine.cpp.i
+
+engine/src/core/Engine.s: engine/src/core/Engine.cpp.s
+.PHONY : engine/src/core/Engine.s
+
+# target to generate assembly for a file
+engine/src/core/Engine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Engine.cpp.s
+.PHONY : engine/src/core/Engine.cpp.s
+
+engine/src/core/GameObject.o: engine/src/core/GameObject.cpp.o
+.PHONY : engine/src/core/GameObject.o
+
+# target to build an object file
+engine/src/core/GameObject.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/GameObject.cpp.o
+.PHONY : engine/src/core/GameObject.cpp.o
+
+engine/src/core/GameObject.i: engine/src/core/GameObject.cpp.i
+.PHONY : engine/src/core/GameObject.i
+
+# target to preprocess a source file
+engine/src/core/GameObject.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/GameObject.cpp.i
+.PHONY : engine/src/core/GameObject.cpp.i
+
+engine/src/core/GameObject.s: engine/src/core/GameObject.cpp.s
+.PHONY : engine/src/core/GameObject.s
+
+# target to generate assembly for a file
+engine/src/core/GameObject.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/GameObject.cpp.s
+.PHONY : engine/src/core/GameObject.cpp.s
+
+engine/src/core/Node.o: engine/src/core/Node.cpp.o
+.PHONY : engine/src/core/Node.o
+
+# target to build an object file
+engine/src/core/Node.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/Node.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Node.cpp.o
+.PHONY : engine/src/core/Node.cpp.o
+
+engine/src/core/Node.i: engine/src/core/Node.cpp.i
+.PHONY : engine/src/core/Node.i
+
+# target to preprocess a source file
+engine/src/core/Node.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/Node.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Node.cpp.i
+.PHONY : engine/src/core/Node.cpp.i
+
+engine/src/core/Node.s: engine/src/core/Node.cpp.s
+.PHONY : engine/src/core/Node.s
+
+# target to generate assembly for a file
+engine/src/core/Node.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/Node.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Node.cpp.s
+.PHONY : engine/src/core/Node.cpp.s
+
+engine/src/core/Scene.o: engine/src/core/Scene.cpp.o
+.PHONY : engine/src/core/Scene.o
+
+# target to build an object file
+engine/src/core/Scene.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Scene.cpp.o
+.PHONY : engine/src/core/Scene.cpp.o
+
+engine/src/core/Scene.i: engine/src/core/Scene.cpp.i
+.PHONY : engine/src/core/Scene.i
+
+# target to preprocess a source file
+engine/src/core/Scene.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Scene.cpp.i
+.PHONY : engine/src/core/Scene.cpp.i
+
+engine/src/core/Scene.s: engine/src/core/Scene.cpp.s
+.PHONY : engine/src/core/Scene.s
+
+# target to generate assembly for a file
+engine/src/core/Scene.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Scene.cpp.s
+.PHONY : engine/src/core/Scene.cpp.s
+
+engine/src/core/SceneTree.o: engine/src/core/SceneTree.cpp.o
+.PHONY : engine/src/core/SceneTree.o
+
+# target to build an object file
+engine/src/core/SceneTree.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/SceneTree.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/SceneTree.cpp.o
+.PHONY : engine/src/core/SceneTree.cpp.o
+
+engine/src/core/SceneTree.i: engine/src/core/SceneTree.cpp.i
+.PHONY : engine/src/core/SceneTree.i
+
+# target to preprocess a source file
+engine/src/core/SceneTree.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/SceneTree.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/SceneTree.cpp.i
+.PHONY : engine/src/core/SceneTree.cpp.i
+
+engine/src/core/SceneTree.s: engine/src/core/SceneTree.cpp.s
+.PHONY : engine/src/core/SceneTree.s
+
+# target to generate assembly for a file
+engine/src/core/SceneTree.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/core/SceneTree.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/SceneTree.cpp.s
+.PHONY : engine/src/core/SceneTree.cpp.s
+
+engine/src/core/Transform.o: engine/src/core/Transform.cpp.o
+.PHONY : engine/src/core/Transform.o
+
+# target to build an object file
+engine/src/core/Transform.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Transform.cpp.o
+.PHONY : engine/src/core/Transform.cpp.o
+
+engine/src/core/Transform.i: engine/src/core/Transform.cpp.i
+.PHONY : engine/src/core/Transform.i
+
+# target to preprocess a source file
+engine/src/core/Transform.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Transform.cpp.i
+.PHONY : engine/src/core/Transform.cpp.i
+
+engine/src/core/Transform.s: engine/src/core/Transform.cpp.s
+.PHONY : engine/src/core/Transform.s
+
+# target to generate assembly for a file
+engine/src/core/Transform.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Transform.cpp.s
+.PHONY : engine/src/core/Transform.cpp.s
+
+engine/src/core/Workspace.o: engine/src/core/Workspace.cpp.o
+.PHONY : engine/src/core/Workspace.o
+
+# target to build an object file
+engine/src/core/Workspace.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Workspace.cpp.o
+.PHONY : engine/src/core/Workspace.cpp.o
+
+engine/src/core/Workspace.i: engine/src/core/Workspace.cpp.i
+.PHONY : engine/src/core/Workspace.i
+
+# target to preprocess a source file
+engine/src/core/Workspace.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Workspace.cpp.i
+.PHONY : engine/src/core/Workspace.cpp.i
+
+engine/src/core/Workspace.s: engine/src/core/Workspace.cpp.s
+.PHONY : engine/src/core/Workspace.s
+
+# target to generate assembly for a file
+engine/src/core/Workspace.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/core/Workspace.cpp.s
+.PHONY : engine/src/core/Workspace.cpp.s
+
+engine/src/io/PSFFile.o: engine/src/io/PSFFile.cpp.o
+.PHONY : engine/src/io/PSFFile.o
+
+# target to build an object file
+engine/src/io/PSFFile.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/io/PSFFile.cpp.o
+.PHONY : engine/src/io/PSFFile.cpp.o
+
+engine/src/io/PSFFile.i: engine/src/io/PSFFile.cpp.i
+.PHONY : engine/src/io/PSFFile.i
+
+# target to preprocess a source file
+engine/src/io/PSFFile.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/io/PSFFile.cpp.i
+.PHONY : engine/src/io/PSFFile.cpp.i
+
+engine/src/io/PSFFile.s: engine/src/io/PSFFile.cpp.s
+.PHONY : engine/src/io/PSFFile.s
+
+# target to generate assembly for a file
+engine/src/io/PSFFile.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/io/PSFFile.cpp.s
+.PHONY : engine/src/io/PSFFile.cpp.s
+
+engine/src/llm/LLMClient.o: engine/src/llm/LLMClient.cpp.o
+.PHONY : engine/src/llm/LLMClient.o
+
+# target to build an object file
+engine/src/llm/LLMClient.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/llm/LLMClient.cpp.o
+.PHONY : engine/src/llm/LLMClient.cpp.o
+
+engine/src/llm/LLMClient.i: engine/src/llm/LLMClient.cpp.i
+.PHONY : engine/src/llm/LLMClient.i
+
+# target to preprocess a source file
+engine/src/llm/LLMClient.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/llm/LLMClient.cpp.i
+.PHONY : engine/src/llm/LLMClient.cpp.i
+
+engine/src/llm/LLMClient.s: engine/src/llm/LLMClient.cpp.s
+.PHONY : engine/src/llm/LLMClient.s
+
+# target to generate assembly for a file
+engine/src/llm/LLMClient.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/llm/LLMClient.cpp.s
+.PHONY : engine/src/llm/LLMClient.cpp.s
+
+engine/src/physics/CollisionAnalytic.o: engine/src/physics/CollisionAnalytic.cpp.o
+.PHONY : engine/src/physics/CollisionAnalytic.o
+
+# target to build an object file
+engine/src/physics/CollisionAnalytic.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/CollisionAnalytic.cpp.o
+.PHONY : engine/src/physics/CollisionAnalytic.cpp.o
+
+engine/src/physics/CollisionAnalytic.i: engine/src/physics/CollisionAnalytic.cpp.i
+.PHONY : engine/src/physics/CollisionAnalytic.i
+
+# target to preprocess a source file
+engine/src/physics/CollisionAnalytic.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/CollisionAnalytic.cpp.i
+.PHONY : engine/src/physics/CollisionAnalytic.cpp.i
+
+engine/src/physics/CollisionAnalytic.s: engine/src/physics/CollisionAnalytic.cpp.s
+.PHONY : engine/src/physics/CollisionAnalytic.s
+
+# target to generate assembly for a file
+engine/src/physics/CollisionAnalytic.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/CollisionAnalytic.cpp.s
+.PHONY : engine/src/physics/CollisionAnalytic.cpp.s
+
+engine/src/physics/LocalFEM.o: engine/src/physics/LocalFEM.cpp.o
+.PHONY : engine/src/physics/LocalFEM.o
+
+# target to build an object file
+engine/src/physics/LocalFEM.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/LocalFEM.cpp.o
+.PHONY : engine/src/physics/LocalFEM.cpp.o
+
+engine/src/physics/LocalFEM.i: engine/src/physics/LocalFEM.cpp.i
+.PHONY : engine/src/physics/LocalFEM.i
+
+# target to preprocess a source file
+engine/src/physics/LocalFEM.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/LocalFEM.cpp.i
+.PHONY : engine/src/physics/LocalFEM.cpp.i
+
+engine/src/physics/LocalFEM.s: engine/src/physics/LocalFEM.cpp.s
+.PHONY : engine/src/physics/LocalFEM.s
+
+# target to generate assembly for a file
+engine/src/physics/LocalFEM.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/LocalFEM.cpp.s
+.PHONY : engine/src/physics/LocalFEM.cpp.s
+
+engine/src/physics/ModalDynamics.o: engine/src/physics/ModalDynamics.cpp.o
+.PHONY : engine/src/physics/ModalDynamics.o
+
+# target to build an object file
+engine/src/physics/ModalDynamics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/ModalDynamics.cpp.o
+.PHONY : engine/src/physics/ModalDynamics.cpp.o
+
+engine/src/physics/ModalDynamics.i: engine/src/physics/ModalDynamics.cpp.i
+.PHONY : engine/src/physics/ModalDynamics.i
+
+# target to preprocess a source file
+engine/src/physics/ModalDynamics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/ModalDynamics.cpp.i
+.PHONY : engine/src/physics/ModalDynamics.cpp.i
+
+engine/src/physics/ModalDynamics.s: engine/src/physics/ModalDynamics.cpp.s
+.PHONY : engine/src/physics/ModalDynamics.s
+
+# target to generate assembly for a file
+engine/src/physics/ModalDynamics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/ModalDynamics.cpp.s
+.PHONY : engine/src/physics/ModalDynamics.cpp.s
+
+engine/src/physics/PhysicsWorld.o: engine/src/physics/PhysicsWorld.cpp.o
+.PHONY : engine/src/physics/PhysicsWorld.o
+
+# target to build an object file
+engine/src/physics/PhysicsWorld.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/PhysicsWorld.cpp.o
+.PHONY : engine/src/physics/PhysicsWorld.cpp.o
+
+engine/src/physics/PhysicsWorld.i: engine/src/physics/PhysicsWorld.cpp.i
+.PHONY : engine/src/physics/PhysicsWorld.i
+
+# target to preprocess a source file
+engine/src/physics/PhysicsWorld.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/PhysicsWorld.cpp.i
+.PHONY : engine/src/physics/PhysicsWorld.cpp.i
+
+engine/src/physics/PhysicsWorld.s: engine/src/physics/PhysicsWorld.cpp.s
+.PHONY : engine/src/physics/PhysicsWorld.s
+
+# target to generate assembly for a file
+engine/src/physics/PhysicsWorld.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/physics/PhysicsWorld.cpp.s
+.PHONY : engine/src/physics/PhysicsWorld.cpp.s
+
+engine/src/psf/AnchorPhysics.o: engine/src/psf/AnchorPhysics.cpp.o
+.PHONY : engine/src/psf/AnchorPhysics.o
+
+# target to build an object file
+engine/src/psf/AnchorPhysics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPhysics.cpp.o
+.PHONY : engine/src/psf/AnchorPhysics.cpp.o
+
+engine/src/psf/AnchorPhysics.i: engine/src/psf/AnchorPhysics.cpp.i
+.PHONY : engine/src/psf/AnchorPhysics.i
+
+# target to preprocess a source file
+engine/src/psf/AnchorPhysics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPhysics.cpp.i
+.PHONY : engine/src/psf/AnchorPhysics.cpp.i
+
+engine/src/psf/AnchorPhysics.s: engine/src/psf/AnchorPhysics.cpp.s
+.PHONY : engine/src/psf/AnchorPhysics.s
+
+# target to generate assembly for a file
+engine/src/psf/AnchorPhysics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPhysics.cpp.s
+.PHONY : engine/src/psf/AnchorPhysics.cpp.s
+
+engine/src/psf/AnchorPool.o: engine/src/psf/AnchorPool.cpp.o
+.PHONY : engine/src/psf/AnchorPool.o
+
+# target to build an object file
+engine/src/psf/AnchorPool.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool.cpp.o
+.PHONY : engine/src/psf/AnchorPool.cpp.o
+
+engine/src/psf/AnchorPool.i: engine/src/psf/AnchorPool.cpp.i
+.PHONY : engine/src/psf/AnchorPool.i
+
+# target to preprocess a source file
+engine/src/psf/AnchorPool.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool.cpp.i
+.PHONY : engine/src/psf/AnchorPool.cpp.i
+
+engine/src/psf/AnchorPool.s: engine/src/psf/AnchorPool.cpp.s
+.PHONY : engine/src/psf/AnchorPool.s
+
+# target to generate assembly for a file
+engine/src/psf/AnchorPool.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool.cpp.s
+.PHONY : engine/src/psf/AnchorPool.cpp.s
+
+engine/src/psf/AnchorPool_snapped.o: engine/src/psf/AnchorPool_snapped.cpp.o
+.PHONY : engine/src/psf/AnchorPool_snapped.o
+
+# target to build an object file
+engine/src/psf/AnchorPool_snapped.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool_snapped.cpp.o
+.PHONY : engine/src/psf/AnchorPool_snapped.cpp.o
+
+engine/src/psf/AnchorPool_snapped.i: engine/src/psf/AnchorPool_snapped.cpp.i
+.PHONY : engine/src/psf/AnchorPool_snapped.i
+
+# target to preprocess a source file
+engine/src/psf/AnchorPool_snapped.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool_snapped.cpp.i
+.PHONY : engine/src/psf/AnchorPool_snapped.cpp.i
+
+engine/src/psf/AnchorPool_snapped.s: engine/src/psf/AnchorPool_snapped.cpp.s
+.PHONY : engine/src/psf/AnchorPool_snapped.s
+
+# target to generate assembly for a file
+engine/src/psf/AnchorPool_snapped.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/AnchorPool_snapped.cpp.s
+.PHONY : engine/src/psf/AnchorPool_snapped.cpp.s
+
+engine/src/psf/CageSurface.o: engine/src/psf/CageSurface.cpp.o
+.PHONY : engine/src/psf/CageSurface.o
+
+# target to build an object file
+engine/src/psf/CageSurface.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/CageSurface.cpp.o
+.PHONY : engine/src/psf/CageSurface.cpp.o
+
+engine/src/psf/CageSurface.i: engine/src/psf/CageSurface.cpp.i
+.PHONY : engine/src/psf/CageSurface.i
+
+# target to preprocess a source file
+engine/src/psf/CageSurface.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/CageSurface.cpp.i
+.PHONY : engine/src/psf/CageSurface.cpp.i
+
+engine/src/psf/CageSurface.s: engine/src/psf/CageSurface.cpp.s
+.PHONY : engine/src/psf/CageSurface.s
+
+# target to generate assembly for a file
+engine/src/psf/CageSurface.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/CageSurface.cpp.s
+.PHONY : engine/src/psf/CageSurface.cpp.s
+
+engine/src/psf/PSFBody.o: engine/src/psf/PSFBody.cpp.o
+.PHONY : engine/src/psf/PSFBody.o
+
+# target to build an object file
+engine/src/psf/PSFBody.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PSFBody.cpp.o
+.PHONY : engine/src/psf/PSFBody.cpp.o
+
+engine/src/psf/PSFBody.i: engine/src/psf/PSFBody.cpp.i
+.PHONY : engine/src/psf/PSFBody.i
+
+# target to preprocess a source file
+engine/src/psf/PSFBody.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PSFBody.cpp.i
+.PHONY : engine/src/psf/PSFBody.cpp.i
+
+engine/src/psf/PSFBody.s: engine/src/psf/PSFBody.cpp.s
+.PHONY : engine/src/psf/PSFBody.s
+
+# target to generate assembly for a file
+engine/src/psf/PSFBody.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PSFBody.cpp.s
+.PHONY : engine/src/psf/PSFBody.cpp.s
+
+engine/src/psf/Patch.o: engine/src/psf/Patch.cpp.o
+.PHONY : engine/src/psf/Patch.o
+
+# target to build an object file
+engine/src/psf/Patch.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Patch.cpp.o
+.PHONY : engine/src/psf/Patch.cpp.o
+
+engine/src/psf/Patch.i: engine/src/psf/Patch.cpp.i
+.PHONY : engine/src/psf/Patch.i
+
+# target to preprocess a source file
+engine/src/psf/Patch.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Patch.cpp.i
+.PHONY : engine/src/psf/Patch.cpp.i
+
+engine/src/psf/Patch.s: engine/src/psf/Patch.cpp.s
+.PHONY : engine/src/psf/Patch.s
+
+# target to generate assembly for a file
+engine/src/psf/Patch.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Patch.cpp.s
+.PHONY : engine/src/psf/Patch.cpp.s
+
+engine/src/psf/PatchColorField.o: engine/src/psf/PatchColorField.cpp.o
+.PHONY : engine/src/psf/PatchColorField.o
+
+# target to build an object file
+engine/src/psf/PatchColorField.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatchColorField.cpp.o
+.PHONY : engine/src/psf/PatchColorField.cpp.o
+
+engine/src/psf/PatchColorField.i: engine/src/psf/PatchColorField.cpp.i
+.PHONY : engine/src/psf/PatchColorField.i
+
+# target to preprocess a source file
+engine/src/psf/PatchColorField.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatchColorField.cpp.i
+.PHONY : engine/src/psf/PatchColorField.cpp.i
+
+engine/src/psf/PatchColorField.s: engine/src/psf/PatchColorField.cpp.s
+.PHONY : engine/src/psf/PatchColorField.s
+
+# target to generate assembly for a file
+engine/src/psf/PatchColorField.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatchColorField.cpp.s
+.PHONY : engine/src/psf/PatchColorField.cpp.s
+
+engine/src/psf/PatternLibrary.o: engine/src/psf/PatternLibrary.cpp.o
+.PHONY : engine/src/psf/PatternLibrary.o
+
+# target to build an object file
+engine/src/psf/PatternLibrary.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatternLibrary.cpp.o
+.PHONY : engine/src/psf/PatternLibrary.cpp.o
+
+engine/src/psf/PatternLibrary.i: engine/src/psf/PatternLibrary.cpp.i
+.PHONY : engine/src/psf/PatternLibrary.i
+
+# target to preprocess a source file
+engine/src/psf/PatternLibrary.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatternLibrary.cpp.i
+.PHONY : engine/src/psf/PatternLibrary.cpp.i
+
+engine/src/psf/PatternLibrary.s: engine/src/psf/PatternLibrary.cpp.s
+.PHONY : engine/src/psf/PatternLibrary.s
+
+# target to generate assembly for a file
+engine/src/psf/PatternLibrary.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/PatternLibrary.cpp.s
+.PHONY : engine/src/psf/PatternLibrary.cpp.s
+
+engine/src/psf/ProceduralDetail.o: engine/src/psf/ProceduralDetail.cpp.o
+.PHONY : engine/src/psf/ProceduralDetail.o
+
+# target to build an object file
+engine/src/psf/ProceduralDetail.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/ProceduralDetail.cpp.o
+.PHONY : engine/src/psf/ProceduralDetail.cpp.o
+
+engine/src/psf/ProceduralDetail.i: engine/src/psf/ProceduralDetail.cpp.i
+.PHONY : engine/src/psf/ProceduralDetail.i
+
+# target to preprocess a source file
+engine/src/psf/ProceduralDetail.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/ProceduralDetail.cpp.i
+.PHONY : engine/src/psf/ProceduralDetail.cpp.i
+
+engine/src/psf/ProceduralDetail.s: engine/src/psf/ProceduralDetail.cpp.s
+.PHONY : engine/src/psf/ProceduralDetail.s
+
+# target to generate assembly for a file
+engine/src/psf/ProceduralDetail.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/ProceduralDetail.cpp.s
+.PHONY : engine/src/psf/ProceduralDetail.cpp.s
+
+engine/src/psf/Reconstructor.o: engine/src/psf/Reconstructor.cpp.o
+.PHONY : engine/src/psf/Reconstructor.o
+
+# target to build an object file
+engine/src/psf/Reconstructor.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Reconstructor.cpp.o
+.PHONY : engine/src/psf/Reconstructor.cpp.o
+
+engine/src/psf/Reconstructor.i: engine/src/psf/Reconstructor.cpp.i
+.PHONY : engine/src/psf/Reconstructor.i
+
+# target to preprocess a source file
+engine/src/psf/Reconstructor.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Reconstructor.cpp.i
+.PHONY : engine/src/psf/Reconstructor.cpp.i
+
+engine/src/psf/Reconstructor.s: engine/src/psf/Reconstructor.cpp.s
+.PHONY : engine/src/psf/Reconstructor.s
+
+# target to generate assembly for a file
+engine/src/psf/Reconstructor.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/Reconstructor.cpp.s
+.PHONY : engine/src/psf/Reconstructor.cpp.s
+
+engine/src/psf/SeamBridge.o: engine/src/psf/SeamBridge.cpp.o
+.PHONY : engine/src/psf/SeamBridge.o
+
+# target to build an object file
+engine/src/psf/SeamBridge.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamBridge.cpp.o
+.PHONY : engine/src/psf/SeamBridge.cpp.o
+
+engine/src/psf/SeamBridge.i: engine/src/psf/SeamBridge.cpp.i
+.PHONY : engine/src/psf/SeamBridge.i
+
+# target to preprocess a source file
+engine/src/psf/SeamBridge.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamBridge.cpp.i
+.PHONY : engine/src/psf/SeamBridge.cpp.i
+
+engine/src/psf/SeamBridge.s: engine/src/psf/SeamBridge.cpp.s
+.PHONY : engine/src/psf/SeamBridge.s
+
+# target to generate assembly for a file
+engine/src/psf/SeamBridge.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamBridge.cpp.s
+.PHONY : engine/src/psf/SeamBridge.cpp.s
+
+engine/src/psf/SeamGraph.o: engine/src/psf/SeamGraph.cpp.o
+.PHONY : engine/src/psf/SeamGraph.o
+
+# target to build an object file
+engine/src/psf/SeamGraph.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamGraph.cpp.o
+.PHONY : engine/src/psf/SeamGraph.cpp.o
+
+engine/src/psf/SeamGraph.i: engine/src/psf/SeamGraph.cpp.i
+.PHONY : engine/src/psf/SeamGraph.i
+
+# target to preprocess a source file
+engine/src/psf/SeamGraph.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamGraph.cpp.i
+.PHONY : engine/src/psf/SeamGraph.cpp.i
+
+engine/src/psf/SeamGraph.s: engine/src/psf/SeamGraph.cpp.s
+.PHONY : engine/src/psf/SeamGraph.s
+
+# target to generate assembly for a file
+engine/src/psf/SeamGraph.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SeamGraph.cpp.s
+.PHONY : engine/src/psf/SeamGraph.cpp.s
+
+engine/src/psf/SurfaceTypeLibrary.o: engine/src/psf/SurfaceTypeLibrary.cpp.o
+.PHONY : engine/src/psf/SurfaceTypeLibrary.o
+
+# target to build an object file
+engine/src/psf/SurfaceTypeLibrary.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o
+.PHONY : engine/src/psf/SurfaceTypeLibrary.cpp.o
+
+engine/src/psf/SurfaceTypeLibrary.i: engine/src/psf/SurfaceTypeLibrary.cpp.i
+.PHONY : engine/src/psf/SurfaceTypeLibrary.i
+
+# target to preprocess a source file
+engine/src/psf/SurfaceTypeLibrary.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SurfaceTypeLibrary.cpp.i
+.PHONY : engine/src/psf/SurfaceTypeLibrary.cpp.i
+
+engine/src/psf/SurfaceTypeLibrary.s: engine/src/psf/SurfaceTypeLibrary.cpp.s
+.PHONY : engine/src/psf/SurfaceTypeLibrary.s
+
+# target to generate assembly for a file
+engine/src/psf/SurfaceTypeLibrary.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/SurfaceTypeLibrary.cpp.s
+.PHONY : engine/src/psf/SurfaceTypeLibrary.cpp.s
+
+engine/src/psf/TreeFormat.o: engine/src/psf/TreeFormat.cpp.o
+.PHONY : engine/src/psf/TreeFormat.o
+
+# target to build an object file
+engine/src/psf/TreeFormat.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/TreeFormat.cpp.o
+.PHONY : engine/src/psf/TreeFormat.cpp.o
+
+engine/src/psf/TreeFormat.i: engine/src/psf/TreeFormat.cpp.i
+.PHONY : engine/src/psf/TreeFormat.i
+
+# target to preprocess a source file
+engine/src/psf/TreeFormat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/TreeFormat.cpp.i
+.PHONY : engine/src/psf/TreeFormat.cpp.i
+
+engine/src/psf/TreeFormat.s: engine/src/psf/TreeFormat.cpp.s
+.PHONY : engine/src/psf/TreeFormat.s
+
+# target to generate assembly for a file
+engine/src/psf/TreeFormat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/psf/TreeFormat.cpp.s
+.PHONY : engine/src/psf/TreeFormat.cpp.s
+
+engine/src/render/Camera.o: engine/src/render/Camera.cpp.o
+.PHONY : engine/src/render/Camera.o
+
+# target to build an object file
+engine/src/render/Camera.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/Camera.cpp.o
+.PHONY : engine/src/render/Camera.cpp.o
+
+engine/src/render/Camera.i: engine/src/render/Camera.cpp.i
+.PHONY : engine/src/render/Camera.i
+
+# target to preprocess a source file
+engine/src/render/Camera.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/Camera.cpp.i
+.PHONY : engine/src/render/Camera.cpp.i
+
+engine/src/render/Camera.s: engine/src/render/Camera.cpp.s
+.PHONY : engine/src/render/Camera.s
+
+# target to generate assembly for a file
+engine/src/render/Camera.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/Camera.cpp.s
+.PHONY : engine/src/render/Camera.cpp.s
+
+engine/src/render/EquationAccel.o: engine/src/render/EquationAccel.cpp.o
+.PHONY : engine/src/render/EquationAccel.o
+
+# target to build an object file
+engine/src/render/EquationAccel.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/EquationAccel.cpp.o
+.PHONY : engine/src/render/EquationAccel.cpp.o
+
+engine/src/render/EquationAccel.i: engine/src/render/EquationAccel.cpp.i
+.PHONY : engine/src/render/EquationAccel.i
+
+# target to preprocess a source file
+engine/src/render/EquationAccel.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/EquationAccel.cpp.i
+.PHONY : engine/src/render/EquationAccel.cpp.i
+
+engine/src/render/EquationAccel.s: engine/src/render/EquationAccel.cpp.s
+.PHONY : engine/src/render/EquationAccel.s
+
+# target to generate assembly for a file
+engine/src/render/EquationAccel.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/EquationAccel.cpp.s
+.PHONY : engine/src/render/EquationAccel.cpp.s
+
+engine/src/render/LateralRayMarch.o: engine/src/render/LateralRayMarch.cpp.o
+.PHONY : engine/src/render/LateralRayMarch.o
+
+# target to build an object file
+engine/src/render/LateralRayMarch.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/LateralRayMarch.cpp.o
+.PHONY : engine/src/render/LateralRayMarch.cpp.o
+
+engine/src/render/LateralRayMarch.i: engine/src/render/LateralRayMarch.cpp.i
+.PHONY : engine/src/render/LateralRayMarch.i
+
+# target to preprocess a source file
+engine/src/render/LateralRayMarch.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/LateralRayMarch.cpp.i
+.PHONY : engine/src/render/LateralRayMarch.cpp.i
+
+engine/src/render/LateralRayMarch.s: engine/src/render/LateralRayMarch.cpp.s
+.PHONY : engine/src/render/LateralRayMarch.s
+
+# target to generate assembly for a file
+engine/src/render/LateralRayMarch.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/LateralRayMarch.cpp.s
+.PHONY : engine/src/render/LateralRayMarch.cpp.s
+
+engine/src/render/SplatRenderer.o: engine/src/render/SplatRenderer.cpp.o
+.PHONY : engine/src/render/SplatRenderer.o
+
+# target to build an object file
+engine/src/render/SplatRenderer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.o
+.PHONY : engine/src/render/SplatRenderer.cpp.o
+
+engine/src/render/SplatRenderer.i: engine/src/render/SplatRenderer.cpp.i
+.PHONY : engine/src/render/SplatRenderer.i
+
+# target to preprocess a source file
+engine/src/render/SplatRenderer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.i
+.PHONY : engine/src/render/SplatRenderer.cpp.i
+
+engine/src/render/SplatRenderer.s: engine/src/render/SplatRenderer.cpp.s
+.PHONY : engine/src/render/SplatRenderer.s
+
+# target to generate assembly for a file
+engine/src/render/SplatRenderer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.s
+.PHONY : engine/src/render/SplatRenderer.cpp.s
+
+engine/src/render/SurfelRasterizer.o: engine/src/render/SurfelRasterizer.cpp.o
+.PHONY : engine/src/render/SurfelRasterizer.o
+
+# target to build an object file
+engine/src/render/SurfelRasterizer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SurfelRasterizer.cpp.o
+.PHONY : engine/src/render/SurfelRasterizer.cpp.o
+
+engine/src/render/SurfelRasterizer.i: engine/src/render/SurfelRasterizer.cpp.i
+.PHONY : engine/src/render/SurfelRasterizer.i
+
+# target to preprocess a source file
+engine/src/render/SurfelRasterizer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SurfelRasterizer.cpp.i
+.PHONY : engine/src/render/SurfelRasterizer.cpp.i
+
+engine/src/render/SurfelRasterizer.s: engine/src/render/SurfelRasterizer.cpp.s
+.PHONY : engine/src/render/SurfelRasterizer.s
+
+# target to generate assembly for a file
+engine/src/render/SurfelRasterizer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/SurfelRasterizer.cpp.s
+.PHONY : engine/src/render/SurfelRasterizer.cpp.s
+
+engine/src/render/TriInfill.o: engine/src/render/TriInfill.cpp.o
+.PHONY : engine/src/render/TriInfill.o
+
+# target to build an object file
+engine/src/render/TriInfill.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/TriInfill.cpp.o
+.PHONY : engine/src/render/TriInfill.cpp.o
+
+engine/src/render/TriInfill.i: engine/src/render/TriInfill.cpp.i
+.PHONY : engine/src/render/TriInfill.i
+
+# target to preprocess a source file
+engine/src/render/TriInfill.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/TriInfill.cpp.i
+.PHONY : engine/src/render/TriInfill.cpp.i
+
+engine/src/render/TriInfill.s: engine/src/render/TriInfill.cpp.s
+.PHONY : engine/src/render/TriInfill.s
+
+# target to generate assembly for a file
+engine/src/render/TriInfill.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/render/TriInfill.cpp.s
+.PHONY : engine/src/render/TriInfill.cpp.s
+
+engine/src/scene/SplatView.o: engine/src/scene/SplatView.cpp.o
+.PHONY : engine/src/scene/SplatView.o
+
+# target to build an object file
+engine/src/scene/SplatView.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/scene/SplatView.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/scene/SplatView.cpp.o
+.PHONY : engine/src/scene/SplatView.cpp.o
+
+engine/src/scene/SplatView.i: engine/src/scene/SplatView.cpp.i
+.PHONY : engine/src/scene/SplatView.i
+
+# target to preprocess a source file
+engine/src/scene/SplatView.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/scene/SplatView.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/scene/SplatView.cpp.i
+.PHONY : engine/src/scene/SplatView.cpp.i
+
+engine/src/scene/SplatView.s: engine/src/scene/SplatView.cpp.s
+.PHONY : engine/src/scene/SplatView.s
+
+# target to generate assembly for a file
+engine/src/scene/SplatView.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/scene/SplatView.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/scene/SplatView.cpp.s
+.PHONY : engine/src/scene/SplatView.cpp.s
+
+engine/src/servers/PhysicsServer.o: engine/src/servers/PhysicsServer.cpp.o
+.PHONY : engine/src/servers/PhysicsServer.o
+
+# target to build an object file
+engine/src/servers/PhysicsServer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/PhysicsServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/PhysicsServer.cpp.o
+.PHONY : engine/src/servers/PhysicsServer.cpp.o
+
+engine/src/servers/PhysicsServer.i: engine/src/servers/PhysicsServer.cpp.i
+.PHONY : engine/src/servers/PhysicsServer.i
+
+# target to preprocess a source file
+engine/src/servers/PhysicsServer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/PhysicsServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/PhysicsServer.cpp.i
+.PHONY : engine/src/servers/PhysicsServer.cpp.i
+
+engine/src/servers/PhysicsServer.s: engine/src/servers/PhysicsServer.cpp.s
+.PHONY : engine/src/servers/PhysicsServer.s
+
+# target to generate assembly for a file
+engine/src/servers/PhysicsServer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/PhysicsServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/PhysicsServer.cpp.s
+.PHONY : engine/src/servers/PhysicsServer.cpp.s
+
+engine/src/servers/RenderServer.o: engine/src/servers/RenderServer.cpp.o
+.PHONY : engine/src/servers/RenderServer.o
+
+# target to build an object file
+engine/src/servers/RenderServer.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/RenderServer.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/RenderServer.cpp.o
+.PHONY : engine/src/servers/RenderServer.cpp.o
+
+engine/src/servers/RenderServer.i: engine/src/servers/RenderServer.cpp.i
+.PHONY : engine/src/servers/RenderServer.i
+
+# target to preprocess a source file
+engine/src/servers/RenderServer.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/RenderServer.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/RenderServer.cpp.i
+.PHONY : engine/src/servers/RenderServer.cpp.i
+
+engine/src/servers/RenderServer.s: engine/src/servers/RenderServer.cpp.s
+.PHONY : engine/src/servers/RenderServer.s
+
+# target to generate assembly for a file
+engine/src/servers/RenderServer.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/engine/src/servers/RenderServer.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/servers/RenderServer.cpp.s
+.PHONY : engine/src/servers/RenderServer.cpp.s
+
+engine/src/ui/Font.o: engine/src/ui/Font.cpp.o
+.PHONY : engine/src/ui/Font.o
+
+# target to build an object file
+engine/src/ui/Font.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/Font.cpp.o
+.PHONY : engine/src/ui/Font.cpp.o
+
+engine/src/ui/Font.i: engine/src/ui/Font.cpp.i
+.PHONY : engine/src/ui/Font.i
+
+# target to preprocess a source file
+engine/src/ui/Font.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/Font.cpp.i
+.PHONY : engine/src/ui/Font.cpp.i
+
+engine/src/ui/Font.s: engine/src/ui/Font.cpp.s
+.PHONY : engine/src/ui/Font.s
+
+# target to generate assembly for a file
+engine/src/ui/Font.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/Font.cpp.s
+.PHONY : engine/src/ui/Font.cpp.s
+
+engine/src/ui/UI.o: engine/src/ui/UI.cpp.o
+.PHONY : engine/src/ui/UI.o
+
+# target to build an object file
+engine/src/ui/UI.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/UI.cpp.o
+.PHONY : engine/src/ui/UI.cpp.o
+
+engine/src/ui/UI.i: engine/src/ui/UI.cpp.i
+.PHONY : engine/src/ui/UI.i
+
+# target to preprocess a source file
+engine/src/ui/UI.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/UI.cpp.i
+.PHONY : engine/src/ui/UI.cpp.i
+
+engine/src/ui/UI.s: engine/src/ui/UI.cpp.s
+.PHONY : engine/src/ui/UI.s
+
+# target to generate assembly for a file
+engine/src/ui/UI.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_engine_lib.dir/build.make CMakeFiles/delirium_engine_lib.dir/engine/src/ui/UI.cpp.s
+.PHONY : engine/src/ui/UI.cpp.s
+
+examples/01_torus_deform/main.o: examples/01_torus_deform/main.cpp.o
+.PHONY : examples/01_torus_deform/main.o
+
+# target to build an object file
+examples/01_torus_deform/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.o
+.PHONY : examples/01_torus_deform/main.cpp.o
+
+examples/01_torus_deform/main.i: examples/01_torus_deform/main.cpp.i
+.PHONY : examples/01_torus_deform/main.i
+
+# target to preprocess a source file
+examples/01_torus_deform/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.i
+.PHONY : examples/01_torus_deform/main.cpp.i
+
+examples/01_torus_deform/main.s: examples/01_torus_deform/main.cpp.s
+.PHONY : examples/01_torus_deform/main.s
+
+# target to generate assembly for a file
+examples/01_torus_deform/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m1_torus.dir/build.make CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.s
+.PHONY : examples/01_torus_deform/main.cpp.s
+
+examples/03_visual_stress/main.o: examples/03_visual_stress/main.cpp.o
+.PHONY : examples/03_visual_stress/main.o
+
+# target to build an object file
+examples/03_visual_stress/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_stress.dir/build.make CMakeFiles/delirium_visual_stress.dir/examples/03_visual_stress/main.cpp.o
+.PHONY : examples/03_visual_stress/main.cpp.o
+
+examples/03_visual_stress/main.i: examples/03_visual_stress/main.cpp.i
+.PHONY : examples/03_visual_stress/main.i
+
+# target to preprocess a source file
+examples/03_visual_stress/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_stress.dir/build.make CMakeFiles/delirium_visual_stress.dir/examples/03_visual_stress/main.cpp.i
+.PHONY : examples/03_visual_stress/main.cpp.i
+
+examples/03_visual_stress/main.s: examples/03_visual_stress/main.cpp.s
+.PHONY : examples/03_visual_stress/main.s
+
+# target to generate assembly for a file
+examples/03_visual_stress/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_stress.dir/build.make CMakeFiles/delirium_visual_stress.dir/examples/03_visual_stress/main.cpp.s
+.PHONY : examples/03_visual_stress/main.cpp.s
+
+examples/ai_pipeline_probe/closed_body_probe.o: examples/ai_pipeline_probe/closed_body_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.o
+
+# target to build an object file
+examples/ai_pipeline_probe/closed_body_probe.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/closed_body_probe.dir/build.make CMakeFiles/closed_body_probe.dir/examples/ai_pipeline_probe/closed_body_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.cpp.o
+
+examples/ai_pipeline_probe/closed_body_probe.i: examples/ai_pipeline_probe/closed_body_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.i
+
+# target to preprocess a source file
+examples/ai_pipeline_probe/closed_body_probe.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/closed_body_probe.dir/build.make CMakeFiles/closed_body_probe.dir/examples/ai_pipeline_probe/closed_body_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.cpp.i
+
+examples/ai_pipeline_probe/closed_body_probe.s: examples/ai_pipeline_probe/closed_body_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.s
+
+# target to generate assembly for a file
+examples/ai_pipeline_probe/closed_body_probe.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/closed_body_probe.dir/build.make CMakeFiles/closed_body_probe.dir/examples/ai_pipeline_probe/closed_body_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/closed_body_probe.cpp.s
+
+examples/ai_pipeline_probe/main.o: examples/ai_pipeline_probe/main.cpp.o
+.PHONY : examples/ai_pipeline_probe/main.o
+
+# target to build an object file
+examples/ai_pipeline_probe/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ai_pipeline_probe.dir/build.make CMakeFiles/ai_pipeline_probe.dir/examples/ai_pipeline_probe/main.cpp.o
+.PHONY : examples/ai_pipeline_probe/main.cpp.o
+
+examples/ai_pipeline_probe/main.i: examples/ai_pipeline_probe/main.cpp.i
+.PHONY : examples/ai_pipeline_probe/main.i
+
+# target to preprocess a source file
+examples/ai_pipeline_probe/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ai_pipeline_probe.dir/build.make CMakeFiles/ai_pipeline_probe.dir/examples/ai_pipeline_probe/main.cpp.i
+.PHONY : examples/ai_pipeline_probe/main.cpp.i
+
+examples/ai_pipeline_probe/main.s: examples/ai_pipeline_probe/main.cpp.s
+.PHONY : examples/ai_pipeline_probe/main.s
+
+# target to generate assembly for a file
+examples/ai_pipeline_probe/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ai_pipeline_probe.dir/build.make CMakeFiles/ai_pipeline_probe.dir/examples/ai_pipeline_probe/main.cpp.s
+.PHONY : examples/ai_pipeline_probe/main.cpp.s
+
+examples/ai_pipeline_probe/sphere_probe.o: examples/ai_pipeline_probe/sphere_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/sphere_probe.o
+
+# target to build an object file
+examples/ai_pipeline_probe/sphere_probe.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sphere_probe.dir/build.make CMakeFiles/sphere_probe.dir/examples/ai_pipeline_probe/sphere_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/sphere_probe.cpp.o
+
+examples/ai_pipeline_probe/sphere_probe.i: examples/ai_pipeline_probe/sphere_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/sphere_probe.i
+
+# target to preprocess a source file
+examples/ai_pipeline_probe/sphere_probe.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sphere_probe.dir/build.make CMakeFiles/sphere_probe.dir/examples/ai_pipeline_probe/sphere_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/sphere_probe.cpp.i
+
+examples/ai_pipeline_probe/sphere_probe.s: examples/ai_pipeline_probe/sphere_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/sphere_probe.s
+
+# target to generate assembly for a file
+examples/ai_pipeline_probe/sphere_probe.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sphere_probe.dir/build.make CMakeFiles/sphere_probe.dir/examples/ai_pipeline_probe/sphere_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/sphere_probe.cpp.s
+
+examples/ai_pipeline_probe/torus_probe.o: examples/ai_pipeline_probe/torus_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/torus_probe.o
+
+# target to build an object file
+examples/ai_pipeline_probe/torus_probe.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/torus_probe.dir/build.make CMakeFiles/torus_probe.dir/examples/ai_pipeline_probe/torus_probe.cpp.o
+.PHONY : examples/ai_pipeline_probe/torus_probe.cpp.o
+
+examples/ai_pipeline_probe/torus_probe.i: examples/ai_pipeline_probe/torus_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/torus_probe.i
+
+# target to preprocess a source file
+examples/ai_pipeline_probe/torus_probe.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/torus_probe.dir/build.make CMakeFiles/torus_probe.dir/examples/ai_pipeline_probe/torus_probe.cpp.i
+.PHONY : examples/ai_pipeline_probe/torus_probe.cpp.i
+
+examples/ai_pipeline_probe/torus_probe.s: examples/ai_pipeline_probe/torus_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/torus_probe.s
+
+# target to generate assembly for a file
+examples/ai_pipeline_probe/torus_probe.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/torus_probe.dir/build.make CMakeFiles/torus_probe.dir/examples/ai_pipeline_probe/torus_probe.cpp.s
+.PHONY : examples/ai_pipeline_probe/torus_probe.cpp.s
+
+examples/complex_scene/main.o: examples/complex_scene/main.cpp.o
+.PHONY : examples/complex_scene/main.o
+
+# target to build an object file
+examples/complex_scene/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/complex_scene.dir/build.make CMakeFiles/complex_scene.dir/examples/complex_scene/main.cpp.o
+.PHONY : examples/complex_scene/main.cpp.o
+
+examples/complex_scene/main.i: examples/complex_scene/main.cpp.i
+.PHONY : examples/complex_scene/main.i
+
+# target to preprocess a source file
+examples/complex_scene/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/complex_scene.dir/build.make CMakeFiles/complex_scene.dir/examples/complex_scene/main.cpp.i
+.PHONY : examples/complex_scene/main.cpp.i
+
+examples/complex_scene/main.s: examples/complex_scene/main.cpp.s
+.PHONY : examples/complex_scene/main.s
+
+# target to generate assembly for a file
+examples/complex_scene/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/complex_scene.dir/build.make CMakeFiles/complex_scene.dir/examples/complex_scene/main.cpp.s
+.PHONY : examples/complex_scene/main.cpp.s
+
+examples/doc_learner_probe/main.o: examples/doc_learner_probe/main.cpp.o
+.PHONY : examples/doc_learner_probe/main.o
+
+# target to build an object file
+examples/doc_learner_probe/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/doc_learner_probe.dir/build.make CMakeFiles/doc_learner_probe.dir/examples/doc_learner_probe/main.cpp.o
+.PHONY : examples/doc_learner_probe/main.cpp.o
+
+examples/doc_learner_probe/main.i: examples/doc_learner_probe/main.cpp.i
+.PHONY : examples/doc_learner_probe/main.i
+
+# target to preprocess a source file
+examples/doc_learner_probe/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/doc_learner_probe.dir/build.make CMakeFiles/doc_learner_probe.dir/examples/doc_learner_probe/main.cpp.i
+.PHONY : examples/doc_learner_probe/main.cpp.i
+
+examples/doc_learner_probe/main.s: examples/doc_learner_probe/main.cpp.s
+.PHONY : examples/doc_learner_probe/main.s
+
+# target to generate assembly for a file
+examples/doc_learner_probe/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/doc_learner_probe.dir/build.make CMakeFiles/doc_learner_probe.dir/examples/doc_learner_probe/main.cpp.s
+.PHONY : examples/doc_learner_probe/main.cpp.s
+
+examples/g3_frame/main.o: examples/g3_frame/main.cpp.o
+.PHONY : examples/g3_frame/main.o
+
+# target to build an object file
+examples/g3_frame/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/examples/g3_frame/main.cpp.o
+.PHONY : examples/g3_frame/main.cpp.o
+
+examples/g3_frame/main.i: examples/g3_frame/main.cpp.i
+.PHONY : examples/g3_frame/main.i
+
+# target to preprocess a source file
+examples/g3_frame/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/examples/g3_frame/main.cpp.i
+.PHONY : examples/g3_frame/main.cpp.i
+
+examples/g3_frame/main.s: examples/g3_frame/main.cpp.s
+.PHONY : examples/g3_frame/main.s
+
+# target to generate assembly for a file
+examples/g3_frame/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_g3_frame.dir/build.make CMakeFiles/delirium_g3_frame.dir/examples/g3_frame/main.cpp.s
+.PHONY : examples/g3_frame/main.cpp.s
+
+examples/llm_probe/main.o: examples/llm_probe/main.cpp.o
+.PHONY : examples/llm_probe/main.o
+
+# target to build an object file
+examples/llm_probe/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llm_probe.dir/build.make CMakeFiles/llm_probe.dir/examples/llm_probe/main.cpp.o
+.PHONY : examples/llm_probe/main.cpp.o
+
+examples/llm_probe/main.i: examples/llm_probe/main.cpp.i
+.PHONY : examples/llm_probe/main.i
+
+# target to preprocess a source file
+examples/llm_probe/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llm_probe.dir/build.make CMakeFiles/llm_probe.dir/examples/llm_probe/main.cpp.i
+.PHONY : examples/llm_probe/main.cpp.i
+
+examples/llm_probe/main.s: examples/llm_probe/main.cpp.s
+.PHONY : examples/llm_probe/main.s
+
+# target to generate assembly for a file
+examples/llm_probe/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/llm_probe.dir/build.make CMakeFiles/llm_probe.dir/examples/llm_probe/main.cpp.s
+.PHONY : examples/llm_probe/main.cpp.s
+
+examples/playground/main.o: examples/playground/main.cpp.o
+.PHONY : examples/playground/main.o
+
+# target to build an object file
+examples/playground/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_playground.dir/build.make CMakeFiles/delirium_playground.dir/examples/playground/main.cpp.o
+.PHONY : examples/playground/main.cpp.o
+
+examples/playground/main.i: examples/playground/main.cpp.i
+.PHONY : examples/playground/main.i
+
+# target to preprocess a source file
+examples/playground/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_playground.dir/build.make CMakeFiles/delirium_playground.dir/examples/playground/main.cpp.i
+.PHONY : examples/playground/main.cpp.i
+
+examples/playground/main.s: examples/playground/main.cpp.s
+.PHONY : examples/playground/main.s
+
+# target to generate assembly for a file
+examples/playground/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_playground.dir/build.make CMakeFiles/delirium_playground.dir/examples/playground/main.cpp.s
+.PHONY : examples/playground/main.cpp.s
+
+examples/realtime_deform/main.o: examples/realtime_deform/main.cpp.o
+.PHONY : examples/realtime_deform/main.o
+
+# target to build an object file
+examples/realtime_deform/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_realtime_deform.dir/build.make CMakeFiles/delirium_realtime_deform.dir/examples/realtime_deform/main.cpp.o
+.PHONY : examples/realtime_deform/main.cpp.o
+
+examples/realtime_deform/main.i: examples/realtime_deform/main.cpp.i
+.PHONY : examples/realtime_deform/main.i
+
+# target to preprocess a source file
+examples/realtime_deform/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_realtime_deform.dir/build.make CMakeFiles/delirium_realtime_deform.dir/examples/realtime_deform/main.cpp.i
+.PHONY : examples/realtime_deform/main.cpp.i
+
+examples/realtime_deform/main.s: examples/realtime_deform/main.cpp.s
+.PHONY : examples/realtime_deform/main.s
+
+# target to generate assembly for a file
+examples/realtime_deform/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_realtime_deform.dir/build.make CMakeFiles/delirium_realtime_deform.dir/examples/realtime_deform/main.cpp.s
+.PHONY : examples/realtime_deform/main.cpp.s
+
+examples/recon_diag/main.o: examples/recon_diag/main.cpp.o
+.PHONY : examples/recon_diag/main.o
+
+# target to build an object file
+examples/recon_diag/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_diag.dir/build.make CMakeFiles/delirium_recon_diag.dir/examples/recon_diag/main.cpp.o
+.PHONY : examples/recon_diag/main.cpp.o
+
+examples/recon_diag/main.i: examples/recon_diag/main.cpp.i
+.PHONY : examples/recon_diag/main.i
+
+# target to preprocess a source file
+examples/recon_diag/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_diag.dir/build.make CMakeFiles/delirium_recon_diag.dir/examples/recon_diag/main.cpp.i
+.PHONY : examples/recon_diag/main.cpp.i
+
+examples/recon_diag/main.s: examples/recon_diag/main.cpp.s
+.PHONY : examples/recon_diag/main.s
+
+# target to generate assembly for a file
+examples/recon_diag/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_diag.dir/build.make CMakeFiles/delirium_recon_diag.dir/examples/recon_diag/main.cpp.s
+.PHONY : examples/recon_diag/main.cpp.s
+
+examples/recon_window/main.o: examples/recon_window/main.cpp.o
+.PHONY : examples/recon_window/main.o
+
+# target to build an object file
+examples/recon_window/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_window.dir/build.make CMakeFiles/delirium_recon_window.dir/examples/recon_window/main.cpp.o
+.PHONY : examples/recon_window/main.cpp.o
+
+examples/recon_window/main.i: examples/recon_window/main.cpp.i
+.PHONY : examples/recon_window/main.i
+
+# target to preprocess a source file
+examples/recon_window/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_window.dir/build.make CMakeFiles/delirium_recon_window.dir/examples/recon_window/main.cpp.i
+.PHONY : examples/recon_window/main.cpp.i
+
+examples/recon_window/main.s: examples/recon_window/main.cpp.s
+.PHONY : examples/recon_window/main.s
+
+# target to generate assembly for a file
+examples/recon_window/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_recon_window.dir/build.make CMakeFiles/delirium_recon_window.dir/examples/recon_window/main.cpp.s
+.PHONY : examples/recon_window/main.cpp.s
+
+examples/torus_live/main.o: examples/torus_live/main.cpp.o
+.PHONY : examples/torus_live/main.o
+
+# target to build an object file
+examples/torus_live/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_torus_live.dir/build.make CMakeFiles/delirium_torus_live.dir/examples/torus_live/main.cpp.o
+.PHONY : examples/torus_live/main.cpp.o
+
+examples/torus_live/main.i: examples/torus_live/main.cpp.i
+.PHONY : examples/torus_live/main.i
+
+# target to preprocess a source file
+examples/torus_live/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_torus_live.dir/build.make CMakeFiles/delirium_torus_live.dir/examples/torus_live/main.cpp.i
+.PHONY : examples/torus_live/main.cpp.i
+
+examples/torus_live/main.s: examples/torus_live/main.cpp.s
+.PHONY : examples/torus_live/main.s
+
+# target to generate assembly for a file
+examples/torus_live/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_torus_live.dir/build.make CMakeFiles/delirium_torus_live.dir/examples/torus_live/main.cpp.s
+.PHONY : examples/torus_live/main.cpp.s
+
+examples/ui_font_probe/main.o: examples/ui_font_probe/main.cpp.o
+.PHONY : examples/ui_font_probe/main.o
+
+# target to build an object file
+examples/ui_font_probe/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ui_font_probe.dir/build.make CMakeFiles/ui_font_probe.dir/examples/ui_font_probe/main.cpp.o
+.PHONY : examples/ui_font_probe/main.cpp.o
+
+examples/ui_font_probe/main.i: examples/ui_font_probe/main.cpp.i
+.PHONY : examples/ui_font_probe/main.i
+
+# target to preprocess a source file
+examples/ui_font_probe/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ui_font_probe.dir/build.make CMakeFiles/ui_font_probe.dir/examples/ui_font_probe/main.cpp.i
+.PHONY : examples/ui_font_probe/main.cpp.i
+
+examples/ui_font_probe/main.s: examples/ui_font_probe/main.cpp.s
+.PHONY : examples/ui_font_probe/main.s
+
+# target to generate assembly for a file
+examples/ui_font_probe/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/ui_font_probe.dir/build.make CMakeFiles/ui_font_probe.dir/examples/ui_font_probe/main.cpp.s
+.PHONY : examples/ui_font_probe/main.cpp.s
+
+examples/visual_gallery/main.o: examples/visual_gallery/main.cpp.o
+.PHONY : examples/visual_gallery/main.o
+
+# target to build an object file
+examples/visual_gallery/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_gallery.dir/build.make CMakeFiles/delirium_visual_gallery.dir/examples/visual_gallery/main.cpp.o
+.PHONY : examples/visual_gallery/main.cpp.o
+
+examples/visual_gallery/main.i: examples/visual_gallery/main.cpp.i
+.PHONY : examples/visual_gallery/main.i
+
+# target to preprocess a source file
+examples/visual_gallery/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_gallery.dir/build.make CMakeFiles/delirium_visual_gallery.dir/examples/visual_gallery/main.cpp.i
+.PHONY : examples/visual_gallery/main.cpp.i
+
+examples/visual_gallery/main.s: examples/visual_gallery/main.cpp.s
+.PHONY : examples/visual_gallery/main.s
+
+# target to generate assembly for a file
+examples/visual_gallery/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_visual_gallery.dir/build.make CMakeFiles/delirium_visual_gallery.dir/examples/visual_gallery/main.cpp.s
+.PHONY : examples/visual_gallery/main.cpp.s
+
+examples/workspace/main.o: examples/workspace/main.cpp.o
+.PHONY : examples/workspace/main.o
+
+# target to build an object file
+examples/workspace/main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_workspace.dir/build.make CMakeFiles/delirium_workspace.dir/examples/workspace/main.cpp.o
+.PHONY : examples/workspace/main.cpp.o
+
+examples/workspace/main.i: examples/workspace/main.cpp.i
+.PHONY : examples/workspace/main.i
+
+# target to preprocess a source file
+examples/workspace/main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_workspace.dir/build.make CMakeFiles/delirium_workspace.dir/examples/workspace/main.cpp.i
+.PHONY : examples/workspace/main.cpp.i
+
+examples/workspace/main.s: examples/workspace/main.cpp.s
+.PHONY : examples/workspace/main.s
+
+# target to generate assembly for a file
+examples/workspace/main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_workspace.dir/build.make CMakeFiles/delirium_workspace.dir/examples/workspace/main.cpp.s
+.PHONY : examples/workspace/main.cpp.s
+
+src/opencl_probe.o: src/opencl_probe.cpp.o
+.PHONY : src/opencl_probe.o
+
+# target to build an object file
+src/opencl_probe.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m0_probe.dir/build.make CMakeFiles/delirium_m0_probe.dir/src/opencl_probe.cpp.o
+.PHONY : src/opencl_probe.cpp.o
+
+src/opencl_probe.i: src/opencl_probe.cpp.i
+.PHONY : src/opencl_probe.i
+
+# target to preprocess a source file
+src/opencl_probe.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m0_probe.dir/build.make CMakeFiles/delirium_m0_probe.dir/src/opencl_probe.cpp.i
+.PHONY : src/opencl_probe.cpp.i
+
+src/opencl_probe.s: src/opencl_probe.cpp.s
+.PHONY : src/opencl_probe.s
+
+# target to generate assembly for a file
+src/opencl_probe.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/delirium_m0_probe.dir/build.make CMakeFiles/delirium_m0_probe.dir/src/opencl_probe.cpp.s
+.PHONY : src/opencl_probe.cpp.s
+
+tests/perf_engine.o: tests/perf_engine.cpp.o
+.PHONY : tests/perf_engine.o
+
+# target to build an object file
+tests/perf_engine.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/perf_engine.dir/build.make CMakeFiles/perf_engine.dir/tests/perf_engine.cpp.o
+.PHONY : tests/perf_engine.cpp.o
+
+tests/perf_engine.i: tests/perf_engine.cpp.i
+.PHONY : tests/perf_engine.i
+
+# target to preprocess a source file
+tests/perf_engine.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/perf_engine.dir/build.make CMakeFiles/perf_engine.dir/tests/perf_engine.cpp.i
+.PHONY : tests/perf_engine.cpp.i
+
+tests/perf_engine.s: tests/perf_engine.cpp.s
+.PHONY : tests/perf_engine.s
+
+# target to generate assembly for a file
+tests/perf_engine.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/perf_engine.dir/build.make CMakeFiles/perf_engine.dir/tests/perf_engine.cpp.s
+.PHONY : tests/perf_engine.cpp.s
+
+tests/validate_ai_parser.o: tests/validate_ai_parser.cpp.o
+.PHONY : tests/validate_ai_parser.o
+
+# target to build an object file
+tests/validate_ai_parser.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_ai_parser.dir/build.make CMakeFiles/validate_ai_parser.dir/tests/validate_ai_parser.cpp.o
+.PHONY : tests/validate_ai_parser.cpp.o
+
+tests/validate_ai_parser.i: tests/validate_ai_parser.cpp.i
+.PHONY : tests/validate_ai_parser.i
+
+# target to preprocess a source file
+tests/validate_ai_parser.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_ai_parser.dir/build.make CMakeFiles/validate_ai_parser.dir/tests/validate_ai_parser.cpp.i
+.PHONY : tests/validate_ai_parser.cpp.i
+
+tests/validate_ai_parser.s: tests/validate_ai_parser.cpp.s
+.PHONY : tests/validate_ai_parser.s
+
+# target to generate assembly for a file
+tests/validate_ai_parser.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_ai_parser.dir/build.make CMakeFiles/validate_ai_parser.dir/tests/validate_ai_parser.cpp.s
+.PHONY : tests/validate_ai_parser.cpp.s
+
+tests/validate_bridge.o: tests/validate_bridge.cpp.o
+.PHONY : tests/validate_bridge.o
+
+# target to build an object file
+tests/validate_bridge.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_bridge.dir/build.make CMakeFiles/validate_bridge.dir/tests/validate_bridge.cpp.o
+.PHONY : tests/validate_bridge.cpp.o
+
+tests/validate_bridge.i: tests/validate_bridge.cpp.i
+.PHONY : tests/validate_bridge.i
+
+# target to preprocess a source file
+tests/validate_bridge.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_bridge.dir/build.make CMakeFiles/validate_bridge.dir/tests/validate_bridge.cpp.i
+.PHONY : tests/validate_bridge.cpp.i
+
+tests/validate_bridge.s: tests/validate_bridge.cpp.s
+.PHONY : tests/validate_bridge.s
+
+# target to generate assembly for a file
+tests/validate_bridge.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_bridge.dir/build.make CMakeFiles/validate_bridge.dir/tests/validate_bridge.cpp.s
+.PHONY : tests/validate_bridge.cpp.s
+
+tests/validate_cage.o: tests/validate_cage.cpp.o
+.PHONY : tests/validate_cage.o
+
+# target to build an object file
+tests/validate_cage.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_cage.dir/build.make CMakeFiles/validate_cage.dir/tests/validate_cage.cpp.o
+.PHONY : tests/validate_cage.cpp.o
+
+tests/validate_cage.i: tests/validate_cage.cpp.i
+.PHONY : tests/validate_cage.i
+
+# target to preprocess a source file
+tests/validate_cage.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_cage.dir/build.make CMakeFiles/validate_cage.dir/tests/validate_cage.cpp.i
+.PHONY : tests/validate_cage.cpp.i
+
+tests/validate_cage.s: tests/validate_cage.cpp.s
+.PHONY : tests/validate_cage.s
+
+# target to generate assembly for a file
+tests/validate_cage.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_cage.dir/build.make CMakeFiles/validate_cage.dir/tests/validate_cage.cpp.s
+.PHONY : tests/validate_cage.cpp.s
+
+tests/validate_closed_body.o: tests/validate_closed_body.cpp.o
+.PHONY : tests/validate_closed_body.o
+
+# target to build an object file
+tests/validate_closed_body.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_closed_body.dir/build.make CMakeFiles/validate_closed_body.dir/tests/validate_closed_body.cpp.o
+.PHONY : tests/validate_closed_body.cpp.o
+
+tests/validate_closed_body.i: tests/validate_closed_body.cpp.i
+.PHONY : tests/validate_closed_body.i
+
+# target to preprocess a source file
+tests/validate_closed_body.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_closed_body.dir/build.make CMakeFiles/validate_closed_body.dir/tests/validate_closed_body.cpp.i
+.PHONY : tests/validate_closed_body.cpp.i
+
+tests/validate_closed_body.s: tests/validate_closed_body.cpp.s
+.PHONY : tests/validate_closed_body.s
+
+# target to generate assembly for a file
+tests/validate_closed_body.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_closed_body.dir/build.make CMakeFiles/validate_closed_body.dir/tests/validate_closed_body.cpp.s
+.PHONY : tests/validate_closed_body.cpp.s
+
+tests/validate_dent.o: tests/validate_dent.cpp.o
+.PHONY : tests/validate_dent.o
+
+# target to build an object file
+tests/validate_dent.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_dent.dir/build.make CMakeFiles/validate_dent.dir/tests/validate_dent.cpp.o
+.PHONY : tests/validate_dent.cpp.o
+
+tests/validate_dent.i: tests/validate_dent.cpp.i
+.PHONY : tests/validate_dent.i
+
+# target to preprocess a source file
+tests/validate_dent.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_dent.dir/build.make CMakeFiles/validate_dent.dir/tests/validate_dent.cpp.i
+.PHONY : tests/validate_dent.cpp.i
+
+tests/validate_dent.s: tests/validate_dent.cpp.s
+.PHONY : tests/validate_dent.s
+
+# target to generate assembly for a file
+tests/validate_dent.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_dent.dir/build.make CMakeFiles/validate_dent.dir/tests/validate_dent.cpp.s
+.PHONY : tests/validate_dent.cpp.s
+
+tests/validate_detail.o: tests/validate_detail.cpp.o
+.PHONY : tests/validate_detail.o
+
+# target to build an object file
+tests/validate_detail.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_detail.dir/build.make CMakeFiles/validate_detail.dir/tests/validate_detail.cpp.o
+.PHONY : tests/validate_detail.cpp.o
+
+tests/validate_detail.i: tests/validate_detail.cpp.i
+.PHONY : tests/validate_detail.i
+
+# target to preprocess a source file
+tests/validate_detail.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_detail.dir/build.make CMakeFiles/validate_detail.dir/tests/validate_detail.cpp.i
+.PHONY : tests/validate_detail.cpp.i
+
+tests/validate_detail.s: tests/validate_detail.cpp.s
+.PHONY : tests/validate_detail.s
+
+# target to generate assembly for a file
+tests/validate_detail.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_detail.dir/build.make CMakeFiles/validate_detail.dir/tests/validate_detail.cpp.s
+.PHONY : tests/validate_detail.cpp.s
+
+tests/validate_doc_learner.o: tests/validate_doc_learner.cpp.o
+.PHONY : tests/validate_doc_learner.o
+
+# target to build an object file
+tests/validate_doc_learner.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_doc_learner.dir/build.make CMakeFiles/validate_doc_learner.dir/tests/validate_doc_learner.cpp.o
+.PHONY : tests/validate_doc_learner.cpp.o
+
+tests/validate_doc_learner.i: tests/validate_doc_learner.cpp.i
+.PHONY : tests/validate_doc_learner.i
+
+# target to preprocess a source file
+tests/validate_doc_learner.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_doc_learner.dir/build.make CMakeFiles/validate_doc_learner.dir/tests/validate_doc_learner.cpp.i
+.PHONY : tests/validate_doc_learner.cpp.i
+
+tests/validate_doc_learner.s: tests/validate_doc_learner.cpp.s
+.PHONY : tests/validate_doc_learner.s
+
+# target to generate assembly for a file
+tests/validate_doc_learner.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_doc_learner.dir/build.make CMakeFiles/validate_doc_learner.dir/tests/validate_doc_learner.cpp.s
+.PHONY : tests/validate_doc_learner.cpp.s
+
+tests/validate_eval.o: tests/validate_eval.cpp.o
+.PHONY : tests/validate_eval.o
+
+# target to build an object file
+tests/validate_eval.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_eval.dir/build.make CMakeFiles/validate_eval.dir/tests/validate_eval.cpp.o
+.PHONY : tests/validate_eval.cpp.o
+
+tests/validate_eval.i: tests/validate_eval.cpp.i
+.PHONY : tests/validate_eval.i
+
+# target to preprocess a source file
+tests/validate_eval.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_eval.dir/build.make CMakeFiles/validate_eval.dir/tests/validate_eval.cpp.i
+.PHONY : tests/validate_eval.cpp.i
+
+tests/validate_eval.s: tests/validate_eval.cpp.s
+.PHONY : tests/validate_eval.s
+
+# target to generate assembly for a file
+tests/validate_eval.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_eval.dir/build.make CMakeFiles/validate_eval.dir/tests/validate_eval.cpp.s
+.PHONY : tests/validate_eval.cpp.s
+
+tests/validate_fem.o: tests/validate_fem.cpp.o
+.PHONY : tests/validate_fem.o
+
+# target to build an object file
+tests/validate_fem.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_fem.dir/build.make CMakeFiles/validate_fem.dir/tests/validate_fem.cpp.o
+.PHONY : tests/validate_fem.cpp.o
+
+tests/validate_fem.i: tests/validate_fem.cpp.i
+.PHONY : tests/validate_fem.i
+
+# target to preprocess a source file
+tests/validate_fem.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_fem.dir/build.make CMakeFiles/validate_fem.dir/tests/validate_fem.cpp.i
+.PHONY : tests/validate_fem.cpp.i
+
+tests/validate_fem.s: tests/validate_fem.cpp.s
+.PHONY : tests/validate_fem.s
+
+# target to generate assembly for a file
+tests/validate_fem.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_fem.dir/build.make CMakeFiles/validate_fem.dir/tests/validate_fem.cpp.s
+.PHONY : tests/validate_fem.cpp.s
+
+tests/validate_gameplay.o: tests/validate_gameplay.cpp.o
+.PHONY : tests/validate_gameplay.o
+
+# target to build an object file
+tests/validate_gameplay.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gameplay.dir/build.make CMakeFiles/validate_gameplay.dir/tests/validate_gameplay.cpp.o
+.PHONY : tests/validate_gameplay.cpp.o
+
+tests/validate_gameplay.i: tests/validate_gameplay.cpp.i
+.PHONY : tests/validate_gameplay.i
+
+# target to preprocess a source file
+tests/validate_gameplay.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gameplay.dir/build.make CMakeFiles/validate_gameplay.dir/tests/validate_gameplay.cpp.i
+.PHONY : tests/validate_gameplay.cpp.i
+
+tests/validate_gameplay.s: tests/validate_gameplay.cpp.s
+.PHONY : tests/validate_gameplay.s
+
+# target to generate assembly for a file
+tests/validate_gameplay.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gameplay.dir/build.make CMakeFiles/validate_gameplay.dir/tests/validate_gameplay.cpp.s
+.PHONY : tests/validate_gameplay.cpp.s
+
+tests/validate_gpu_flush.o: tests/validate_gpu_flush.cpp.o
+.PHONY : tests/validate_gpu_flush.o
+
+# target to build an object file
+tests/validate_gpu_flush.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_flush.dir/build.make CMakeFiles/validate_gpu_flush.dir/tests/validate_gpu_flush.cpp.o
+.PHONY : tests/validate_gpu_flush.cpp.o
+
+tests/validate_gpu_flush.i: tests/validate_gpu_flush.cpp.i
+.PHONY : tests/validate_gpu_flush.i
+
+# target to preprocess a source file
+tests/validate_gpu_flush.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_flush.dir/build.make CMakeFiles/validate_gpu_flush.dir/tests/validate_gpu_flush.cpp.i
+.PHONY : tests/validate_gpu_flush.cpp.i
+
+tests/validate_gpu_flush.s: tests/validate_gpu_flush.cpp.s
+.PHONY : tests/validate_gpu_flush.s
+
+# target to generate assembly for a file
+tests/validate_gpu_flush.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_flush.dir/build.make CMakeFiles/validate_gpu_flush.dir/tests/validate_gpu_flush.cpp.s
+.PHONY : tests/validate_gpu_flush.cpp.s
+
+tests/validate_gpu_split.o: tests/validate_gpu_split.cpp.o
+.PHONY : tests/validate_gpu_split.o
+
+# target to build an object file
+tests/validate_gpu_split.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_split.dir/build.make CMakeFiles/validate_gpu_split.dir/tests/validate_gpu_split.cpp.o
+.PHONY : tests/validate_gpu_split.cpp.o
+
+tests/validate_gpu_split.i: tests/validate_gpu_split.cpp.i
+.PHONY : tests/validate_gpu_split.i
+
+# target to preprocess a source file
+tests/validate_gpu_split.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_split.dir/build.make CMakeFiles/validate_gpu_split.dir/tests/validate_gpu_split.cpp.i
+.PHONY : tests/validate_gpu_split.cpp.i
+
+tests/validate_gpu_split.s: tests/validate_gpu_split.cpp.s
+.PHONY : tests/validate_gpu_split.s
+
+# target to generate assembly for a file
+tests/validate_gpu_split.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_gpu_split.dir/build.make CMakeFiles/validate_gpu_split.dir/tests/validate_gpu_split.cpp.s
+.PHONY : tests/validate_gpu_split.cpp.s
+
+tests/validate_liveweld.o: tests/validate_liveweld.cpp.o
+.PHONY : tests/validate_liveweld.o
+
+# target to build an object file
+tests/validate_liveweld.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_liveweld.dir/build.make CMakeFiles/validate_liveweld.dir/tests/validate_liveweld.cpp.o
+.PHONY : tests/validate_liveweld.cpp.o
+
+tests/validate_liveweld.i: tests/validate_liveweld.cpp.i
+.PHONY : tests/validate_liveweld.i
+
+# target to preprocess a source file
+tests/validate_liveweld.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_liveweld.dir/build.make CMakeFiles/validate_liveweld.dir/tests/validate_liveweld.cpp.i
+.PHONY : tests/validate_liveweld.cpp.i
+
+tests/validate_liveweld.s: tests/validate_liveweld.cpp.s
+.PHONY : tests/validate_liveweld.s
+
+# target to generate assembly for a file
+tests/validate_liveweld.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_liveweld.dir/build.make CMakeFiles/validate_liveweld.dir/tests/validate_liveweld.cpp.s
+.PHONY : tests/validate_liveweld.cpp.s
+
+tests/validate_merge.o: tests/validate_merge.cpp.o
+.PHONY : tests/validate_merge.o
+
+# target to build an object file
+tests/validate_merge.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_merge.dir/build.make CMakeFiles/validate_merge.dir/tests/validate_merge.cpp.o
+.PHONY : tests/validate_merge.cpp.o
+
+tests/validate_merge.i: tests/validate_merge.cpp.i
+.PHONY : tests/validate_merge.i
+
+# target to preprocess a source file
+tests/validate_merge.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_merge.dir/build.make CMakeFiles/validate_merge.dir/tests/validate_merge.cpp.i
+.PHONY : tests/validate_merge.cpp.i
+
+tests/validate_merge.s: tests/validate_merge.cpp.s
+.PHONY : tests/validate_merge.s
+
+# target to generate assembly for a file
+tests/validate_merge.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_merge.dir/build.make CMakeFiles/validate_merge.dir/tests/validate_merge.cpp.s
+.PHONY : tests/validate_merge.cpp.s
+
+tests/validate_modal.o: tests/validate_modal.cpp.o
+.PHONY : tests/validate_modal.o
+
+# target to build an object file
+tests/validate_modal.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_modal.dir/build.make CMakeFiles/validate_modal.dir/tests/validate_modal.cpp.o
+.PHONY : tests/validate_modal.cpp.o
+
+tests/validate_modal.i: tests/validate_modal.cpp.i
+.PHONY : tests/validate_modal.i
+
+# target to preprocess a source file
+tests/validate_modal.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_modal.dir/build.make CMakeFiles/validate_modal.dir/tests/validate_modal.cpp.i
+.PHONY : tests/validate_modal.cpp.i
+
+tests/validate_modal.s: tests/validate_modal.cpp.s
+.PHONY : tests/validate_modal.s
+
+# target to generate assembly for a file
+tests/validate_modal.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_modal.dir/build.make CMakeFiles/validate_modal.dir/tests/validate_modal.cpp.s
+.PHONY : tests/validate_modal.cpp.s
+
+tests/validate_move.o: tests/validate_move.cpp.o
+.PHONY : tests/validate_move.o
+
+# target to build an object file
+tests/validate_move.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_move.dir/build.make CMakeFiles/validate_move.dir/tests/validate_move.cpp.o
+.PHONY : tests/validate_move.cpp.o
+
+tests/validate_move.i: tests/validate_move.cpp.i
+.PHONY : tests/validate_move.i
+
+# target to preprocess a source file
+tests/validate_move.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_move.dir/build.make CMakeFiles/validate_move.dir/tests/validate_move.cpp.i
+.PHONY : tests/validate_move.cpp.i
+
+tests/validate_move.s: tests/validate_move.cpp.s
+.PHONY : tests/validate_move.s
+
+# target to generate assembly for a file
+tests/validate_move.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_move.dir/build.make CMakeFiles/validate_move.dir/tests/validate_move.cpp.s
+.PHONY : tests/validate_move.cpp.s
+
+tests/validate_physics.o: tests/validate_physics.cpp.o
+.PHONY : tests/validate_physics.o
+
+# target to build an object file
+tests/validate_physics.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_physics.dir/build.make CMakeFiles/validate_physics.dir/tests/validate_physics.cpp.o
+.PHONY : tests/validate_physics.cpp.o
+
+tests/validate_physics.i: tests/validate_physics.cpp.i
+.PHONY : tests/validate_physics.i
+
+# target to preprocess a source file
+tests/validate_physics.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_physics.dir/build.make CMakeFiles/validate_physics.dir/tests/validate_physics.cpp.i
+.PHONY : tests/validate_physics.cpp.i
+
+tests/validate_physics.s: tests/validate_physics.cpp.s
+.PHONY : tests/validate_physics.s
+
+# target to generate assembly for a file
+tests/validate_physics.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_physics.dir/build.make CMakeFiles/validate_physics.dir/tests/validate_physics.cpp.s
+.PHONY : tests/validate_physics.cpp.s
+
+tests/validate_query.o: tests/validate_query.cpp.o
+.PHONY : tests/validate_query.o
+
+# target to build an object file
+tests/validate_query.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_query.dir/build.make CMakeFiles/validate_query.dir/tests/validate_query.cpp.o
+.PHONY : tests/validate_query.cpp.o
+
+tests/validate_query.i: tests/validate_query.cpp.i
+.PHONY : tests/validate_query.i
+
+# target to preprocess a source file
+tests/validate_query.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_query.dir/build.make CMakeFiles/validate_query.dir/tests/validate_query.cpp.i
+.PHONY : tests/validate_query.cpp.i
+
+tests/validate_query.s: tests/validate_query.cpp.s
+.PHONY : tests/validate_query.s
+
+# target to generate assembly for a file
+tests/validate_query.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_query.dir/build.make CMakeFiles/validate_query.dir/tests/validate_query.cpp.s
+.PHONY : tests/validate_query.cpp.s
+
+tests/validate_reconstruction.o: tests/validate_reconstruction.cpp.o
+.PHONY : tests/validate_reconstruction.o
+
+# target to build an object file
+tests/validate_reconstruction.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_reconstruction.dir/build.make CMakeFiles/validate_reconstruction.dir/tests/validate_reconstruction.cpp.o
+.PHONY : tests/validate_reconstruction.cpp.o
+
+tests/validate_reconstruction.i: tests/validate_reconstruction.cpp.i
+.PHONY : tests/validate_reconstruction.i
+
+# target to preprocess a source file
+tests/validate_reconstruction.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_reconstruction.dir/build.make CMakeFiles/validate_reconstruction.dir/tests/validate_reconstruction.cpp.i
+.PHONY : tests/validate_reconstruction.cpp.i
+
+tests/validate_reconstruction.s: tests/validate_reconstruction.cpp.s
+.PHONY : tests/validate_reconstruction.s
+
+# target to generate assembly for a file
+tests/validate_reconstruction.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_reconstruction.dir/build.make CMakeFiles/validate_reconstruction.dir/tests/validate_reconstruction.cpp.s
+.PHONY : tests/validate_reconstruction.cpp.s
+
+tests/validate_split.o: tests/validate_split.cpp.o
+.PHONY : tests/validate_split.o
+
+# target to build an object file
+tests/validate_split.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_split.dir/build.make CMakeFiles/validate_split.dir/tests/validate_split.cpp.o
+.PHONY : tests/validate_split.cpp.o
+
+tests/validate_split.i: tests/validate_split.cpp.i
+.PHONY : tests/validate_split.i
+
+# target to preprocess a source file
+tests/validate_split.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_split.dir/build.make CMakeFiles/validate_split.dir/tests/validate_split.cpp.i
+.PHONY : tests/validate_split.cpp.i
+
+tests/validate_split.s: tests/validate_split.cpp.s
+.PHONY : tests/validate_split.s
+
+# target to generate assembly for a file
+tests/validate_split.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_split.dir/build.make CMakeFiles/validate_split.dir/tests/validate_split.cpp.s
+.PHONY : tests/validate_split.cpp.s
+
+tests/validate_weldcat.o: tests/validate_weldcat.cpp.o
+.PHONY : tests/validate_weldcat.o
+
+# target to build an object file
+tests/validate_weldcat.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_weldcat.dir/build.make CMakeFiles/validate_weldcat.dir/tests/validate_weldcat.cpp.o
+.PHONY : tests/validate_weldcat.cpp.o
+
+tests/validate_weldcat.i: tests/validate_weldcat.cpp.i
+.PHONY : tests/validate_weldcat.i
+
+# target to preprocess a source file
+tests/validate_weldcat.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_weldcat.dir/build.make CMakeFiles/validate_weldcat.dir/tests/validate_weldcat.cpp.i
+.PHONY : tests/validate_weldcat.cpp.i
+
+tests/validate_weldcat.s: tests/validate_weldcat.cpp.s
+.PHONY : tests/validate_weldcat.s
+
+# target to generate assembly for a file
+tests/validate_weldcat.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/validate_weldcat.dir/build.make CMakeFiles/validate_weldcat.dir/tests/validate_weldcat.cpp.s
+.PHONY : tests/validate_weldcat.cpp.s
 
 # Help Target
 help:
@@ -124,6 +2841,301 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
+	@echo "... test"
+	@echo "... ai_pipeline_probe"
+	@echo "... closed_body_probe"
+	@echo "... complex_scene"
+	@echo "... delirium_engine_lib"
+	@echo "... delirium_g3_frame"
+	@echo "... delirium_m0_probe"
+	@echo "... delirium_m1_torus"
+	@echo "... delirium_playground"
+	@echo "... delirium_realtime_deform"
+	@echo "... delirium_recon_diag"
+	@echo "... delirium_recon_window"
+	@echo "... delirium_torus_live"
+	@echo "... delirium_visual_gallery"
+	@echo "... delirium_visual_stress"
+	@echo "... delirium_workspace"
+	@echo "... doc_learner_probe"
+	@echo "... llm_probe"
+	@echo "... perf_engine"
+	@echo "... sphere_probe"
+	@echo "... torus_probe"
+	@echo "... ui_font_probe"
+	@echo "... validate_ai_parser"
+	@echo "... validate_bridge"
+	@echo "... validate_cage"
+	@echo "... validate_closed_body"
+	@echo "... validate_dent"
+	@echo "... validate_detail"
+	@echo "... validate_doc_learner"
+	@echo "... validate_eval"
+	@echo "... validate_fem"
+	@echo "... validate_gameplay"
+	@echo "... validate_gpu_flush"
+	@echo "... validate_gpu_split"
+	@echo "... validate_liveweld"
+	@echo "... validate_merge"
+	@echo "... validate_modal"
+	@echo "... validate_move"
+	@echo "... validate_physics"
+	@echo "... validate_query"
+	@echo "... validate_reconstruction"
+	@echo "... validate_split"
+	@echo "... validate_weldcat"
+	@echo "... engine/src/ai/DocLearner.o"
+	@echo "... engine/src/ai/DocLearner.i"
+	@echo "... engine/src/ai/DocLearner.s"
+	@echo "... engine/src/ai/ElementSystem.o"
+	@echo "... engine/src/ai/ElementSystem.i"
+	@echo "... engine/src/ai/ElementSystem.s"
+	@echo "... engine/src/ai/ElementTreeParser.o"
+	@echo "... engine/src/ai/ElementTreeParser.i"
+	@echo "... engine/src/ai/ElementTreeParser.s"
+	@echo "... engine/src/ai/ReconstructionModel.o"
+	@echo "... engine/src/ai/ReconstructionModel.i"
+	@echo "... engine/src/ai/ReconstructionModel.s"
+	@echo "... engine/src/core/Editor.o"
+	@echo "... engine/src/core/Editor.i"
+	@echo "... engine/src/core/Editor.s"
+	@echo "... engine/src/core/Engine.o"
+	@echo "... engine/src/core/Engine.i"
+	@echo "... engine/src/core/Engine.s"
+	@echo "... engine/src/core/GameObject.o"
+	@echo "... engine/src/core/GameObject.i"
+	@echo "... engine/src/core/GameObject.s"
+	@echo "... engine/src/core/Node.o"
+	@echo "... engine/src/core/Node.i"
+	@echo "... engine/src/core/Node.s"
+	@echo "... engine/src/core/Scene.o"
+	@echo "... engine/src/core/Scene.i"
+	@echo "... engine/src/core/Scene.s"
+	@echo "... engine/src/core/SceneTree.o"
+	@echo "... engine/src/core/SceneTree.i"
+	@echo "... engine/src/core/SceneTree.s"
+	@echo "... engine/src/core/Transform.o"
+	@echo "... engine/src/core/Transform.i"
+	@echo "... engine/src/core/Transform.s"
+	@echo "... engine/src/core/Workspace.o"
+	@echo "... engine/src/core/Workspace.i"
+	@echo "... engine/src/core/Workspace.s"
+	@echo "... engine/src/io/PSFFile.o"
+	@echo "... engine/src/io/PSFFile.i"
+	@echo "... engine/src/io/PSFFile.s"
+	@echo "... engine/src/llm/LLMClient.o"
+	@echo "... engine/src/llm/LLMClient.i"
+	@echo "... engine/src/llm/LLMClient.s"
+	@echo "... engine/src/physics/CollisionAnalytic.o"
+	@echo "... engine/src/physics/CollisionAnalytic.i"
+	@echo "... engine/src/physics/CollisionAnalytic.s"
+	@echo "... engine/src/physics/LocalFEM.o"
+	@echo "... engine/src/physics/LocalFEM.i"
+	@echo "... engine/src/physics/LocalFEM.s"
+	@echo "... engine/src/physics/ModalDynamics.o"
+	@echo "... engine/src/physics/ModalDynamics.i"
+	@echo "... engine/src/physics/ModalDynamics.s"
+	@echo "... engine/src/physics/PhysicsWorld.o"
+	@echo "... engine/src/physics/PhysicsWorld.i"
+	@echo "... engine/src/physics/PhysicsWorld.s"
+	@echo "... engine/src/psf/AnchorPhysics.o"
+	@echo "... engine/src/psf/AnchorPhysics.i"
+	@echo "... engine/src/psf/AnchorPhysics.s"
+	@echo "... engine/src/psf/AnchorPool.o"
+	@echo "... engine/src/psf/AnchorPool.i"
+	@echo "... engine/src/psf/AnchorPool.s"
+	@echo "... engine/src/psf/AnchorPool_snapped.o"
+	@echo "... engine/src/psf/AnchorPool_snapped.i"
+	@echo "... engine/src/psf/AnchorPool_snapped.s"
+	@echo "... engine/src/psf/CageSurface.o"
+	@echo "... engine/src/psf/CageSurface.i"
+	@echo "... engine/src/psf/CageSurface.s"
+	@echo "... engine/src/psf/PSFBody.o"
+	@echo "... engine/src/psf/PSFBody.i"
+	@echo "... engine/src/psf/PSFBody.s"
+	@echo "... engine/src/psf/Patch.o"
+	@echo "... engine/src/psf/Patch.i"
+	@echo "... engine/src/psf/Patch.s"
+	@echo "... engine/src/psf/PatchColorField.o"
+	@echo "... engine/src/psf/PatchColorField.i"
+	@echo "... engine/src/psf/PatchColorField.s"
+	@echo "... engine/src/psf/PatternLibrary.o"
+	@echo "... engine/src/psf/PatternLibrary.i"
+	@echo "... engine/src/psf/PatternLibrary.s"
+	@echo "... engine/src/psf/ProceduralDetail.o"
+	@echo "... engine/src/psf/ProceduralDetail.i"
+	@echo "... engine/src/psf/ProceduralDetail.s"
+	@echo "... engine/src/psf/Reconstructor.o"
+	@echo "... engine/src/psf/Reconstructor.i"
+	@echo "... engine/src/psf/Reconstructor.s"
+	@echo "... engine/src/psf/SeamBridge.o"
+	@echo "... engine/src/psf/SeamBridge.i"
+	@echo "... engine/src/psf/SeamBridge.s"
+	@echo "... engine/src/psf/SeamGraph.o"
+	@echo "... engine/src/psf/SeamGraph.i"
+	@echo "... engine/src/psf/SeamGraph.s"
+	@echo "... engine/src/psf/SurfaceTypeLibrary.o"
+	@echo "... engine/src/psf/SurfaceTypeLibrary.i"
+	@echo "... engine/src/psf/SurfaceTypeLibrary.s"
+	@echo "... engine/src/psf/TreeFormat.o"
+	@echo "... engine/src/psf/TreeFormat.i"
+	@echo "... engine/src/psf/TreeFormat.s"
+	@echo "... engine/src/render/Camera.o"
+	@echo "... engine/src/render/Camera.i"
+	@echo "... engine/src/render/Camera.s"
+	@echo "... engine/src/render/EquationAccel.o"
+	@echo "... engine/src/render/EquationAccel.i"
+	@echo "... engine/src/render/EquationAccel.s"
+	@echo "... engine/src/render/LateralRayMarch.o"
+	@echo "... engine/src/render/LateralRayMarch.i"
+	@echo "... engine/src/render/LateralRayMarch.s"
+	@echo "... engine/src/render/SplatRenderer.o"
+	@echo "... engine/src/render/SplatRenderer.i"
+	@echo "... engine/src/render/SplatRenderer.s"
+	@echo "... engine/src/render/SurfelRasterizer.o"
+	@echo "... engine/src/render/SurfelRasterizer.i"
+	@echo "... engine/src/render/SurfelRasterizer.s"
+	@echo "... engine/src/render/TriInfill.o"
+	@echo "... engine/src/render/TriInfill.i"
+	@echo "... engine/src/render/TriInfill.s"
+	@echo "... engine/src/scene/SplatView.o"
+	@echo "... engine/src/scene/SplatView.i"
+	@echo "... engine/src/scene/SplatView.s"
+	@echo "... engine/src/servers/PhysicsServer.o"
+	@echo "... engine/src/servers/PhysicsServer.i"
+	@echo "... engine/src/servers/PhysicsServer.s"
+	@echo "... engine/src/servers/RenderServer.o"
+	@echo "... engine/src/servers/RenderServer.i"
+	@echo "... engine/src/servers/RenderServer.s"
+	@echo "... engine/src/ui/Font.o"
+	@echo "... engine/src/ui/Font.i"
+	@echo "... engine/src/ui/Font.s"
+	@echo "... engine/src/ui/UI.o"
+	@echo "... engine/src/ui/UI.i"
+	@echo "... engine/src/ui/UI.s"
+	@echo "... examples/01_torus_deform/main.o"
+	@echo "... examples/01_torus_deform/main.i"
+	@echo "... examples/01_torus_deform/main.s"
+	@echo "... examples/03_visual_stress/main.o"
+	@echo "... examples/03_visual_stress/main.i"
+	@echo "... examples/03_visual_stress/main.s"
+	@echo "... examples/ai_pipeline_probe/closed_body_probe.o"
+	@echo "... examples/ai_pipeline_probe/closed_body_probe.i"
+	@echo "... examples/ai_pipeline_probe/closed_body_probe.s"
+	@echo "... examples/ai_pipeline_probe/main.o"
+	@echo "... examples/ai_pipeline_probe/main.i"
+	@echo "... examples/ai_pipeline_probe/main.s"
+	@echo "... examples/ai_pipeline_probe/sphere_probe.o"
+	@echo "... examples/ai_pipeline_probe/sphere_probe.i"
+	@echo "... examples/ai_pipeline_probe/sphere_probe.s"
+	@echo "... examples/ai_pipeline_probe/torus_probe.o"
+	@echo "... examples/ai_pipeline_probe/torus_probe.i"
+	@echo "... examples/ai_pipeline_probe/torus_probe.s"
+	@echo "... examples/complex_scene/main.o"
+	@echo "... examples/complex_scene/main.i"
+	@echo "... examples/complex_scene/main.s"
+	@echo "... examples/doc_learner_probe/main.o"
+	@echo "... examples/doc_learner_probe/main.i"
+	@echo "... examples/doc_learner_probe/main.s"
+	@echo "... examples/g3_frame/main.o"
+	@echo "... examples/g3_frame/main.i"
+	@echo "... examples/g3_frame/main.s"
+	@echo "... examples/llm_probe/main.o"
+	@echo "... examples/llm_probe/main.i"
+	@echo "... examples/llm_probe/main.s"
+	@echo "... examples/playground/main.o"
+	@echo "... examples/playground/main.i"
+	@echo "... examples/playground/main.s"
+	@echo "... examples/realtime_deform/main.o"
+	@echo "... examples/realtime_deform/main.i"
+	@echo "... examples/realtime_deform/main.s"
+	@echo "... examples/recon_diag/main.o"
+	@echo "... examples/recon_diag/main.i"
+	@echo "... examples/recon_diag/main.s"
+	@echo "... examples/recon_window/main.o"
+	@echo "... examples/recon_window/main.i"
+	@echo "... examples/recon_window/main.s"
+	@echo "... examples/torus_live/main.o"
+	@echo "... examples/torus_live/main.i"
+	@echo "... examples/torus_live/main.s"
+	@echo "... examples/ui_font_probe/main.o"
+	@echo "... examples/ui_font_probe/main.i"
+	@echo "... examples/ui_font_probe/main.s"
+	@echo "... examples/visual_gallery/main.o"
+	@echo "... examples/visual_gallery/main.i"
+	@echo "... examples/visual_gallery/main.s"
+	@echo "... examples/workspace/main.o"
+	@echo "... examples/workspace/main.i"
+	@echo "... examples/workspace/main.s"
+	@echo "... src/opencl_probe.o"
+	@echo "... src/opencl_probe.i"
+	@echo "... src/opencl_probe.s"
+	@echo "... tests/perf_engine.o"
+	@echo "... tests/perf_engine.i"
+	@echo "... tests/perf_engine.s"
+	@echo "... tests/validate_ai_parser.o"
+	@echo "... tests/validate_ai_parser.i"
+	@echo "... tests/validate_ai_parser.s"
+	@echo "... tests/validate_bridge.o"
+	@echo "... tests/validate_bridge.i"
+	@echo "... tests/validate_bridge.s"
+	@echo "... tests/validate_cage.o"
+	@echo "... tests/validate_cage.i"
+	@echo "... tests/validate_cage.s"
+	@echo "... tests/validate_closed_body.o"
+	@echo "... tests/validate_closed_body.i"
+	@echo "... tests/validate_closed_body.s"
+	@echo "... tests/validate_dent.o"
+	@echo "... tests/validate_dent.i"
+	@echo "... tests/validate_dent.s"
+	@echo "... tests/validate_detail.o"
+	@echo "... tests/validate_detail.i"
+	@echo "... tests/validate_detail.s"
+	@echo "... tests/validate_doc_learner.o"
+	@echo "... tests/validate_doc_learner.i"
+	@echo "... tests/validate_doc_learner.s"
+	@echo "... tests/validate_eval.o"
+	@echo "... tests/validate_eval.i"
+	@echo "... tests/validate_eval.s"
+	@echo "... tests/validate_fem.o"
+	@echo "... tests/validate_fem.i"
+	@echo "... tests/validate_fem.s"
+	@echo "... tests/validate_gameplay.o"
+	@echo "... tests/validate_gameplay.i"
+	@echo "... tests/validate_gameplay.s"
+	@echo "... tests/validate_gpu_flush.o"
+	@echo "... tests/validate_gpu_flush.i"
+	@echo "... tests/validate_gpu_flush.s"
+	@echo "... tests/validate_gpu_split.o"
+	@echo "... tests/validate_gpu_split.i"
+	@echo "... tests/validate_gpu_split.s"
+	@echo "... tests/validate_liveweld.o"
+	@echo "... tests/validate_liveweld.i"
+	@echo "... tests/validate_liveweld.s"
+	@echo "... tests/validate_merge.o"
+	@echo "... tests/validate_merge.i"
+	@echo "... tests/validate_merge.s"
+	@echo "... tests/validate_modal.o"
+	@echo "... tests/validate_modal.i"
+	@echo "... tests/validate_modal.s"
+	@echo "... tests/validate_move.o"
+	@echo "... tests/validate_move.i"
+	@echo "... tests/validate_move.s"
+	@echo "... tests/validate_physics.o"
+	@echo "... tests/validate_physics.i"
+	@echo "... tests/validate_physics.s"
+	@echo "... tests/validate_query.o"
+	@echo "... tests/validate_query.i"
+	@echo "... tests/validate_query.s"
+	@echo "... tests/validate_reconstruction.o"
+	@echo "... tests/validate_reconstruction.i"
+	@echo "... tests/validate_reconstruction.s"
+	@echo "... tests/validate_split.o"
+	@echo "... tests/validate_split.i"
+	@echo "... tests/validate_split.s"
+	@echo "... tests/validate_weldcat.o"
+	@echo "... tests/validate_weldcat.i"
+	@echo "... tests/validate_weldcat.s"
 .PHONY : help
 
 
@@ -135,6 +3147,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	$(CMAKE_COMMAND) -P /home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

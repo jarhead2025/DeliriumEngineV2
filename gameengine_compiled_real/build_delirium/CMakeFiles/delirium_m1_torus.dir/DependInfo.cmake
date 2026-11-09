@@ -8,7 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/DocLearner.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementSystem.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementTreeParser.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ReconstructionModel.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Editor.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o.d"
@@ -16,7 +18,10 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Node.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Scene.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/SceneTree.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Transform.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Workspace.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/io/PSFFile.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/llm/LLMClient.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/CollisionAnalytic.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/LocalFEM.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/ModalDynamics.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o.d"
@@ -44,6 +49,8 @@ set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/scene/SplatView.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/PhysicsServer.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/RenderServer.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/Font.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o.d"
+  "/home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/UI.cpp" "CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o.d"
   "/home/josias/Desktop/Tartarus/gameengine_compiled_real/examples/01_torus_deform/main.cpp" "CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.o" "gcc" "CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.o.d"
   )
 

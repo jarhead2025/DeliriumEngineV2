@@ -9,6 +9,17 @@ option(DELIRIUM_M0_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
 
 find_package(OpenCL REQUIRED)
 
+# nlohmann/json is NOT required. The engine's JSON handling (the local-LLM
+# client) uses the in-tree strict reader in ai/ElementTreeParser.h, so the
+# build has no external JSON dependency and works identically on a machine
+# that does not have the system package.
+find_package(nlohmann_json QUIET)
+if(nlohmann_json_FOUND)
+  message(STATUS "DeliRium: nlohmann_json found (not required)")
+else()
+  message(STATUS "DeliRium: nlohmann_json not found (not required -- in-tree JSON reader)")
+endif()
+
 # ---------------------------------------------------------------------------
 # M0 — OpenCL device probe (must stay green; default `all` target)
 # ---------------------------------------------------------------------------
@@ -224,6 +235,161 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/recon_diag/main.cpp")
   target_link_libraries(delirium_recon_diag PRIVATE delirium_engine_lib)
 endif()
 
+# ui_font_probe - renders the embedded 5x7 font atlas to a PPM for visual
+# inspection. SDL2_ttf is unavailable on this machine, so the workspace UI
+# depends on the embedded glyph table being correct -- a picture proves it.
+#   cmake --build build_delirium --target ui_font_probe
+#   ./build_delirium/ui_font_probe /tmp/font.ppm
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ui_font_probe/main.cpp")
+  add_executable(ui_font_probe examples/ui_font_probe/main.cpp)
+  target_link_libraries(ui_font_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# llm_probe - proves the local-LLM client talks to a real local server.
+# Standalone (no window): pings the server, lists the models, then does one
+# streaming chat round-trip and prints the answer as it arrives.
+#   cmake --build build_delirium --target llm_probe
+#   ./build_delirium/llm_probe [--host H --port P --model M --prompt "..."]
+#   ./build_delirium/llm_probe --list
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/llm_probe/main.cpp")
+  add_executable(llm_probe examples/llm_probe/main.cpp)
+  target_link_libraries(llm_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# delirium_workspace - the docked editor: scene tree / 3D viewport /
+# inspector / AI console, wired to a local Ollama-compatible LLM.
+#   cmake --build build_delirium --target delirium_workspace
+#   ./build_delirium/delirium_workspace                  (from project root)
+#   options: --host H --port P --model M --object NAME --no-probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/workspace/main.cpp")
+  add_executable(delirium_workspace
+    examples/workspace/main.cpp
+  )
+  target_link_libraries(delirium_workspace PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# ai_pipeline_probe - proves the WHOLE AI path, headless:
+#   prompt -> LLMClient (socket/SSE) -> model reply -> JSON extraction ->
+#   element-tree parse -> ElementSystem::BakeBody -> a real PSFBody.
+# Unlike llm_probe (transport only) this exercises the geometry half, so a
+# failure names the BROKEN LINK rather than "the AI button did nothing".
+#   cmake --build build_delirium --target ai_pipeline_probe
+#   ./build_delirium/ai_pipeline_probe [--prompt "..."] [--model M]
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/main.cpp")
+  add_executable(ai_pipeline_probe
+    examples/ai_pipeline_probe/main.cpp
+  )
+  target_link_libraries(ai_pipeline_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# doc_learner_probe - drives the DOCUMENT-driven reconstruction loop
+# against a LIVE local model:
+#   technical document -> LLMClient -> element tree -> validate -> BAKE
+#   -> a real PSFBody, with the failure logged and the escalation ladder
+#   (retry with the failure context, optionally against a LARGER model)
+#   exercised.
+#   cmake --build build_delirium --target doc_learner_probe
+#   ./build_delirium/doc_learner_probe [--model M] [--escalate-model M2]
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/doc_learner_probe/main.cpp")
+  add_executable(doc_learner_probe
+    examples/doc_learner_probe/main.cpp
+  )
+  target_link_libraries(doc_learner_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# complex_scene - renders COMPLEX scenes: a multi-part closed assembly
+# (the gearbox housing the document learner bakes) and a FIVE-BODY scene
+# that exercises the multi-body compositing contract (body 0 clears, all
+# bodies composite, only the last resolves). Each scene is MEASURED, so a
+# scene that silently renders one object instead of five is caught rather
+# than admired.
+#
+# It also carries the RENDER gates that CTest cannot otherwise see:
+#   --scene sphere       the closed-sphere A/B (a closed body must present
+#                        the same silhouette from both sides)
+#   --scene paths        all five render paths, each with its own banner
+#   --scene determinism  the same scene rendered twice must be BYTE-IDENTICAL
+#                        (this is the gate for GPU races; the march path had
+#                        one -- an unguarded store in build_grid -- that made
+#                        1.09% of pixels differ between two runs)
+#
+#   cmake --build build_delirium --target complex_scene
+#   ./build_delirium/complex_scene [--out DIR] [--scene all|five|gearbox|sphere|paths|determinism]
+#
+# The render scenes are wired into CTest below: they are the only evidence
+# that the renderer actually produces pixels.
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/complex_scene/main.cpp")
+  add_executable(complex_scene
+    examples/complex_scene/main.cpp
+  )
+  target_link_libraries(complex_scene PRIVATE delirium_engine_lib)
+
+  # The render gates. Each gets its own output directory under the build
+  # tree so they cannot interfere with each other or with a developer's
+  # own runs.
+  set(DELIRIUM_COMPLEX_SCENE_OUT "${CMAKE_BINARY_DIR}/render_gates")
+  foreach(scene sphere paths determinism)
+    add_test(NAME render_${scene}
+             COMMAND complex_scene --out "${DELIRIUM_COMPLEX_SCENE_OUT}/${scene}" --scene ${scene})
+    set_tests_properties(render_${scene} PROPERTIES
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      TIMEOUT 600)
+  endforeach()
+endif()
+
+# -----------------------------------------------------------------------
+# torus_probe - attributes a geometry loss to a specific layer (field ->
+# anchors -> patches). Diagnostic: when a bounded substance bakes to a
+# flat slab, this names the stage that dropped the relief instead of
+# leaving it to guesswork.
+#   cmake --build build_delirium --target torus_probe
+#   ./build_delirium/torus_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/torus_probe.cpp")
+  add_executable(torus_probe
+    examples/ai_pipeline_probe/torus_probe.cpp
+  )
+  target_link_libraries(torus_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# sphere_probe - shows why an ellipsoid with a plane child came out as a
+# flat face, and proves the depth-weighted contribution fixes it.
+#   cmake --build build_delirium --target sphere_probe
+#   ./build_delirium/sphere_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/sphere_probe.cpp")
+  add_executable(sphere_probe
+    examples/ai_pipeline_probe/sphere_probe.cpp
+  )
+  target_link_libraries(sphere_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# closed_body_probe - MEASURES which origin/scale actually closes a body.
+# The doc-learner system prompt teaches the model a rule for closing a
+# sphere with two sheets; this probe checks that the rule it teaches is
+# the rule the baker actually implements, instead of trusting the prose.
+#   cmake --build build_delirium --target closed_body_probe
+#   ./build_delirium/closed_body_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/closed_body_probe.cpp")
+  add_executable(closed_body_probe
+    examples/ai_pipeline_probe/closed_body_probe.cpp
+  )
+  target_link_libraries(closed_body_probe PRIVATE delirium_engine_lib)
+endif()
+
 file(GLOB DELIRIUM_VALIDATE_TESTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/validate_*.cpp")
 foreach(test_src ${DELIRIUM_VALIDATE_TESTS})
   get_filename_component(test_name ${test_src} NAME_WE)   # e.g. validate_eval
@@ -232,6 +398,41 @@ foreach(test_src ${DELIRIUM_VALIDATE_TESTS})
   add_test(NAME ${test_name} COMMAND ${test_name})
   set_tests_properties(${test_name} PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endforeach()
+
+# -----------------------------------------------------------------------
+# validate_workspace_render - the RENDER gate for the editor workspace.
+#
+# It drives the REAL app and reads the REAL composited window pixels, so it
+# can see things the C++ suite structurally cannot: that the docked panels
+# paint, that a torus has a real hole, that the app closes itself on a
+# complete frame.
+#
+# It needs a DISPLAY and a live local model, and it takes minutes (the AI
+# path waits on the model). So it is a LABELLED gate: it is registered, but
+# CTest skips it unless DELIRIUM_WORKSPACE_GATE=1 is set. That keeps a
+# headless CI run green while the gate stays one command away:
+#
+#   DELIRIUM_WORKSPACE_GATE=1 ctest -R validate_workspace_render -V
+#
+# The build directory is passed explicitly so the gate finds the binaries
+# wherever CMake put them.
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/tests/validate_workspace_render.py")
+  find_package(Python3 COMPONENTS Interpreter QUIET)
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME validate_workspace_render
+             COMMAND ${Python3_EXECUTABLE}
+                     "${CMAKE_SOURCE_DIR}/tests/validate_workspace_render.py")
+    set_tests_properties(validate_workspace_render PROPERTIES
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      TIMEOUT 900
+      ENVIRONMENT "DELIRIUM_BUILD_DIR=${CMAKE_BINARY_DIR}"
+      LABELS "display;model")
+    # Skipped by default: it needs a display and a local model.
+    set_property(TEST validate_workspace_render
+                 PROPERTY SKIP_RETURN_CODE 77)
+  endif()
+endif()
 
 # ---------------------------------------------------------------------------
 # perf_engine - performance report (NOT a pass/fail gate; always exits 0).

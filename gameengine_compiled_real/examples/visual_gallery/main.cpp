@@ -147,12 +147,16 @@ static bool scene_march_default(Ctx& c) {
     return ok;
 }
 
-// B) GPU equation raymarch. NOTE: the march path is checked FIRST in
-// RenderBody and returns early, so DELIRIUM_MARCH=0 is REQUIRED here or
-// this scene would silently render the march path.
+// B) GPU equation raymarch.
+//
+// THE PATH IS SET THROUGH THE API, NOT THE ENV VARS: the renderer's
+// active path is a runtime value (`path_`) that RenderBody reads EVERY
+// FRAME, because the editor needs to switch paths live. The env vars
+// (DELIRIUM_MARCH / DELIRIUM_RAYMARCH) are read ONCE at Initialize, so
+// setenv() here has NO effect -- before this fix, scene B silently
+// rendered the MARCH path and the "raymarch" gallery image was a lie.
 static bool scene_raymarch(Ctx& c) {
-    setenv_("DELIRIUM_MARCH", "0");
-    setenv_("DELIRIUM_RAYMARCH", "1");
+    c.r->SetPath(SplatRenderer::Path::Raymarch);
     setenv_("DELIRIUM_GLOW", "0.45");
     auto b = Load(c.torus);
     bool ok = false;
@@ -160,26 +164,70 @@ static bool scene_raymarch(Ctx& c) {
         Camera cam = FrameCamera(*b, 30.f, 22.f, 2.6f);
         ok = Shot(*c.r, c.out, "B_raymarch.ppm", *b, cam);
     }
-    unsetenv_("DELIRIUM_MARCH");
-    unsetenv_("DELIRIUM_RAYMARCH");
     unsetenv_("DELIRIUM_GLOW");
+    c.r->SetPath(SplatRenderer::Path::March);
     std::printf("  [B] raymarch           <- GPU equation ray-march (emissive glow)\n");
     return ok;
 }
 
-// C) classic splat
+// C) classic splat (the per-patch splat with ONE winner per pixel).
 static bool scene_splat_classic(Ctx& c) {
-    setenv_("DELIRIUM_MARCH", "0");
-    setenv_("DELIRIUM_RAYMARCH", "0");
+    c.r->SetPath(SplatRenderer::Path::SplatClassic);
     auto b = Load(c.torus);
     bool ok = false;
     if (b) {
         Camera cam = FrameCamera(*b, 30.f, 22.f, 2.6f);
         ok = Shot(*c.r, c.out, "C_splat_classic.ppm", *b, cam);
     }
-    unsetenv_("DELIRIUM_MARCH");
-    unsetenv_("DELIRIUM_RAYMARCH");
+    c.r->SetPath(SplatRenderer::Path::March);
     std::printf("  [C] splat_classic      <- anisotropic per-patch splat (psf_splat.cl)\n");
+    return ok;
+}
+
+// C2) LAYERED splat -- the user's distance-plane method.
+//
+// The impacts are bucketed into DISTANCE SHELLS along the view axis,
+// each shell is averaged within itself, and the shells are stacked BACK
+// TO FRONT so the nearest wins. This is scene C's exact counterpart:
+// same body, same camera, same samples -- only the compositing differs.
+// Comparing the two images side by side is how the method is judged.
+static bool scene_splat_layered(Ctx& c) {
+    c.r->SetPath(SplatRenderer::Path::SplatLayered);
+    auto b = Load(c.torus);
+    bool ok = false;
+    if (b) {
+        Camera cam = FrameCamera(*b, 30.f, 22.f, 2.6f);
+        ok = Shot(*c.r, c.out, "C2_splat_layered.ppm", *b, cam);
+    }
+    c.r->SetPath(SplatRenderer::Path::March);
+    std::printf("  [C2] splat_layered     <- distance-plane shells, averaged, stacked back-to-front\n");
+    return ok;
+}
+
+// V) AREA-WEIGHTED splat -- the pixel-footprint pyramid.
+//
+// The classic splat lands every surface sample on EXACTLY ONE pixel. This
+// path distributes each sample over the pixels its footprint covers -- the
+// footprint grows linearly with the distance (a pixel subtends a fixed
+// ANGLE, so it covers more world space further away) and stretches on a
+// grazing surface -- and the pixel's colour is the AREA-WEIGHTED MEAN of
+// everything that touched it. The weights are fixed-point integers summed
+// with atomic_add and divided with an integer divide, so the result is
+// exact and deterministic.
+//
+// It is scene C's exact counterpart: same body, same camera, same samples
+// -- only the compositing differs. Comparing the images side by side is
+// how the method is judged.
+static bool scene_splat_area(Ctx& c) {
+    c.r->SetPath(SplatRenderer::Path::SplatArea);
+    auto b = Load(c.torus);
+    bool ok = false;
+    if (b) {
+        Camera cam = FrameCamera(*b, 30.f, 22.f, 2.6f);
+        ok = Shot(*c.r, c.out, "C3_splat_area.ppm", *b, cam);
+    }
+    c.r->SetPath(SplatRenderer::Path::March);
+    std::printf("  [C3] splat_area        <- pixel-footprint area weighting\n");
     return ok;
 }
 
@@ -460,6 +508,8 @@ static const SceneDef kScenes[] = {
     {'A', "march_default", scene_march_default},
     {'B', "raymarch",      scene_raymarch},
     {'C', "splat_classic", scene_splat_classic},
+    {'U', "splat_layered", scene_splat_layered},
+    {'V', "splat_area",    scene_splat_area},
     {'D', "march_highres", scene_march_highres},
     {'E', "amr_refine",    scene_amr_refine},
     {'F', "amr_lod",       scene_amr_lod},

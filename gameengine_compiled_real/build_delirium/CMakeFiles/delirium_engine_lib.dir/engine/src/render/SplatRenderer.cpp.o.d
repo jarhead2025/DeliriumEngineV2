@@ -131,21 +131,14 @@ CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.o: \
  /usr/include/c++/13/bits/stl_vector.h \
  /usr/include/c++/13/bits/stl_bvector.h \
  /usr/include/c++/13/bits/vector.tcc \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/PSFBody.h \
- /usr/include/c++/13/unordered_set \
- /usr/include/c++/13/bits/unordered_set.h \
- /usr/include/c++/13/bits/hashtable.h \
- /usr/include/c++/13/bits/hashtable_policy.h \
- /usr/include/c++/13/ext/aligned_buffer.h \
- /usr/include/c++/13/bits/enable_special_members.h \
- /usr/include/c++/13/bits/node_handle.h \
- /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/memory \
- /usr/include/c++/13/bits/stl_tempbuf.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Engine.h \
+ /usr/include/c++/13/memory /usr/include/c++/13/bits/stl_tempbuf.h \
  /usr/include/c++/13/bits/stl_raw_storage_iter.h \
  /usr/include/c++/13/bits/align.h /usr/include/c++/13/bits/unique_ptr.h \
  /usr/include/c++/13/bits/shared_ptr.h \
  /usr/include/c++/13/bits/shared_ptr_base.h /usr/include/c++/13/typeinfo \
  /usr/include/c++/13/bits/allocated_ptr.h \
+ /usr/include/c++/13/ext/aligned_buffer.h \
  /usr/include/c++/13/ext/atomicity.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/gthr.h \
  /usr/include/x86_64-linux-gnu/c++/13/bits/gthr-default.h \
@@ -171,25 +164,24 @@ CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.o: \
  /usr/include/c++/13/bits/atomic_lockfree_defines.h \
  /usr/include/c++/13/backward/auto_ptr.h \
  /usr/include/c++/13/pstl/glue_memory_defs.h \
- /usr/include/c++/13/pstl/execution_defs.h /usr/include/CL/cl.h \
- /usr/include/CL/cl_version.h /usr/include/CL/cl_platform.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/mmintrin.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/mm_malloc.h \
- /usr/include/c++/13/stdlib.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/emmintrin.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/Patch.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/../core/Types.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/Seam.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/../physics/Material.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/../physics/WeldProfile.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/../physics/ConstitutiveModel.h \
- /usr/include/c++/13/algorithm /usr/include/c++/13/bits/stl_algo.h \
+ /usr/include/c++/13/pstl/execution_defs.h /usr/include/c++/13/functional \
+ /usr/include/c++/13/bits/std_function.h \
+ /usr/include/c++/13/unordered_map \
+ /usr/include/c++/13/bits/unordered_map.h \
+ /usr/include/c++/13/bits/hashtable.h \
+ /usr/include/c++/13/bits/hashtable_policy.h \
+ /usr/include/c++/13/bits/enable_special_members.h \
+ /usr/include/c++/13/bits/node_handle.h \
+ /usr/include/c++/13/bits/erase_if.h /usr/include/c++/13/array \
+ /usr/include/c++/13/compare /usr/include/c++/13/bits/stl_algo.h \
  /usr/include/c++/13/bits/algorithmfwd.h \
  /usr/include/c++/13/bits/stl_heap.h \
  /usr/include/c++/13/bits/uniform_int_dist.h \
- /usr/include/c++/13/pstl/glue_algorithm_defs.h /usr/include/c++/13/cmath \
- /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Scene.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/GameObject.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Types.h \
+ /usr/include/c++/13/cmath /usr/include/math.h \
+ /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
  /usr/include/x86_64-linux-gnu/bits/fp-logb.h \
@@ -211,10 +203,30 @@ CMakeFiles/delirium_engine_lib.dir/engine/src/render/SplatRenderer.cpp.o: \
  /usr/include/c++/13/tr1/poly_hermite.tcc \
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
  /usr/include/c++/13/tr1/riemann_zeta.tcc \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/psf/AnchorPool.h \
- /usr/include/c++/13/unordered_map \
- /usr/include/c++/13/bits/unordered_map.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/render/Camera.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Transform.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/PSFBody.h \
+ /usr/include/c++/13/unordered_set \
+ /usr/include/c++/13/bits/unordered_set.h /usr/include/CL/cl.h \
+ /usr/include/CL/cl_version.h /usr/include/CL/cl_platform.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/mmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/mm_malloc.h \
+ /usr/include/c++/13/stdlib.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/emmintrin.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Patch.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Seam.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/Material.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/WeldProfile.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/ConstitutiveModel.h \
+ /usr/include/c++/13/algorithm \
+ /usr/include/c++/13/pstl/glue_algorithm_defs.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/AnchorPool.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Reconstructor.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../physics/ModalDynamics.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../render/Camera.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../physics/PhysicsWorld.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../physics/CollisionAnalytic.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../physics/LocalFEM.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/render/EquationAccel.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/render/LateralRayMarch.h \
  /usr/include/SDL2/SDL.h /usr/include/SDL2/SDL_main.h \

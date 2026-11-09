@@ -1,4 +1,4 @@
-# Install script for directory: /home/josias/Desktop/Tartarus
+# Install script for directory: /home/josias/Desktop/Tartarus/gameengine_compiled_real
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -50,5 +50,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/josias/Desktop/Tartarus/build_delirium/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

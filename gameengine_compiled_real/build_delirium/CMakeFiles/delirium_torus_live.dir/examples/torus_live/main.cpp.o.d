@@ -178,23 +178,7 @@ CMakeFiles/delirium_torus_live.dir/examples/torus_live/main.cpp.o: \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Scene.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/GameObject.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Types.h \
- /usr/include/c++/13/cstdint \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/PSFBody.h \
- /usr/include/c++/13/unordered_set \
- /usr/include/c++/13/bits/unordered_set.h /usr/include/CL/cl.h \
- /usr/include/CL/cl_version.h /usr/include/CL/cl_platform.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/mmintrin.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/mm_malloc.h \
- /usr/include/c++/13/stdlib.h \
- /usr/lib/gcc/x86_64-linux-gnu/13/include/emmintrin.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Patch.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Seam.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/Material.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/WeldProfile.h \
- /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/ConstitutiveModel.h \
- /usr/include/c++/13/algorithm \
- /usr/include/c++/13/pstl/glue_algorithm_defs.h /usr/include/c++/13/cmath \
+ /usr/include/c++/13/cstdint /usr/include/c++/13/cmath \
  /usr/include/math.h /usr/include/x86_64-linux-gnu/bits/math-vector.h \
  /usr/include/x86_64-linux-gnu/bits/libm-simd-decl-stubs.h \
  /usr/include/x86_64-linux-gnu/bits/flt-eval-method.h \
@@ -217,6 +201,23 @@ CMakeFiles/delirium_torus_live.dir/examples/torus_live/main.cpp.o: \
  /usr/include/c++/13/tr1/poly_hermite.tcc \
  /usr/include/c++/13/tr1/poly_laguerre.tcc \
  /usr/include/c++/13/tr1/riemann_zeta.tcc \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/Transform.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/PSFBody.h \
+ /usr/include/c++/13/unordered_set \
+ /usr/include/c++/13/bits/unordered_set.h /usr/include/CL/cl.h \
+ /usr/include/CL/cl_version.h /usr/include/CL/cl_platform.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/xmmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/mmintrin.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/mm_malloc.h \
+ /usr/include/c++/13/stdlib.h \
+ /usr/lib/gcc/x86_64-linux-gnu/13/include/emmintrin.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Patch.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Seam.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/Material.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/WeldProfile.h \
+ /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/../physics/ConstitutiveModel.h \
+ /usr/include/c++/13/algorithm \
+ /usr/include/c++/13/pstl/glue_algorithm_defs.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/AnchorPool.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../psf/Reconstructor.h \
  /home/josias/Desktop/Tartarus/gameengine_compiled_real/include/delirium/core/../physics/ModalDynamics.h \

@@ -1,0 +1,335 @@
+# GOALS — ordered execution plan
+
+**Set: 2026-11-08.** These are the agreed goals, in the recommended order.
+
+**Rule:** follow this order. **Alter it only when the underlying code or the
+reasoning requires it** — and when you do, record *why* in this file (a new
+entry under "Order changes"), so the deviation is visible rather than silent.
+
+**Status vocabulary:** `TODO` · `WIP` · `DONE` · `CANCELLED (reason)`
+
+---
+
+## Tier 0 — Restore confidence in what is already claimed
+
+> Nothing here adds capability. It re-establishes evidence for claims that
+> were made *before* a core fix, and therefore need re-measuring.
+
+### G1. Rebuild + run the closed-sphere A/B render — `DONE`
+The `complex_scene --scene sphere` build was left broken on a scope error
+(`m` not declared). It was fixed by hoisting `m_under`/`m_over`, but **the
+build was never re-run**, so no pixel-level evidence existed that the closed
+sphere renders from both sides.
+
+**Result:** `side balance (geometry): 1.0003x` — a symmetric silhouette from
+both sides; `complex_scene: OK`.
+
+Two real bugs were found and fixed while getting there:
+
+1. **The metric measured illumination, not geometry.** `lit` is a luminance
+   threshold (`lum > 28`), so a surface turned away from the key light
+   counted as "absent" — the below-seam view read 2.909× dimmer than the
+   above view for a *perfectly closed* body. The fix adds a `nonbg` metric
+   (pixels that differ from the modal background colour) and the A/B
+   assertion now compares **silhouette area**, which is the right invariant:
+   a closed sphere is a disc of the same area from any direction.
+2. **Cross-body anchor contamination (renderer bug, not a test bug).**
+   `SplatRenderer` decided "is this a different body?" with a **pointer**
+   comparison (`last_body != &body`). A destroyed body and a newly allocated
+   one routinely share the same heap address, so the second body was drawn
+   with the **first body's** anchors still on the GPU. Measured: a 4-sheet
+   gearbox followed by a 2-sheet sphere at the same address rendered the
+   sphere with the gearbox's anchors — 43,218 → 22,909 background pixels,
+   roughly half the silhouette. Fixed by making the body identity include
+   the record COUNTS (`last_anchor_count`/`last_surface_count`), not just
+   the address. Isolated repro after the fix: 22,909 → **43,221**.
+
+> Lesson worth keeping: a pointer is not an identity. Any GPU-side cache
+> keyed on "which object is this" must key on content, because allocators
+> reuse addresses.
+
+### G2. Re-verify all five render paths on the current binary — `DONE`
+The missing-brace bug meant every baked body carried **2× the anchors it
+should have** (9216 instead of 4608). Every render path consumes baked
+bodies, so **all measurements taken before that fix are stale**: the gallery,
+the layered-splat figures, the area-path determinism md5, the white-pixel
+count.
+
+**Result:** all five paths render, each with its own banner (`march:` /
+`psf_raymarch` / `splat:` / `splat-layered:` / `splat-area:`), each reports
+the right name, **zero white pixels** on all five, all five md5s distinct (no
+silent fallback), and **all five byte-identical across two runs**.
+
+| path | lit | clusters | white |
+|---|---|---|---|
+| march | 27,584 | 23 | 0 |
+| raymarch | 8,600 | 34 | 0 |
+| splat | 21,771 | 19 | 0 |
+| splat-layered | 28,023 | 42 | 0 |
+| splat-area | 22,240 | 12 | 0 |
+
+**One real bug found and fixed here:** the march path was **non-deterministic**
+— 1.09% of pixels (7,534 / 691,200) differed between two runs of the same
+binary on the same input (only 9 pixels by more than 16/255, so it was noise,
+not a stable artefact). Cause: `build_grid` in `kernels/surfel_march.cl`
+claimed a grid cell with a **plain unguarded store** (`grid[cell] = i`),
+which is a race when several surfels land in the same cell — the winner was
+whichever work-item wrote last. Fixed with `atomic_max` against the -1
+"empty" sentinel (NOT `atomic_min`: that would keep -1 forever and the grid
+would never receive a surfel). All five paths are now byte-identical across
+runs.
+
+### G3. Re-run the workspace torus probe — `DONE`
+It asserted "the torus has a hole, the orb is solid" on pre-fix geometry.
+
+**Result:** the probe is now a permanent in-tree gate —
+`tests/validate_workspace_render.py`, registered as the
+`validate_workspace_render` CTest entry — and it **passes 21/21** on the
+current binary.
+
+**Three** of its own defects had to be fixed first, and all three were the
+*probe* being wrong rather than the engine:
+
+1. **A change-detector.** It required the literal string `"952 patches"` —
+   a snapshot of one particular model reply. The model is
+   non-deterministic (this run produced a 3-system tree baking to 5,146
+   patches; another produced 200), so the count legitimately varies. The
+   project's own rule forbids such assertions, so it was replaced with the
+   invariant: the tree contains a `torus` substance and bakes to a
+   **non-zero** patch count.
+2. **The hole was measured on the wrong path.** The gate measured the hole
+   on the **layered splat** — the workspace's default — which cannot
+   resolve a torus hole at all (it projects SURFELS; the torus's inner
+   wall lands in the hole). Measured across all five paths on the same
+   torus, camera and window:
+
+   | path | centre-background | hole? |
+   |---|---|---|
+   | **march** | **0.884** | **yes** |
+   | **area-weighted** | **1.000** | **yes** |
+   | splat-layered | 0.520 | no |
+   | raymarch | 0.526 | no |
+   | classic splat | 0.466 | no |
+
+   That is a **path limitation**, not a geometry bug — the torus surface is
+   correct (952 patches kept at grid 48, centre out of support). The gate
+   now measures the hole on the march path and asserts **separately** that
+   the default path still renders the torus. The orb control runs on the
+   same path, so the A/B is apples-to-apples:
+   torus centre **0.761** background vs orb centre **0.000**.
+3. **It sampled a live process at an arbitrary point** — the flakiness.
+   The gate quit the app on the **wall clock**, but the render is **not
+   frame-stable** (the march path's adaptive step count is recomputed per
+   frame), so a clock-defined frame lands on a different sample each run:
+   4 s → 0.868, 6 s → 0.436, 8 s → 0.496, 12 s → 0.148, 16 s → 0.853.
+   Fixed by adding `Engine::SetAutoQuitFrames(N)` and the workspace's
+   `--auto-frames N`: the app closes after N **rendered frames**. Five
+   consecutive runs at 60 frames produced an **identical viewport md5**
+   every time.
+4. **It ran the app back-to-back on the same GPU.** Even with a fixed
+   frame count the gate was still flaky (first run 0.761, repeat 0.807):
+   the app is reproducible *in isolation*, but the previous instance's last
+   frames are still in flight when the next one creates its context and
+   competes for the device. Fixed with a **settle delay** between
+   launches. Three consecutive gate runs then passed with identical
+   measurements (0.761 / 0.198 every time).
+
+The gate now also asserts its own reproducibility (C3: the same frame must
+render the same pixels), so a regression that makes the render
+frame-dependent fails the gate instead of making it flaky.
+
+---
+
+## Tier 1 — Land what is built
+
+### G4. Update `docs/FIXES_REGISTER.md` — `DONE`
+Seven entries added (30–36), each with symptom / cause / fix / evidence /
+the lesson:
+
+30. **A missing brace made the anchor loop run once per sheet** — 9,216
+    anchors where 4,608 were expected; the surface count hid it.
+31. **The closed-body rule was taught wrong** — the prompt gave two
+    different wrong rules; the measured rule is now stated with its
+    derivation and both failure modes.
+32. **The renderer keyed its GPU anchor cache on a POINTER** — a freed and
+    reallocated body share an address, so body 2 drew body 1's anchors.
+33. **`build_grid` claimed a cell with an unguarded store** — a GPU race
+    that made the march path non-deterministic (1.09% of pixels).
+34. **A brightness threshold was standing in for a geometry measurement** —
+    the `lit` metric measured illumination, not coverage, and reported a
+    perfectly closed body as "not closed".
+35. **Not every render path can resolve a hole** — the splat family
+    projects surfels, so a torus's inner wall fills its own hole.
+36. **A wall-clock quit made every pixel measurement irreproducible** —
+    and a shared GPU made it irreproducible *again* even after the frame
+    count was fixed. Two layers: sample at a DISCRETE stop, and let the
+    device drain between launches.
+
+### G5. Skill write-back — `DONE`
+`procedural-surface-engine` already carried the determinism gate,
+pointer-vs-identity, the `build_grid` race and its sentinel, the
+geometry-vs-illumination metric, and the "prove the gate fails on the
+buggy code" discipline. This session added:
+- `references/render-path-compositors.md` — **which paths can resolve a
+  hole** (the measured table, with the surfel-vs-ray explanation).
+- `references/probe-measurement-discipline.md` §0 — **sample at a discrete
+  stop, and let a shared device drain**, with both measurements.
+- `SKILL.md`'s reference index now lists both.
+
+### G6. Commit — `DONE`
+**Commit `ae9811d`** — "feat(engine): workspace editor, document-driven
+reconstruction, 5 render paths". 205 files, +53,999 / −2,324.
+
+Two things needed care:
+
+1. **The repo root is `/home/josias/Desktop/Tartarus`**, and **158 files
+   from a sibling directory (`gameengine_compiled`) were already staged**
+   before this session — not mine. The commit used `--only` with an
+   explicit pathspec so the sibling was excluded; those 158 files remain
+   staged, exactly as they were.
+2. **`build_delirium` was tracked** from the initial import (450 files) and
+   churned on every build. It is now **gitignored** and untracked — the
+   files are untouched on disk. A `.gitignore` was added for `build*/`,
+   `__pycache__/` and editor noise.
+
+The commit message carries the substance: what was built, the six measured
+bugs, and the gates that back each claim.
+
+**Verified after committing:** the tree builds and **27/27 tests pass** from
+the committed source.
+
+---
+
+## Tier 2 — The bones / articulations spine (the substantive architecture)
+
+> The engine already has the substrate: `AnchorRecord.bone_index` +
+> `connectivity[4]`, `BoneRecord` (frozen 64 bytes), `ModelOutput.bones`,
+> `mode_hints`. **The baker currently writes `bone_index = 0xFFFFFFFF` on
+> every anchor — the fields exist and are dead.**
+
+### G7. A bone/articulation vocabulary in the element tree — `TODO`
+The tree can currently say "kind / origin / scale / substance / children /
+presence". It cannot say "this is a femur, it articulates at the knee, it is
+0.4 units long".
+
+Add to the JSON schema + parser: `bones: [{name, parent, head, tail,
+radius, mass}]`, and a `kind` that maps to a bone rather than a surface
+sheet.
+
+**Done when:** a parsed tree containing bones validates, and the parser
+rejects a bone with a malformed parent reference.
+
+### G8. Bake the skeleton into the frozen records — `TODO`
+Anchors receive `bone_index` + `connectivity` along their bone; the bone
+hierarchy lands in `ModelOutput.bones`.
+
+**Done when:** a baked body carries non-`0xFFFFFFFF` `bone_index` values and
+`ReconstructionModel::Validate` still passes on the 64-byte layout.
+
+> **Dependency:** G9 (inertia) is impossible before G8. Attempting it earlier
+> is the "no substrate" trap.
+
+### G9. Inertia from conservation laws — `TODO`
+With a skeleton: mass distribution per bone → centre of mass, and the
+inertia tensor → **rotational** and **directional** inertia. Computed from
+the anchor mass distribution, not from a mesh.
+
+**Done when:** the inertia tensor of a known simple body (a rod, a disc)
+matches the analytic value within a stated tolerance, and is invariant under
+rigid translation.
+
+### G10. Coarseness as an explicit budget — `TODO`
+"Complete in representation, coarse for speed" maps onto two knobs the
+engine already has: surface resolution (`grid_n`) and skeleton density.
+
+The tree carries a `coarseness` / `lod` field that **derives** both, so the
+model chooses an abstraction level rather than a pixel count.
+
+> **Order note:** G10 precedes G9 on purpose — coarseness decides *what* the
+> inertia is computed over. Changing the LOD after computing inertia means
+> recomputing it.
+
+### G11. Material properties → field physics — `TODO`
+`Material.h` and `ConstitutiveModel.h` exist. Attach per-bone material
+properties (density, permittivity, permeability) so magnetic / electric /
+radiative fields have something to read.
+
+**Done when:** a body with assigned material properties reports field
+responses (e.g. a magnetic permeability) that come from its bones, not from
+a global constant.
+
+### G12. Re-point the doc-learner at bones — `TODO`
+The prompt currently teaches substances and sheets. Once bones exist, a
+technical document is interpreted as *mechanisms and their parts*: a gearbox
+document becomes a shaft + housing + rotor with articulations, not four
+overlapping ellipsoids. The closed-body section becomes "a bone needs its
+opposing surface".
+
+---
+
+## Tier 3 — Make the learning loop genuinely good
+
+### G13. Success log → retrieval corpus — `TODO`
+The failure log already feeds the escalation prompt. The **success** log
+should feed the *normal* prompt as a retrieved worked example (nearest prior
+document → its tree). That turns "accumulates complaints" into "improves with
+use" — few-shot over a local corpus, no neural net required.
+
+### G14. Exercise escalation against a real larger model — `TODO`
+The ladder is unit-tested against a stub and has never run against a second
+endpoint.
+
+### G15. Wire the document loop into the workspace UI — `TODO`
+A "load document" affordance and a live error-log panel. Today the learner
+is a library with a CLI probe, not something usable.
+
+---
+
+## Tier 4 — Engine gaps (cheap and real)
+
+### G16. Launch `psf_refine` — `TODO`
+Implemented but **never launched**. It is the 38.9 ms/op AMR bottleneck *and*
+`refine` is a user-facing tool button.
+
+### G17. Add the CPU/GPU bit-compat validator — `TODO`
+`psf_validate.py` exists in the proven tree but not here. ARCHITECTURE.md
+invariant #2 currently has **no gate**.
+
+### G18. Fix `assets/sphere.psf` — `TODO`
+It is the legacy **text** format, so the binary loader rejects it and the
+gallery's scene N fails with a misleading "MISSING" message.
+
+### G19. Move the ad-hoc probes into `tests/` — `WIP`
+The workspace-torus, layered-splat, path-switch and closed-body probes live
+in `/tmp` and will be lost. CTest renders nothing, so these are the *only*
+render evidence — they belong in-tree as permanent gates.
+
+**Landed so far — the suite is now 26 gates (was 22):**
+- `tests/validate_closed_body.cpp` — **21 checks, 0 failures.** Pins the
+  measured closure rule: the correct rule spans exactly `[-sz, +sz]` and is
+  centred; an offset origin opens a gap; an unflipped lower sheet is
+  inside-out; anchors == `sheets * n^2` at three grid sizes; no orphan
+  anchors (every anchor is either referenced or an out-of-support
+  placeholder).
+- `render_sphere` (CTest) — the closed-sphere A/B, asserting a **geometric**
+  silhouette balance (1.0002×).
+- `render_paths` (CTest) — all five paths, each with its own banner, plus
+  the lit/cluster counts and the white-pixel check.
+- `render_determinism` (CTest) — the same scene rendered twice must be
+  **byte-identical**. This is the gate that would have caught the
+  `build_grid` race automatically; it now fails the moment a render stops
+  agreeing with itself.
+
+**Still to land:** the workspace-torus probe (needs the windowed app), and
+the layered-splat probe.
+
+---
+
+## Order changes
+
+*(Record every deviation here: what moved, why the code or reasoning required
+it, and what it displaced.)*
+
+- **2026-11-08** — G1/G2/G3 raised above G4/G5/G6. Reason: the render-path
+  measurements they protect were taken before the anchor-count fix, so
+  landing them first would record stale numbers as current.

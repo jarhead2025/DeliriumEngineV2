@@ -14,6 +14,11 @@ GameObject::GameObject(std::string n, IReconstructor& maker,
                             name.c_str(), req.semantic.c_str());
 }
 
+// The externally-built body path: NO reconstruction is attempted, so there
+// is no spurious "reconstruction failed" on stderr.
+GameObject::GameObject(std::string n, std::unique_ptr<PSFBody> b, Material mat)
+    : name(std::move(n)), material(mat), body(std::move(b)) {}
+
 bool GameObject::LoadModes(const std::string& path) {
     return body && dynamics.LoadModes(path, *body);
 }

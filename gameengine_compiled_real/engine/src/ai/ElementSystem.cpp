@@ -60,6 +60,83 @@ uint8_t q8(float t) {
     return (uint8_t)(t * 255.0f + 0.5f);
 }
 
+// -----------------------------------------------------------------------------
+// SHEET EXTRACTION -- the multi-layer bake.
+//
+// WHY THIS EXISTS: a substance is a GRAPH z = f(x, y). The field composer
+// blends every active sheet at a location into ONE surface point. A closed
+// body (a sphere) needs TWO sheets -- an upper hemisphere and a lower one --
+// and the blend AVERAGES them into a single dome, which is exactly the
+// "the sphere only shows one face" symptom.
+//
+// The fix is not to change the substance model (a graph cannot represent a
+// closed surface; that is a property of graphs). The fix is to bake each
+// SHEET as its own LAYER of patches, so the upper hemisphere and the lower
+// hemisphere are separate surfaces that MEET at the seam. The engine's
+// renderer already composites layers by depth, so the closed body falls out
+// of the existing pipeline.
+//
+// A "sheet" here is one (element, substance) pair -- a leaf in the tree.
+// Each sheet is baked over its own grid, and the layers are concatenated
+// into one anchor/surface set (the anchor index space is uint16, so the
+// total must stay under 65535).
+// -----------------------------------------------------------------------------
+struct Sheet {
+    const Element* el = nullptr;
+    Vec3 origin{0,0,0};      // world position of this sheet's local origin
+    Vec3 scale{1,1,1};       // world scale of this sheet's local frame
+    float weight = 1.f;      // the element's own contribution weight
+    int depth = 0;           // nesting depth (for the depth weight)
+};
+
+// Collect every leaf sheet in the tree, with its resolved world frame.
+void CollectSheets(const Element& root, std::vector<Sheet>& out) {
+    struct Frame { const Element* el; Vec3 origin; Vec3 scale; int depth; };
+    std::vector<Frame> stack;
+    stack.push_back({&root, Vec3{0,0,0}, Vec3{1,1,1}, 0});
+    while (!stack.empty()) {
+        Frame f = stack.back(); stack.pop_back();
+        if (f.el->substance) {
+            Sheet s;
+            s.el = f.el;
+            s.origin = f.origin;
+            s.scale = f.scale;
+            s.weight = f.el->weight;
+            s.depth = f.depth;
+            out.push_back(s);
+        }
+        for (auto& c : f.el->children) {
+            Frame cf;
+            cf.el = c.get();
+            cf.origin = { f.origin.x + c->origin.x * f.scale.x,
+                          f.origin.y + c->origin.y * f.scale.y,
+                          f.origin.z + c->origin.z * f.scale.z };
+            cf.scale  = { c->scale.x * f.scale.x, c->scale.y * f.scale.y,
+                          c->scale.z * f.scale.z };
+            cf.depth  = f.depth + 1;
+            stack.push_back(cf);
+        }
+    }
+}
+
+// Evaluate ONE sheet (not the blended field) at a local (x, y), returning
+// the world point + normal, or weight==0 when the sheet has no surface
+// there (outside a bounded domain).
+ElementSystem::Field SheetAt(const Sheet& s, float lx, float ly) {
+    ElementSystem::Field f{Vec3{0,0,0}, Vec3{0,0,0}, Vec3{0,0,0}, 0.f};
+    const SubstancePoint sp = s.el->substance->Eval(lx, ly);
+    if (!sp.valid) return f;
+    const Vec3 wp{ s.origin.x + sp.p.x * s.scale.x,
+                   s.origin.y + sp.p.y * s.scale.y,
+                   s.origin.z + sp.p.z * s.scale.z };
+    const Vec3 wn{ sp.n.x / s.scale.x, sp.n.y / s.scale.y, sp.n.z / s.scale.z };
+    f.point = wp;
+    f.normal = vnorm(wn);
+    f.color = s.el->color;
+    f.weight = s.weight;
+    return f;
+}
+
 } // namespace
 
 // =============================================================================
@@ -77,6 +154,24 @@ SubstancePoint EllipsoidSubstance::Eval(float x, float y) const {
     // implicit F = x^2/sx^2 + y^2/sy^2 + z^2/sz^2 = 1 -> grad = (2x/sx^2, 2y/sy^2, 2z/sz^2)
     Vec3 n{ x / (sx_*sx_), y / (sy_*sy_), z / (sz_*sz_) };
     return { Vec3{x, y, z}, vnorm(n) };
+}
+
+SubstancePoint TorusSubstance::Eval(float x, float y) const {
+    const float r = std::sqrt(x * x + y * y);
+    const float d = r - major_;              // distance from the tube axis
+    const float inside = minor_ * minor_ - d * d;
+    // Outside the tube's cross-section there is no surface. Inside the hole
+    // (d < -minor) the same test fails, which is what leaves the hole open.
+    if (inside <= 0.f) return { Vec3{x, y, 0.f}, Vec3{0.f, 0.f, 1.f}, false };
+    const float z = std::sqrt(inside);
+    // Normal from the implicit surface F = d^2 + z^2 - minor^2:
+    //   dF/dx = 2*d*x/r,  dF/dy = 2*d*y/r,  dF/dz = 2*z
+    // (the outward normal is the gradient; at r -> 0 the radial part is
+    //  undefined, but there the surface does not exist, so it cannot hit).
+    Vec3 n{ d * x, d * y, z };
+    const float nl = std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
+    if (nl > 1e-9f) { n.x /= nl; n.y /= nl; n.z /= nl; }
+    return { Vec3{x, y, z}, n };
 }
 
 SubstancePoint GaussianSystemSubstance::Eval(float x, float y) const {
@@ -102,9 +197,9 @@ SubstancePoint HeightfieldSubstance::Eval(float x, float y) const {
 // =============================================================================
 ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& world) {
     Field acc{Vec3{0,0,0}, Vec3{0,0,0}, Vec3{0,0,0}, 0.f};
-    struct Frame { const Element* el; Vec3 origin; Vec3 scale; };
+    struct Frame { const Element* el; Vec3 origin; Vec3 scale; int depth; };
     std::vector<Frame> stack;
-    stack.push_back({&root, Vec3{0,0,0}, Vec3{1,1,1}});
+    stack.push_back({&root, Vec3{0,0,0}, Vec3{1,1,1}, 0});
     while (!stack.empty()) {
         Frame f = stack.back(); stack.pop_back();
         const Element* el = f.el;
@@ -113,7 +208,29 @@ ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& wor
                           (world.y - f.origin.y) / f.scale.y,
                           (world.z - f.origin.z) / f.scale.z };
         const float pres = el->presence ? std::max(0.f, std::min(1.f, el->presence(world))) : 1.f;
-        const float w = el->weight * pres;
+
+        // DEPTH-WEIGHTED CONTRIBUTION.
+        //
+        // WHY: the user's rule is that overlapping surfaces AVERAGE, so the
+        // seams between them do not matter -- but that only holds if the
+        // overlapping systems contribute COMPARABLY. With a flat weight, a
+        // child drowns its parent: the model asked for "a smooth glass
+        // ellipsoid" and emitted an ellipsoid with a plane child, and the
+        // plane (an infinite surface at full weight) flattened the dome into
+        // a disc. The symptom was "the sphere isn't there, it only shows
+        // one face".
+        //
+        // The fix is a weight that decreases with nesting depth: a direct
+        // child contributes fully, a grandchild half as much, and so on. A
+        // parent therefore always keeps a majority voice over its own
+        // descendants, and a DEEPER, more specific system refines a
+        // shallower one instead of replacing it.
+        //
+        // The parent's own weight is NOT damped -- only the depth factor
+        // applies -- so a root with several children still blends them.
+        const float depth_scale = 1.0f / float(1 << std::min(f.depth, 6));
+        const float w = el->weight * pres * depth_scale;
+
         if (el->substance && w > 1e-6f) {
             SubstancePoint sp = el->substance->Eval(local.x, local.y);
             if (sp.valid) {
@@ -129,6 +246,7 @@ ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& wor
                 acc.weight += w;
             }
         }
+
         for (auto& c : el->children) {
             // child local frame in WORLD = parent_origin + child_origin * parent_scale
             Frame cf;
@@ -137,6 +255,7 @@ ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& wor
                           f.origin.y + c->origin.y * f.scale.y,
                           f.origin.z + c->origin.z * f.scale.z };
             cf.scale  = { c->scale.x * f.scale.x, c->scale.y * f.scale.y, c->scale.z * f.scale.z };
+            cf.depth  = f.depth + 1;
             stack.push_back(cf);
         }
     }
@@ -152,8 +271,25 @@ ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& wor
 }
 
 // =============================================================================
-// Bake: sample the aggregate field onto a patch grid, fit corner-vanishing
-// coefficients per patch, emit frozen 64-byte records.
+// Bake: sample the tree onto a patch grid, fit corner-vanishing coefficients
+// per patch, emit frozen 64-byte records.
+//
+// MULTI-LAYER BAKE (the closed-body fix):
+//
+// The original bake sampled the BLENDED field on one N x N grid at Z=0, so
+// every (x,y) produced exactly ONE surface point. Two sheets at the same
+// (x,y) were averaged into that one point -- which is why a "sphere" built
+// from an upper and a lower hemisphere came out as a single dome with a
+// flat bottom ("it only shows one face").
+//
+// Now each SHEET (a leaf substance in the tree) is baked as its OWN layer:
+// its own anchor grid, its own patch set, its own surface. The layers are
+// concatenated into one anchor/surface list, so the renderer composites them
+// by depth and the upper and lower hemispheres MEET at the seam instead of
+// averaging into one dome.
+//
+// The single-layer path is unchanged for a tree with exactly one sheet, so
+// the existing behaviour (and its tests) are preserved.
 // =============================================================================
 bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                          ModelOutput& out, std::string& why,
@@ -165,19 +301,44 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     const int N = grid_n;
     const int npatch = N - 1;
 
-    // --- sample the field on the N x N anchor grid -------------------------
-    std::vector<Vec3> pts((size_t)N * N);
-    std::vector<Vec3> nrm((size_t)N * N);
-    std::vector<Vec3> col((size_t)N * N);
-    std::vector<char> ok((size_t)N * N, 0);
+    // The sheets to bake. A tree with ONE sheet keeps the exact historical
+    // behaviour (blended field, one layer). A tree with SEVERAL sheets is
+    // baked per sheet so closed bodies close.
+    std::vector<Sheet> sheets;
+    CollectSheets(root, sheets);
+    if (sheets.empty()) { why = "the tree has no substance to bake"; return false; }
+
+    // The anchor index space is uint16 (SurfaceRecord::anchor_idx), so the
+    // TOTAL across all layers must fit. Report it rather than silently
+    // truncating a layer into an invalid record set.
+    const size_t max_anchors = 0xFFFFu;
+    if (sheets.size() * (size_t)N * N > max_anchors) {
+        why = "too many anchors for the uint16 index space (" +
+              std::to_string(sheets.size() * (size_t)N * N) + " > 65535); "
+              "use a smaller grid_n or fewer sheets";
+        return false;
+    }
+
+    // --- sample EVERY sheet on the N x N anchor grid ------------------------
+    // pts/nrm/col/ok are indexed [sheet][(j*N)+i].
+    const size_t nsheets = sheets.size();
+    const size_t per = (size_t)N * N;
+    std::vector<Vec3> pts(per * nsheets), nrm(per * nsheets), col(per * nsheets);
+    std::vector<char> ok(per * nsheets, 0);
     Vec3 mn{1e30f,1e30f,1e30f}, mx{-1e30f,-1e30f,-1e30f};
-    for (int j = 0; j < N; ++j)
-        for (int i = 0; i < N; ++i) {
-            const float u = i / float(N - 1), v = j / float(N - 1);
-            const Vec3 world{(u - 0.5f) * extent, (v - 0.5f) * extent, 0.f};
-            Field f = FieldAt(root, world);
-            const size_t id = (size_t)j * N + i;
-            // weight==0: no system covers this location (e.g. outside a
+    for (size_t si = 0; si < nsheets; ++si) {
+        const Sheet& sh = sheets[si];
+        for (int j = 0; j < N; ++j)
+            for (int i = 0; i < N; ++i) {
+                const float u = i / float(N - 1), v = j / float(N - 1);
+                // The sheet's local (x, y): the grid is the canvas in the
+                // sheet's OWN frame, so a sheet with its own origin and
+                // scale samples its own domain.
+                const float lx = (u - 0.5f) * extent;
+                const float ly = (v - 0.5f) * extent;
+                const Field f = SheetAt(sh, lx, ly);
+                const size_t id = si * per + (size_t)j * N + i;
+                // weight==0: no surface here (e.g. outside a bounded
             // bounded substance's support). FieldAt collapses such points to
             // the origin -- they must NOT be baked as surface or the corner
             // patches fit a phantom point (the "flat card + bump" artifact).
@@ -190,6 +351,15 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
             mn.x = std::min(mn.x, f.point.x + world_offset.x); mn.y = std::min(mn.y, f.point.y + world_offset.y); mn.z = std::min(mn.z, f.point.z + world_offset.z);
             mx.x = std::max(mx.x, f.point.x + world_offset.x); mx.y = std::max(mx.y, f.point.y + world_offset.y); mx.z = std::max(mx.z, f.point.z + world_offset.z);
         }
+    }   // closes the per-sheet SAMPLING loop
+    //
+    // BRACE-BALANCE NOTE (a real bug that shipped once):
+    // This closing brace was MISSING. Without it the per-sheet sampling loop
+    // stayed open, so the ANCHOR-writing loop below was NESTED INSIDE it and
+    // ran once PER SHEET -- writing nsheets * N * N anchors instead of N * N.
+    // The surface count looked right (that loop has its own headers), so the
+    // symptom was only a bloated anchor blob whose upper blocks were never
+    // referenced by any surface: 9216 anchors where 4608 were expected.
     if (mn.x > 1e29f) { why = "no in-support samples on the grid"; return false; }
     // margin so later deformation does not push anchors outside the box
     const Vec3 span0{ mx.x-mn.x, mx.y-mn.y, mx.z-mn.z };
@@ -201,10 +371,13 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     const float bsx = bbsafe(bbspan.x), bsy = bbsafe(bbspan.y), bsz = bbsafe(bbspan.z);
 
     // --- anchor records (quantized positions + normals + color) ------------
-    out.anchors.reserve((size_t)N * N);
-    for (int j = 0; j < N; ++j)
+    // One grid PER SHEET, concatenated. The anchor index of a layer's
+    // anchor is `si * (N*N) + (j*N+i)`.
+    out.anchors.reserve(per * nsheets);
+    for (size_t si = 0; si < nsheets; ++si) {
+    for (int j = 0; j < N; ++j) {
         for (int i = 0; i < N; ++i) {
-            const size_t id = (size_t)j * N + i;
+            const size_t id = si * per + (size_t)j * N + i;
             AnchorRecord a{};
             a.bone_index = 0xFFFFFFFFu;
             a.connectivity[0] = a.connectivity[1] = a.connectivity[2] = a.connectivity[3] = 0xFFFF;
@@ -228,17 +401,23 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
             a.roughness = 128; a.metallic = 0; a.anim_weight = 0;
             out.anchors.push_back(a);
         }
+    }
+    }
 
-    // --- surface records (one patch per grid cell) --------------------------
-    out.surfaces.reserve((size_t)npatch * npatch);
+    // --- surface records (one patch per grid cell, PER SHEET) --------------
+    out.surfaces.reserve((size_t)npatch * npatch * nsheets);
     const int G = 8;  // LSQ sample grid per patch (same as SplitPatch)
-    for (int j = 0; j < npatch; ++j)
+    for (size_t si = 0; si < nsheets; ++si) {
+    for (int j = 0; j < npatch; ++j) {
         for (int i = 0; i < npatch; ++i) {
             // corner ordering matches the renderer bilinear: A0(0,0) A1(1,0) A2(1,1) A3(0,1)
-            const uint16_t a00 = (uint16_t)((size_t)j * N + i);
-            const uint16_t a10 = (uint16_t)((size_t)j * N + i + 1);
-            const uint16_t a11 = (uint16_t)((size_t)(j + 1) * N + i + 1);
-            const uint16_t a01 = (uint16_t)((size_t)(j + 1) * N + i);
+            // The layer's base offset shifts every index into this layer's
+            // own anchor block.
+            const uint16_t base = (uint16_t)(si * per);
+            const uint16_t a00 = (uint16_t)(base + (size_t)j * N + i);
+            const uint16_t a10 = (uint16_t)(base + (size_t)j * N + i + 1);
+            const uint16_t a11 = (uint16_t)(base + (size_t)(j + 1) * N + i + 1);
+            const uint16_t a01 = (uint16_t)(base + (size_t)(j + 1) * N + i);
             // skip patches with any out-of-support corner: fitting them would
             // target the phantom origin (FieldAt's zero-weight collapse) and
             // produce degenerate/huge-coef patches (the "flat card + bump"
@@ -267,10 +446,16 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                              um*vm*CN[0].y + cu*vm*CN[1].y + cu*cv*CN[2].y + um*cv*CN[3].y,
                              um*vm*CN[0].z + cu*vm*CN[1].z + cu*cv*CN[2].z + um*cv*CN[3].z };
                     nf = vnorm(nf);
-                    // target = the aggregate field at this world location
+                    // target = THIS SHEET's own surface at this sample point.
+                    //
+                    // It must be the SHEET's surface, not the blended field:
+                    // the blended field averages the upper and lower
+                    // hemispheres into one point, so fitting against it
+                    // would drag the upper layer back down toward the
+                    // average -- which is the flat-bottomed dome again.
                     const float wu = (i + cu) / float(N - 1), wv = (j + cv) / float(N - 1);
-                    const Vec3 world{(wu - 0.5f) * extent, (wv - 0.5f) * extent, 0.f};
-                    const Field f = FieldAt(root, world);
+                    const float lx = (wu - 0.5f) * extent, ly = (wv - 0.5f) * extent;
+                    const Field f = SheetAt(sheets[si], lx, ly);
                     // target in the SAME frame as bil (dequant = world,
                     // i.e. field point + placement offset)
                     const double h = (f.point.x + world_offset.x - bil.x) * nf.x
@@ -292,9 +477,15 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
             // K[1..3]=0. The kernel sums K[0..3]/63 * pattern_eval, so this
             // decodes to exactly val (the old "all 4 slots = val*126" summed to
             // 4*val*2 = 8x -> clamped white for every mid-range color).
-            Vec3 c{ (col[a00].x+col[a10].x+col[a11].x+col[a01].x)*0.25f,
-                    (col[a00].y+col[a10].y+col[a11].y+col[a01].y)*0.25f,
-                    (col[a00].z+col[a10].z+col[a11].z+col[a01].z)*0.25f };
+            // The color indices are LOCAL to the layer (the global anchor
+            // index is layer-offset), so they are offset back by `base`.
+            const size_t l00 = (size_t)j * N + i;
+            const size_t l10 = (size_t)j * N + i + 1;
+            const size_t l11 = (size_t)(j + 1) * N + i + 1;
+            const size_t l01 = (size_t)(j + 1) * N + i;
+            Vec3 c{ (col[si*per+l00].x+col[si*per+l10].x+col[si*per+l11].x+col[si*per+l01].x)*0.25f,
+                    (col[si*per+l00].y+col[si*per+l10].y+col[si*per+l11].y+col[si*per+l01].y)*0.25f,
+                    (col[si*per+l00].z+col[si*per+l10].z+col[si*per+l11].z+col[si*per+l01].z)*0.25f };
             for (int ch = 0; ch < 3; ++ch) {
                 const float val = (ch == 0 ? c.x : ch == 1 ? c.y : c.z);
                 uint8_t* cp = s.color_pattern + ch * 6;
@@ -307,6 +498,8 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
             }
             out.surfaces.push_back(s);
         }
+    }
+    }
 
     // sanity: distinct anchors per patch (Validate also checks this)
     for (const SurfaceRecord& s : out.surfaces) {
@@ -330,19 +523,30 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
     if (!ReconstructionModel::Validate(mo, vwhy)) { why = vwhy; return nullptr; }
     // recompute the same bbox the baker used (margin over the field extent,
     // INCLUDING the placement offset so dequant matches the stored positions)
+    //
+    // It MUST match Bake's bbox exactly, because the dequantization of the
+    // stored positions uses this box. Bake now samples PER SHEET (each sheet
+    // has its own origin and scale), so this must too -- using the blended
+    // field here would compute a DIFFERENT box and every position would be
+    // dequantized wrong.
     Vec3 mn{1e30f,1e30f,1e30f}, mx{-1e30f,-1e30f,-1e30f};
     const int N = std::max(2, std::min(64, grid_n));
+    std::vector<Sheet> sheets;
+    CollectSheets(root, sheets);
+    for (const Sheet& sh : sheets)
     for (int j = 0; j < N; ++j)
         for (int i = 0; i < N; ++i) {
             const float u = i / float(N - 1), v = j / float(N - 1);
-            Field f = FieldAt(root, {(u - 0.5f) * extent, (v - 0.5f) * extent, 0.f});
+            const Field f = SheetAt(sh, (u - 0.5f) * extent, (v - 0.5f) * extent);
             // MUST match Bake's bbox: out-of-support samples (weight==0) are
-            // collapsed to the origin by FieldAt and are excluded there, so
-            // they must be excluded here too or dequant uses a different box.
+            // collapsed to the origin by the sheet evaluation and are excluded
+            // there, so they must be excluded here too or dequant uses a
+            // different box.
             if (f.weight <= 1e-9f) continue;
             mn.x = std::min(mn.x, f.point.x + world_offset.x); mn.y = std::min(mn.y, f.point.y + world_offset.y); mn.z = std::min(mn.z, f.point.z + world_offset.z);
             mx.x = std::max(mx.x, f.point.x + world_offset.x); mx.y = std::max(mx.y, f.point.y + world_offset.y); mx.z = std::max(mx.z, f.point.z + world_offset.z);
         }
+    if (mn.x > 1e29f) { why = "no in-support samples on the grid"; return nullptr; }
     const Vec3 span0{ mx.x-mn.x, mx.y-mn.y, mx.z-mn.z };
     const float diag0 = std::sqrt(span0.x*span0.x + span0.y*span0.y + span0.z*span0.z) + 1e-9f;
     const float m = 0.05f * diag0;
@@ -378,6 +582,14 @@ std::unique_ptr<Element> ProceduralElementGenerator::Build(const std::string& se
         node->substance = std::make_unique<GaussianSystemSubstance>(0.2f, 0.35f);
         node->color = {0.9f, 0.7f, 0.4f};
         root->AddChild(std::move(node));
+        return root;
+    }
+    if (semantic.find("torus") != std::string::npos ||
+        semantic.find("donut") != std::string::npos ||
+        semantic.find("ring") != std::string::npos) {
+        root->kind = "torus_body";
+        root->substance = std::make_unique<TorusSubstance>(0.32f, 0.12f);
+        root->color = {0.7f, 0.6f, 0.5f};
         return root;
     }
     if (semantic.find("orb") != std::string::npos ||

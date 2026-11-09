@@ -88,6 +88,34 @@ private:
     float sx_, sy_, sz_;
 };
 
+// The upper surface of a TORUS with its axis along +Z: a ring of centre
+// radius `major` and tube radius `minor`.
+//
+//   r = sqrt(x^2 + y^2)
+//   z = +sqrt(minor^2 - (r - major)^2)     for |r - major| <= minor
+//
+// WHY THIS IS THE RIGHT SHAPE FOR THE ENGINE: a PSF body is a graph
+// z = f(x,y) over a rectangular grid of patches (see ISubstance above), so
+// a substance CANNOT describe a closed overhang. What it CAN describe is
+// the upper half of the tube, and that half already carries the torus's
+// defining feature -- the HOLE. Inside r < major - minor there is no
+// surface at all, so the baker marks those samples out-of-support and
+// leaves the centre open. The result reads as a donut from any angle
+// above the plane.
+//
+// The normal is the gradient of the implicit surface
+//   F = (r - major)^2 + z^2 - minor^2,
+// which points radially outward at the tube's outer edge and straight up
+// over the centre of the tube -- exactly the orientation a torus needs.
+class TorusSubstance : public ISubstance {
+public:
+    TorusSubstance(float major = 0.32f, float minor = 0.12f)
+        : major_(major), minor_(minor) {}
+    SubstancePoint Eval(float x, float y) const override;
+private:
+    float major_, minor_;
+};
+
 // A localized gaussian "system": a bump of height `amp` with falloff `sigma`
 // centered at the local origin, on an otherwise flat plane. Models a subsystem
 // that occupies a bounded region (a node, a cluster, a feature) and fades to
@@ -135,6 +163,25 @@ struct Element {
     }
     Element& SetPresence(std::function<float(const Vec3&)> p) {
         presence = std::move(p); return *this;
+    }
+
+    // The name of this element's leaf substance ("plane", "ellipsoid",
+    // "torus", "gaussian", "heightfield"), or "" when it is a grouping node.
+    //
+    // WHY: the Element stores the substance as an opaque ISubstance pointer,
+    // so a caller cannot tell WHICH substance it holds. Without this, a
+    // report of "the body came out flat" cannot distinguish "the model
+    // chose a flat substance" from "the baker could not resolve the one it
+    // chose" -- two completely different bugs with the same symptom.
+    const char* SubstanceName() const {
+        if (!substance) return "";
+        const ISubstance* s = substance.get();
+        if (dynamic_cast<const TorusSubstance*>(s))          return "torus";
+        if (dynamic_cast<const EllipsoidSubstance*>(s))      return "ellipsoid";
+        if (dynamic_cast<const GaussianSystemSubstance*>(s)) return "gaussian";
+        if (dynamic_cast<const HeightfieldSubstance*>(s))    return "heightfield";
+        if (dynamic_cast<const PlaneSubstance*>(s))          return "plane";
+        return "unknown";
     }
 };
 

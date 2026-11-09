@@ -83,10 +83,24 @@ CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.s: cmake_forc
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/examples/01_torus_deform/main.cpp -o CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.s
 
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/DocLearner.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/DocLearner.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/DocLearner.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/DocLearner.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.s
+
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementSystem.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementSystem.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.i: cmake_force
@@ -97,10 +111,24 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementSystem.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.s
 
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementTreeParser.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementTreeParser.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementTreeParser.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ElementTreeParser.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.s
+
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ReconstructionModel.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ai/ReconstructionModel.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.i: cmake_force
@@ -114,7 +142,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.s: cmake_
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Editor.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Editor.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.i: cmake_force
@@ -128,7 +156,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Engine.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.i: cmake_force
@@ -142,7 +170,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/GameObject.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.i: cmake_force
@@ -156,7 +184,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Node.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Node.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.i: cmake_force
@@ -170,7 +198,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Scene.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Scene.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.i: cmake_force
@@ -184,7 +212,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/SceneTree.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/SceneTree.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.i: cmake_force
@@ -195,10 +223,38 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/SceneTree.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.s
 
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Transform.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Transform.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Transform.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Transform.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.s
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Workspace.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Workspace.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Workspace.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/core/Workspace.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.s
+
 CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/io/PSFFile.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/io/PSFFile.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.i: cmake_force
@@ -209,10 +265,24 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/io/PSFFile.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.s
 
+CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/llm/LLMClient.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/llm/LLMClient.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/llm/LLMClient.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/llm/LLMClient.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.s
+
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/CollisionAnalytic.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_11) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/CollisionAnalytic.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.i: cmake_force
@@ -226,7 +296,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.s: cma
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/LocalFEM.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_12) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/LocalFEM.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.i: cmake_force
@@ -240,7 +310,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/ModalDynamics.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_13) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/ModalDynamics.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.i: cmake_force
@@ -254,7 +324,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.s: cmake_f
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/PhysicsWorld.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_14) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/physics/PhysicsWorld.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.i: cmake_force
@@ -268,7 +338,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/physics/PhysicsWorld.cpp.s: cmake_fo
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPhysics.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_15) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPhysics.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.i: cmake_force
@@ -282,7 +352,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPhysics.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPool.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_16) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPool.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.i: cmake_force
@@ -296,7 +366,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPool_snapped.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_17) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/AnchorPool_snapped.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.i: cmake_force
@@ -310,7 +380,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/AnchorPool_snapped.cpp.s: cmake_
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/CageSurface.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_18) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/CageSurface.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.i: cmake_force
@@ -324,7 +394,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/CageSurface.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PSFBody.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_19) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PSFBody.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.i: cmake_force
@@ -338,7 +408,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PSFBody.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/Patch.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/Patch.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.i: cmake_force
@@ -352,7 +422,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Patch.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatchColorField.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatchColorField.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.i: cmake_force
@@ -366,7 +436,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatchColorField.cpp.s: cmake_for
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/PatternLibrary.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.i: cmake_force
@@ -380,7 +450,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/PatternLibrary.cpp.s: cmake_forc
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/ProceduralDetail.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/ProceduralDetail.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.i: cmake_force
@@ -394,7 +464,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/ProceduralDetail.cpp.s: cmake_fo
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/Reconstructor.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/Reconstructor.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.i: cmake_force
@@ -408,7 +478,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/Reconstructor.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SeamBridge.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SeamBridge.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.i: cmake_force
@@ -422,7 +492,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamBridge.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SeamGraph.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SeamGraph.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.i: cmake_force
@@ -436,7 +506,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SeamGraph.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SurfaceTypeLibrary.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/SurfaceTypeLibrary.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.i: cmake_force
@@ -450,7 +520,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/SurfaceTypeLibrary.cpp.s: cmake_
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/TreeFormat.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_28) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/psf/TreeFormat.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.i: cmake_force
@@ -464,7 +534,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/psf/TreeFormat.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/Camera.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_29) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/Camera.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.i: cmake_force
@@ -478,7 +548,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/Camera.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/EquationAccel.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_30) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/EquationAccel.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.i: cmake_force
@@ -492,7 +562,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/EquationAccel.cpp.s: cmake_fo
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/LateralRayMarch.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_31) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/LateralRayMarch.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.i: cmake_force
@@ -506,7 +576,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/LateralRayMarch.cpp.s: cmake_
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_32) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SplatRenderer.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.i: cmake_force
@@ -520,7 +590,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/SplatRenderer.cpp.s: cmake_fo
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SurfelRasterizer.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_33) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/SurfelRasterizer.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.i: cmake_force
@@ -534,7 +604,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/SurfelRasterizer.cpp.s: cmake
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/TriInfill.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_34) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_39) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/render/TriInfill.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.i: cmake_force
@@ -548,7 +618,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/scene/SplatView.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_35) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_40) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/scene/SplatView.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.i: cmake_force
@@ -562,7 +632,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.s: cmake_force
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/PhysicsServer.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_36) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_41) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/PhysicsServer.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.i: cmake_force
@@ -576,7 +646,7 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.s: cmake_f
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/RenderServer.cpp
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_37) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_42) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/RenderServer.cpp
 
 CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.i: cmake_force
@@ -587,10 +657,40 @@ CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.s: cmake_fo
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/servers/RenderServer.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.s
 
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/Font.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_43) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/Font.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/Font.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/Font.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.s
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o: CMakeFiles/delirium_m1_torus.dir/flags.make
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o: /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/UI.cpp
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o: CMakeFiles/delirium_m1_torus.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_44) "Building CXX object CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o -MF CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o.d -o CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o -c /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/UI.cpp
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/UI.cpp > CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.i
+
+CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/josias/Desktop/Tartarus/gameengine_compiled_real/engine/src/ui/UI.cpp -o CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.s
+
 # Object files for target delirium_m1_torus
 delirium_m1_torus_OBJECTS = \
 "CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o" \
@@ -598,7 +698,10 @@ delirium_m1_torus_OBJECTS = \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o" \
@@ -625,13 +728,17 @@ delirium_m1_torus_OBJECTS = \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o" \
 "CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o" \
-"CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o"
+"CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o" \
+"CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o"
 
 # External object files for target delirium_m1_torus
 delirium_m1_torus_EXTERNAL_OBJECTS =
 
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/examples/01_torus_deform/main.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ai/DocLearner.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementSystem.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ElementTreeParser.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ai/ReconstructionModel.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Editor.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Engine.cpp.o
@@ -639,7 +746,10 @@ delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/GameObject.c
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Node.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Scene.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/SceneTree.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Transform.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/core/Workspace.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/io/PSFFile.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/llm/LLMClient.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/physics/CollisionAnalytic.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/physics/LocalFEM.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/physics/ModalDynamics.cpp.o
@@ -667,11 +777,13 @@ delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/render/TriInfill.
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/scene/SplatView.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/servers/PhysicsServer.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/servers/RenderServer.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ui/Font.cpp.o
+delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/engine/src/ui/UI.cpp.o
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/build.make
 delirium_m1_torus: /usr/lib/x86_64-linux-gnu/libOpenCL.so
 delirium_m1_torus: /usr/lib/x86_64-linux-gnu/libSDL2.so
 delirium_m1_torus: CMakeFiles/delirium_m1_torus.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_38) "Linking CXX executable delirium_m1_torus"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/home/josias/Desktop/Tartarus/gameengine_compiled_real/build_delirium/CMakeFiles --progress-num=$(CMAKE_PROGRESS_45) "Linking CXX executable delirium_m1_torus"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/delirium_m1_torus.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

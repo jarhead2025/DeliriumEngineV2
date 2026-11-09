@@ -1,0 +1,421 @@
+// FILEPATH: engine/src/ai/DocLearner.cpp
+// Document-driven reconstruction: technical documents -> element tree.
+//
+// See engine/include/delirium/ai/DocLearner.h for the design and the
+// reasons behind it.
+#include "delirium/ai/DocLearner.h"
+
+#include <algorithm>
+#include <cstdio>
+#include <fstream>
+#include <sstream>
+
+namespace DeliRium {
+namespace AI {
+
+namespace {
+
+// Escape a field so the log stays one-record-per-line.
+std::string EscapeField(const std::string& s) {
+    std::string out;
+    out.reserve(s.size() + 8);
+    for (const char c : s) {
+        switch (c) {
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n";  break;
+            case '\r': out += "\\r";  break;
+            case '\t': out += "\\t";  break;
+            default:   out += c;       break;
+        }
+    }
+    return out;
+}
+
+std::string UnescapeField(const std::string& s) {
+    std::string out;
+    out.reserve(s.size());
+    for (size_t i = 0; i < s.size(); ++i) {
+        if (s[i] != '\\' || i + 1 >= s.size()) { out += s[i]; continue; }
+        switch (s[++i]) {
+            case 'n':  out += '\n'; break;
+            case 'r':  out += '\r'; break;
+            case 't':  out += '\t'; break;
+            case '\\': out += '\\'; break;
+            default:   out += s[i]; break;
+        }
+    }
+    return out;
+}
+
+// Split on a single tab.
+std::vector<std::string> SplitTabs(const std::string& line) {
+    std::vector<std::string> out;
+    std::string cur;
+    for (const char c : line) {
+        if (c == '\t') { out.push_back(cur); cur.clear(); }
+        else cur += c;
+    }
+    out.push_back(cur);
+    return out;
+}
+
+} // namespace
+
+// ---------------------------------------------------------------------------
+// DocErrorLog
+// ---------------------------------------------------------------------------
+
+void DocErrorLog::Record(const DocAttempt& a, bool escalated) {
+    entries_.push_back(Entry{a, escalated});
+}
+
+size_t DocErrorLog::FailureCount() const {
+    size_t n = 0;
+    for (const Entry& e : entries_) if (!e.attempt.ok) ++n;
+    return n;
+}
+
+size_t DocErrorLog::SuccessCount() const {
+    size_t n = 0;
+    for (const Entry& e : entries_) if (e.attempt.ok) ++n;
+    return n;
+}
+
+size_t DocErrorLog::EscalatedCount() const {
+    size_t n = 0;
+    for (const Entry& e : entries_) if (e.escalated) ++n;
+    return n;
+}
+
+std::string DocErrorLog::AsPromptContext(size_t max_entries) const {
+    // The MOST RECENT failures are the most relevant -- a model that just
+    // saw the last failure is the one that can avoid repeating it.
+    std::string out;
+    size_t shown = 0;
+    for (auto it = entries_.rbegin(); it != entries_.rend(); ++it) {
+        if (it->attempt.ok) continue;
+        if (shown >= max_entries) break;
+        out += "FAILED document=" + it->attempt.document_id;
+        out += " stage=" + it->attempt.failed_stage;
+        out += ": " + it->attempt.reason + "\n";
+        ++shown;
+    }
+    return out;
+}
+
+std::string DocErrorLog::AsSuccessContext(size_t max_entries) const {
+    // The most recent SUCCESSES, as positive examples. These matter as
+    // much as the failures: they show the model the shape of a valid
+    // answer for THIS pipeline.
+    std::string out;
+    size_t shown = 0;
+    for (auto it = entries_.rbegin(); it != entries_.rend(); ++it) {
+        if (!it->attempt.ok) continue;
+        if (shown >= max_entries) break;
+        out += "OK document=" + it->attempt.document_id;
+        // The successful reply, truncated: it is the WORKED EXAMPLE, and
+        // a worked example is worth more than a description of one.
+        std::string raw = it->attempt.raw_reply;
+        if (raw.size() > 600) raw = raw.substr(0, 600) + "...";
+        out += ":\n" + raw + "\n";
+        ++shown;
+    }
+    return out;
+}
+
+bool DocErrorLog::Save(const std::string& path) const {
+    std::ofstream f(path, std::ios::binary | std::ios::trunc);
+    if (!f) return false;
+    for (const Entry& e : entries_) {
+        f << (e.attempt.ok ? "OK" : "FAIL") << '\t'
+          << (e.escalated ? "ESC" : "---") << '\t'
+          << EscapeField(e.attempt.document_id) << '\t'
+          << EscapeField(e.attempt.failed_stage) << '\t'
+          << EscapeField(e.attempt.reason) << '\t'
+          << EscapeField(e.attempt.raw_reply) << '\n';
+    }
+    return f.good();
+}
+
+bool DocErrorLog::Load(const std::string& path) {
+    std::ifstream f(path, std::ios::binary);
+    if (!f) return false;
+    entries_.clear();
+    std::string line;
+    while (std::getline(f, line)) {
+        if (line.empty()) continue;
+        const std::vector<std::string> f6 = SplitTabs(line);
+        if (f6.size() < 6) continue;
+        DocAttempt a;
+        a.ok = (f6[0] == "OK");
+        a.document_id = UnescapeField(f6[2]);
+        a.failed_stage = UnescapeField(f6[3]);
+        a.reason = UnescapeField(f6[4]);
+        a.raw_reply = UnescapeField(f6[5]);
+        entries_.push_back(Entry{a, f6[1] == "ESC"});
+    }
+    return true;
+}
+
+// ---------------------------------------------------------------------------
+// The prompts
+// ---------------------------------------------------------------------------
+
+std::string DocToTreeSystemPrompt() {
+    // The element schema itself (single source of truth -- the same text
+    // the workspace uses), plus the document-specific instructions.
+    return ElementTreeSystemPrompt() + R"(
+
+=== READING A TECHNICAL DOCUMENT ===
+
+You are given a DOCUMENT that describes a real object: a machine, an
+assembly, an anatomical structure, or any other physical thing. Produce an
+element tree that reconstructs that object.
+
+WORK IN THREE PASSES, and emit only the final JSON:
+
+  1. PARTS. List the document's named parts. Each becomes one system in
+     the tree. A part that is a simple rounded mass uses "ellipsoid"; a
+     part that is a ring or a frame uses "torus"; a part that is a flat
+     plate or a face uses "plane"; a part that has a shaped surface (a
+     gear tooth, a fin, a blade, a cam profile) uses "heightfield".
+
+  2. RELATIONS. Each part's position and size come from the document's
+     description of how the parts fit together: "the rotor sits inside the
+     housing" -> the rotor is a CHILD of the housing, with its origin at
+     the housing's centre and its scale smaller. Use the tree's
+     parent/child structure for containment and attachment, and use each
+     element's "origin" and "scale" for placement.
+
+  3. PROPORTIONS. Sizes are RELATIVE. Make the whole object fit roughly
+     within [-0.5, 0.5] on each axis, and size each part relative to the
+     others according to the document. If the document gives real
+     dimensions, use their RATIOS, not their absolute values.
+
+=== THE CLOSED-BODY RULE (READ THIS) ===
+
+Each substance describes only the UPPER SHEET of a surface -- it is a graph
+z = f(x, y). So ONE substance is NEVER a closed body. A sphere is not one
+ellipsoid: it is an ellipsoid PLUS another one placed below it. A housing
+is not one ellipsoid: it is several parts.
+
+To close a body, compose sheets. The rule is MEASURED (see
+examples/ai_pipeline_probe/closed_body_probe.cpp), not guessed:
+
+  world.z = origin.z + local.z * scale.z
+  with local.z spanning [0, sz] for an ellipsoid:
+     scale.z = +1  ->  the sheet spans [origin.z, origin.z + sz]   (UP)
+     scale.z = -1  ->  the sheet spans [origin.z - sz, origin.z]   (DOWN)
+
+A negative z scale ALREADY flips the sheet downward from the seam plane it
+shares with its parent. So the lower sheet of a closed sphere keeps the SAME
+origin as the upper one and only flips the scale:
+
+  a sphere = an ellipsoid + an ellipsoid with scale z NEGATIVE and the
+             SAME origin ([0,0,0]). They meet at z = 0 and the body
+             spans exactly [-sz, +sz].
+
+Do NOT offset the lower sheet's origin: that shifts it off the seam and
+leaves a GAP (the body does not close). Do NOT leave the scale positive:
+that closes the geometry but turns the lower sheet INSIDE-OUT (its normals
+still point up, so it renders as a hollow shell).
+
+  CORRECT   upper: {"kind":"body","substance":"ellipsoid",
+                    "substance_params":{"sx":0.5,"sy":0.5,"sz":0.5},
+                    "children":[{"kind":"lower","substance":"ellipsoid",
+                                 "substance_params":{"sx":0.5,"sy":0.5,"sz":0.5},
+                                 "scale":[1,1,-1],"origin":[0,0,0]}]}
+
+  WRONG (gap)      the lower sheet's origin is offset to [0,0,-0.5]
+  WRONG (inside)   the lower sheet's scale is [1,1,1] (not flipped)
+
+Other closures:
+  - a cylinder = an ellipsoid (elongated in z) + a plane at each end
+  - a ring/housing = a torus, optionally with ellipsoids inside it
+Each element's "origin" places it in the PARENT's local frame, and
+"scale" scales it. A child with a negative z scale flips the sheet.
+
+=== HOW TO FLIP A SHEET (THE ONE MISTAKE THAT MATTERS MOST) ===
+
+To point a sheet DOWNWARD, use the element's "scale" field with a negative
+component. NEVER use a negative half-extent.
+
+  CORRECT   {"kind":"lower", "substance":"ellipsoid",
+             "substance_params":{"sx":0.6,"sy":0.6,"sz":0.5},
+             "scale":[1,1,-1], "origin":[0,0,0]}
+  WRONG     {"kind":"lower", "substance":"ellipsoid",
+             "substance_params":{"sx":0.6,"sy":0.6,"sz":-1}}
+
+"substance_params" holds SIZES and they are always positive. The
+"scale" field holds the ORIENTATION and the placement. A negative
+"sx"/"sy"/"sz" is rejected.
+
+=== OUTPUT ===
+Emit ONLY the JSON object. No prose, no explanation, no markdown fence.
+)";
+}
+
+std::string DocToTreeEscalationPrompt(const std::string& document,
+                                      const std::string& prior_failure,
+                                      const std::string& error_context,
+                                      const std::string& success_context) {
+    std::string out;
+    out += "A previous attempt to interpret this document FAILED.\n\n";
+    out += "THE DOCUMENT:\n";
+    out += document;
+    out += "\n\n";
+    if (!prior_failure.empty()) {
+        out += "THE PREVIOUS FAILURE:\n";
+        out += prior_failure;
+        out += "\n\n";
+    }
+    if (!error_context.empty()) {
+        out += "PREVIOUS FAILURES ON OTHER DOCUMENTS (do not repeat them):\n";
+        out += error_context;
+        out += "\n";
+    }
+    if (!success_context.empty()) {
+        out += "WORKED EXAMPLES OF A VALID ANSWER:\n";
+        out += success_context;
+        out += "\n";
+    }
+    out += "Retry, following the schema and the closed-body rule exactly.\n";
+    out += "Emit ONLY the JSON object. No prose, no markdown fence.\n";
+    return out;
+}
+
+// ---------------------------------------------------------------------------
+// InterpretDocument
+// ---------------------------------------------------------------------------
+
+DocResult InterpretDocument(
+    const Document& doc,
+    const std::function<std::string(const std::string& system,
+                                    const std::string& user)>& ask,
+    DocErrorLog& log,
+    bool escalate,
+    const std::function<std::string(const std::string& system,
+                                    const std::string& user)>* larger_model_ask)
+{
+    DocResult res;
+
+    // Which model answers this attempt. The escalation ladder:
+    //   - the local model by default;
+    //   - a LARGER model when escalating and one is available.
+    const bool use_larger = escalate && larger_model_ask && *larger_model_ask;
+    const auto& asker = use_larger ? *larger_model_ask : ask;
+
+    // The SYSTEM prompt. On escalation the schema is unchanged (it is the
+    // contract) but the USER message carries the failure context.
+    const std::string system = DocToTreeSystemPrompt();
+
+    std::string user;
+    if (!escalate) {
+        user = "DOCUMENT (" + doc.domain + ", id=" + doc.id + "):\n";
+        user += doc.text;
+        user += "\n\nReconstruct this object as an element tree.\n";
+    } else {
+        std::string prior;
+        // The most recent failure for THIS document is the one to fix.
+        for (auto it = log.Attempts().rbegin(); it != log.Attempts().rend(); ++it) {
+            if (!it->ok && it->document_id == doc.id) {
+                prior = "stage=" + it->failed_stage + ": " + it->reason;
+                break;
+            }
+        }
+        user = DocToTreeEscalationPrompt(doc.text, prior,
+                                         log.AsPromptContext(),
+                                         log.AsSuccessContext());
+    }
+
+    // --- TRANSPORT ---------------------------------------------------------
+    const std::string reply = asker ? asker(system, user) : std::string();
+    if (reply.empty()) {
+        DocAttempt a;
+        a.document_id = doc.id;
+        a.failed_stage = "transport";
+        a.reason = "the model returned nothing (unreachable, or an empty reply)";
+        a.ok = false;
+        log.Record(a, escalate);
+        res.failed_stage = "transport";
+        res.reason = a.reason;
+        res.escalated = escalate;
+        return res;
+    }
+
+    // --- PARSE -------------------------------------------------------------
+    std::unique_ptr<Element> tree;
+    std::string why;
+    if (!ParseElementTree(reply, tree, why)) {
+        DocAttempt a;
+        a.document_id = doc.id;
+        a.raw_reply = reply;
+        a.failed_stage = "parse";
+        a.reason = why;
+        a.ok = false;
+        log.Record(a, escalate);
+        res.failed_stage = "parse";
+        res.reason = why;
+        res.escalated = escalate;
+        return res;
+    }
+
+    // --- VALIDATE (the geometry) -------------------------------------------
+    // The tree parsed, but does it describe a CLOSED body? A tree with a
+    // single sheet is "only one face". This is the check that catches the
+    // exact failure the user reported, and it is checkable WITHOUT baking.
+    //
+    // COUNT THE SHEETS, NOT THE LEAVES: an element that HAS a substance
+    // contributes a SHEET even if it also has children. A housing with a
+    // rotor inside it has TWO sheets (the housing's ellipsoid and the
+    // rotor's ellipsoid), not one -- counting tree-leaves would call that
+    // a single sheet and reject a perfectly good closed body.
+    size_t sheets = 0;
+    {
+        std::vector<const Element*> stack{&*tree};
+        while (!stack.empty()) {
+            const Element* e = stack.back();
+            stack.pop_back();
+            if (e->substance) ++sheets;
+            for (const auto& c : e->children) stack.push_back(c.get());
+        }
+    }
+    if (sheets < 2) {
+        // A single sheet is the "only one face" failure. It is rejected
+        // because the DOCUMENT path is for reconstructing BODIES: a
+        // technical document describes an object with parts, and one sheet
+        // cannot be it.
+        //
+        // (The plain prompt path -- a one-line semantic request -- is a
+        // DIFFERENT contract and still allows a single sheet; this check
+        // belongs to the DOCUMENT path only, which is why it lives here
+        // and not in ParseElementTree.)
+        DocAttempt a;
+        a.document_id = doc.id;
+        a.raw_reply = reply;
+        a.failed_stage = "validate";
+        a.reason = "the tree describes only ONE sheet, so it cannot be a "
+                   "closed body (a closed body needs several sheets "
+                   "arranged in 3D)";
+        a.ok = false;
+        log.Record(a, escalate);
+        res.failed_stage = "validate";
+        res.reason = a.reason;
+        res.escalated = escalate;
+        return res;
+    }
+
+    // --- SUCCESS -----------------------------------------------------------
+    DocAttempt a;
+    a.document_id = doc.id;
+    a.raw_reply = reply;
+    a.ok = true;
+    log.Record(a, escalate);
+    res.ok = true;
+    res.tree = std::move(tree);
+    res.escalated = escalate;
+    return res;
+}
+
+} // namespace AI
+} // namespace DeliRium

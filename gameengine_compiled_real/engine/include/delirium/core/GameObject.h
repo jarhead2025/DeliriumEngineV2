@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include "Types.h"
+#include "Transform.h"
 #include "../psf/PSFBody.h"
 #include "../psf/Reconstructor.h"
 #include "../physics/ModalDynamics.h"
@@ -15,9 +16,10 @@
 
 namespace DeliRium {
 
-struct Transform {
-    Vec3 position{}; Quat rotation{0,0,0,1}; Vec3 scale{1,1,1};
-};
+// The rigid world transform lives in core/Transform.h (Mat4 + ToMatrix +
+// InversePoint). It is deliberately OUTSIDE the frozen 64-byte records so
+// moving an object never re-quantizes anchors -- the renderer applies it as
+// a GPU model matrix.
 
 // rigid-body state integrated by PhysicsWorld (v1: uniform mass,
 // solid-sphere inertia approximation from the bbox -- documented)
@@ -32,6 +34,19 @@ class GameObject {
 public:
     GameObject(std::string name, IReconstructor& maker,
                const ReconstructionRequest& req);                // TODO body = maker.Reconstruct
+
+    // Construct from a body that was BUILT OUTSIDE the engine (the AI
+    // path: an element tree parsed from a model response, baked by
+    // ElementSystem::BakeBody; or a .psf loaded from disk).
+    //
+    // WHY A SEPARATE CONSTRUCTOR: the reconstructing constructor always calls
+    // maker.Reconstruct(req), and for these bodies the request is empty --
+    // so the reconstructor fails, the constructor prints a spurious
+    // "reconstruction failed ()" on stderr, and the body is then REPLACED
+    // by AdoptBody. The user saw two bogus errors per object on every
+    // launch. This path performs NO reconstruction at all.
+    GameObject(std::string name, std::unique_ptr<PSFBody> body,
+               Material material = Material{});
 
     // --- high-level live manipulation (gameplay API) ----------------------
     void Poke(const Vec3& world_point, const Vec3& impulse);     // TODO needs ClosestPoint
@@ -50,6 +65,11 @@ public:
     const PSFBody& Body() const { return *body; }
     bool       HasBody() const { return body != nullptr; }
     PSFBody*   Fragment()  { return fragments.get(); }
+    // Adopt a body built outside the engine (the AI path: an element tree
+    // parsed from a model response, baked by ElementSystem::BakeBody).
+    // The GameObject constructor always reconstructs through an
+    // IReconstructor, so this is how an externally-built body enters.
+    void AdoptBody(std::unique_ptr<PSFBody> b) { body = std::move(b); }
     Transform& GetTransform() { return transform; }
     RigidState& Rigid()    { return rigid; }
     const RigidState& Rigid() const { return rigid; }

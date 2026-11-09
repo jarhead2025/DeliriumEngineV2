@@ -5,11 +5,31 @@
 // =============================================================================
 #pragma once
 #include <cstdint>
+#include <cmath>
 
 namespace DeliRium {
 
 struct Vec3  { float x, y, z; };
 struct Quat  { float x, y, z, w; };
+
+// Minimal vector algebra. The engine predates these (most math is inline
+// component arithmetic in each .cpp), but core/Transform.h needs subtraction
+// and the workspace needs the usual set. Kept header-only so no ABI or link
+// changes ripple through the frozen 64-byte records.
+//
+// NOTE: `dot` / `cross` / `length` are deliberately NOT defined here --
+// several translation units already declare their own file-local versions
+// (PhysicsWorld.cpp, AnchorPhysics.cpp, SurfelRasterizer.cpp) and adding
+// namespace-scope ones would make those calls ambiguous.
+inline Vec3 operator+(const Vec3& a, const Vec3& b) { return {a.x+b.x, a.y+b.y, a.z+b.z}; }
+inline Vec3 operator-(const Vec3& a, const Vec3& b) { return {a.x-b.x, a.y-b.y, a.z-b.z}; }
+inline Vec3 operator-(const Vec3& a)                 { return {-a.x, -a.y, -a.z}; }
+inline Vec3 operator*(const Vec3& a, float s)        { return {a.x*s, a.y*s, a.z*s}; }
+inline Vec3 operator*(float s, const Vec3& a)        { return {a.x*s, a.y*s, a.z*s}; }
+inline Vec3 operator/(const Vec3& a, float s)        { return {a.x/s, a.y/s, a.z/s}; }
+inline Vec3& operator+=(Vec3& a, const Vec3& b)      { a.x+=b.x; a.y+=b.y; a.z+=b.z; return a; }
+inline Vec3& operator-=(Vec3& a, const Vec3& b)      { a.x-=b.x; a.y-=b.y; a.z-=b.z; return a; }
+inline Vec3& operator*=(Vec3& a, float s)            { a.x*=s; a.y*=s; a.z*=s; return a; }
 
 #pragma pack(push, 1)
 
