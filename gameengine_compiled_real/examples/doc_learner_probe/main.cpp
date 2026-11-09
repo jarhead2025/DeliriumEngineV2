@@ -265,6 +265,12 @@ int main(int argc, char** argv) {
                     r.ok ? "OK" : ("FAILED at " + r.failed_stage).c_str(), secs);
         if (!r.ok) {
             std::printf("      reason: %s\n", r.reason.c_str());
+            // The learner's reason is GENERIC ("the model returned nothing"),
+            // which hides WHY. The client's own error is the specific one --
+            // "no response headers", "the response timed out while reading a
+            // chunk", "the server closed the connection mid-response" -- and
+            // the difference between them is the difference between a
+            // configuration problem and a network one.
             if (!err.empty()) std::printf("      transport: %s\n", err.c_str());
         }
 

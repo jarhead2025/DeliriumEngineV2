@@ -362,21 +362,36 @@ void LLMClient::Run(const std::string& payload) {
     std::string decoded;
 
     // --- headers ---
-    while (true) {
-        if (cancel_.load()) { ::close(fd); state_.store(State::Idle, std::memory_order_release); return; }
-        const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
-        if (n <= 0) {
-            if (n < 0 && errno == EINTR) continue;
-            break;
+    //
+    // The socket has an SO_RCVTIMEO, so a recv can time out (EAGAIN) while
+    // the server is THINKING. A large prompt takes minutes before the
+    // first byte comes back, so a timeout here must be RETRIED, not
+    // treated as "no response".
+    //
+    // The old code broke out of the loop on any recv failure other than
+    // EINTR, and then reported "no response headers" -- a TRANSPORT
+    // failure for a server that was working perfectly.
+    bool headers_ok = false;
+    {
+        const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
+        for (int waits = 0; waits < max_waits && header_end == std::string::npos; ++waits) {
+            const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
+            if (n > 0) {
+                raw.append(buf, size_t(n));
+                header_end = raw.find("\r\n\r\n");
+                if (header_end != std::string::npos) { headers_ok = true; break; }
+                continue;
+            }
+            if (n == 0) break;                 // the peer closed
+            if (errno == EINTR) continue;
+            // A read timeout: the server is still thinking. Wait and retry.
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
         }
-        raw.append(buf, size_t(n));
-        header_end = raw.find("\r\n\r\n");
-        if (header_end != std::string::npos) break;
     }
     if (header_end == std::string::npos) {
         ::close(fd);
         std::lock_guard<std::mutex> lk(mu_);
-        error_ = "no response headers";
+        error_ = headers_ok ? "malformed response" : "no response headers";
         state_.store(State::Failed, std::memory_order_release);
         return;
     }
@@ -464,13 +479,54 @@ void LLMClient::Run(const std::string& payload) {
         const unsigned long csize = std::strtoul(body.c_str() + pos, nullptr, 16);
         pos = eol + 2;
         if (csize == 0) break;   // end of the chunked body
-        while (body.size() < pos + csize + 2) {
-            const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
-            if (n <= 0) {
-                if (n < 0 && errno == EINTR) continue;
-                break;
+        // Read the chunk BODY. The socket has an SO_RCVTIMEO, so a recv can
+        // fail with EAGAIN/EWOULDBLOCK (a TIMEOUT) rather than returning
+        // data.
+        //
+        // WHY IT MATTERS: the old code treated any recv failure other than
+        // EINTR as "the chunk is complete" and fell through to
+        // `body.substr(pos, csize)`. A timeout mid-chunk therefore produced
+        // a TRUNCATED chunk with garbage after it, the SSE parse found
+        // nothing usable, and the request was reported as "the model
+        // returned nothing" -- a TRANSPORT failure with a perfectly healthy
+        // server and a perfectly good prompt.
+        //
+        // A timeout is not a disconnect: the server may simply be thinking
+        // (a 2,900-token prompt on a loaded machine takes minutes BEFORE
+        // the first token arrives). So it must RETRY, up to the socket's
+        // own deadline.
+        bool chunk_complete = false;
+        bool recv_failed = false;
+        {
+            // The deadline is the socket timeout, counted from now.
+            const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
+            for (int waits = 0; waits < max_waits; ++waits) {
+                while (body.size() < pos + csize + 2) {
+                    const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
+                    if (n > 0) { body.append(buf, size_t(n)); continue; }
+                    if (n == 0) { recv_failed = true; break; }   // peer closed
+                    if (errno == EINTR) continue;
+                    // EAGAIN/EWOULDBLOCK: the read timed out. Wait and
+                    // retry -- the server is probably still thinking.
+                    break;
+                }
+                if (body.size() >= pos + csize + 2 || recv_failed) break;
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
-            body.append(buf, size_t(n));
+            chunk_complete = (body.size() >= pos + csize + 2);
+        }
+        if (!chunk_complete) {
+            // The chunk never arrived in full. Report it as a REAL error
+            // rather than parsing a truncated buffer.
+            ::close(fd);
+            {
+                std::lock_guard<std::mutex> lk(mu_);
+                error_ = recv_failed
+                    ? "the server closed the connection mid-response"
+                    : "the response timed out while reading a chunk";
+            }
+            state_.store(State::Failed, std::memory_order_release);
+            return;
         }
         const std::string chunk = body.substr(pos, csize);
         pos += csize + 2;
