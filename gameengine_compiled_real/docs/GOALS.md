@@ -600,13 +600,31 @@ not enough for a schema-shaped JSON answer from a 14B on a loaded machine),
 and it uses a **fresh client per call** so a config change cannot corrupt a
 request already in flight.
 
-**Still open: the ladder's RESCUE behaviour.** Every live run so far has
-**succeeded on attempt 1**, so the escalation rung has never actually fired
-against a real second endpoint. The wiring is proven by the 36-check gate;
-the *rescue* — "a bigger model fixes what the local model could not" — is
-not yet demonstrated. Exercising it needs a document the local model
-reliably fails (a single-sheet answer is the obvious candidate, since the
-document path rejects those).
+**Still open: the ladder's RESCUE behaviour.** The ladder's WIRING is
+proven by the 36-check gate, and the RESCUE MECHANIC is now proven by
+`tests/validate_escalation_rescue.cpp` (21 checks, 0 failures): a weak
+responder that always fails and a strong one that always succeeds prove
+that the ladder actually **reaches** the strong model, that the strong
+model's answer is the one **used**, that the failure reason and the
+document are **handed to it**, that an unrescuable failure stays a
+failure, and that a rescued success **becomes retrievable corpus**.
+
+**The gate is proven to catch a broken ladder**: with the escalation
+pointed back at the local model (a classic wiring bug), it fails 10 of its
+21 checks.
+
+**Still to do: the LIVE two-model rescue.** The gate uses two
+deterministic responders, so it proves the *mechanic*. The live claim —
+"the 14B actually answers what the 7B could not" — needs both models
+running.
+
+**A measurement that shaped the live test.** A dense wrist-watch document
+(28mm mainplate, 20mm cutout, hairspring, 15 club teeth) was too hard:
+the 7B was still generating at **1000 s**, having streamed 3,221 bytes.
+That is not "the model failed" — it is "the model needed longer", and the
+two are indistinguishable from the outside. A live rescue test needs a
+document that produces a **wrong answer** (the single-sheet failure the
+document path rejects), not one that produces a **slow** one.
 
 ### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner
