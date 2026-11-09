@@ -1815,6 +1815,69 @@ investigation, and it was the one being thrown away.
 
 ---
 
+## 61. The GPU kernel ported 3% of the work (2026-11-09)
+
+**Goal G16** said: *"`psf_refine` is implemented but never launched. It is
+the 38.9 ms/op AMR bottleneck and `refine` is a user-facing tool button."*
+
+**The premise was wrong, and only a fresh measurement showed it.** The
+kernel `kernels/psf_refine.cl::split_patches` is a **complete, faithful**
+GPU port of the CPU `SplitPatch` — the same 9×9 LSQ grid, the same
+quadrant convention, the same quantisation. It is good work. It ports the
+wrong 3%.
+
+Measured on the 544-surface torus:
+
+| part | cost | share | the kernel covers it? |
+|---|---|---|---|
+| `seams.Build` + `RebuildViews` | **0.826 ms** | **98.7%** | **no** — the kernel explicitly defers to the CPU |
+| the LSQ fit (4 children × 81 evaluates) | 0.029 ms | 3.4% | **yes** |
+| hanging anchors (5 per split) | ~0 | — | no |
+
+Total `SplitPatch`: **0.837 ms**.
+
+**The cause.** `RefineWhere` calls `SplitPatch` in a **loop**, and every
+split called `seams.Build(*this)` — a rebuild over **every** patch in a
+**growing** surface set. One `RefineWhere` does **42 splits** → 42 full
+rebuilds → O(n²). And `seams.Build` is itself super-linear: 1.08 µs per
+surface at 544, 1.84 µs at 4,354 (8× the bodies → 13.6× the time).
+
+**The fix was ALGORITHMIC, not a port.** `PSFBody::BeginSeamBatch()` /
+`EndSeamBatch()` defer the rebuild to the end of a batch; `SplitPatch` and
+`MergeGroup` accumulate their touched patches instead of rebuilding.
+
+**Result: 37.80 → 7.57 ms/op — a 5.0× speedup**, with a **bit-identical**
+surface (deviation 0.000e+00) and an identical max seam gap (0.14703% of
+the diagonal).
+
+**Why deferring is safe.** `SplitPatch` reads the seam graph for exactly
+one thing: `find_existing_mid`, which reuses a hanging anchor a
+neighbouring split already created. That is an **optimisation** (deduping
+an anchor), not a correctness requirement — the fallback creates a fresh
+anchor, which the `AnchorPool`'s position snapping dedupes anyway. The
+seam graph is left **consistent** when the batch ends.
+
+**The gate** (`validate_seam_batch`, 21 checks) asserts the deferred body's
+surface count, anchor count, **evaluated surface points** and seam metrics
+all match the eager path. "Same counts" is not enough: the deferral changes
+WHEN the seams are rebuilt, so it can change the stitch values, which
+change the surface, which is what the user sees.
+
+**Proven to catch the bug:** with the final rebuild removed, the gate fails
+— and the failure is dramatic. The surface tears by **27.3% of the
+diagonal** instead of 0.147%, and the seam count drops from 1235 to 1120.
+A stale seam graph is not a subtle degradation; it is a destroyed surface.
+
+**Lesson.** *A GPU kernel that ports 3% of the work cannot fix a problem
+that is 97% elsewhere.* And the general shape: **a per-item operation that
+rebuilds global state is O(n²) in a loop** — the fix is almost never to
+accelerate the per-item work, it is to rebuild the global state once.
+
+→ Class-level version: `procedural-surface-engine` →
+`references/amr-cost-structure.md`.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

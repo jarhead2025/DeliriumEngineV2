@@ -663,9 +663,43 @@ stage.
 
 ## Tier 4 — Engine gaps (cheap and real)
 
-### G16. Launch `psf_refine` — `TODO`
+### G16. Launch `psf_refine` — `DONE` (but not by launching it)
 Implemented but **never launched**. It is the 38.9 ms/op AMR bottleneck *and*
 `refine` is a user-facing tool button.
+
+**Landed — as an ALGORITHMIC fix, because the premise was wrong.** The
+kernel `psf_refine.cl::split_patches` is a complete, faithful GPU port of
+the CPU `SplitPatch`, and it ports the **wrong 3%**:
+
+| part of a 0.837 ms `SplitPatch` | cost | share | the kernel? |
+|---|---|---|---|
+| `seams.Build` + `RebuildViews` | **0.826 ms** | **98.7%** | **no** |
+| the LSQ fit (4 children × 81 evaluates) | 0.029 ms | 3.4% | **yes** |
+
+The real cost: `RefineWhere` calls `SplitPatch` in a **loop**, and each
+split rebuilt the seam graph over a **growing** surface set — 42 splits →
+42 full rebuilds → O(n²). And `seams.Build` is itself super-linear
+(1.08 → 1.84 µs/surface from 544 to 4,354 surfaces).
+
+**The fix:** `PSFBody::BeginSeamBatch()` / `EndSeamBatch()` defer the
+rebuild to the end of a batch. `SplitPatch` and `MergeGroup` accumulate
+their touched patches instead of rebuilding.
+
+**Result: 37.80 → 7.57 ms/op (5.0×), with a bit-identical surface**
+(deviation 0.000e+00, identical max seam gap 0.14703% of the diagonal).
+
+**The kernel stays unwired** — correctly. Porting 3% of the work is not
+worth a second GPU pipeline, a second set of buffers, and a second source
+of truth for the split. It remains in the tree as a reference
+implementation; the register records why it is not launched.
+
+Gate: `tests/validate_seam_batch.cpp` — 21 checks, 0 failures. It compares
+the deferred body's surface count, anchor count, **evaluated surface
+points** and seam metrics against the eager path. Proven to catch the bug:
+removing the final rebuild makes the surface tear by **27.3% of the
+diagonal**.
+
+→ `procedural-surface-engine` → `references/amr-cost-structure.md`.
 
 ### G17. Add the CPU/GPU bit-compat validator — `TODO`
 `psf_validate.py` exists in the proven tree but not here. ARCHITECTURE.md

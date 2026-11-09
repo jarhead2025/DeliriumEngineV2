@@ -56,6 +56,48 @@ public:
     // refit would lose more than `tol` (fraction of diagonal) of detail.
     bool MergeGroup(uint16_t ctr, float tol);
     bool FindMergeGroup(uint16_t ctr, uint32_t grp[4], uint16_t outer[4]) const;
+
+    // -----------------------------------------------------------------------
+    // DEFERRED SEAMS (the batch-AMR fix).
+    //
+    // MEASURED: a single SplitPatch costs 0.837 ms, of which **0.826 ms
+    // (98.7%) is the seam rebuild** -- `seams.Build` over EVERY patch plus
+    // `RebuildViews()`. The LSQ fit that the GPU kernel (psf_refine.cl)
+    // ports is only 0.029 ms (3.4%).
+    //
+    // So the AMR cost is NOT the fit: it is that RefineWhere calls
+    // SplitPatch in a LOOP, and every split rebuilds the seam graph from
+    // scratch over a GROWING surface set. Measured: one RefineWhere does 42
+    // splits -> 42 full rebuilds -> O(n^2). And `seams.Build` itself is
+    // super-linear: 1.08 us/surface at 544 surfaces, 1.84 us/surface at
+    // 4354 (8x the bodies, 13.6x the time).
+    //
+    // The fix is therefore ALGORITHMIC, not a GPU port: during a batch AMR
+    // operation, defer the seam rebuild to the end.
+    //
+    // WHY IT IS SAFE: SplitPatch reads the seam graph for exactly one
+    // thing -- `find_existing_mid`, which reuses a hanging anchor that a
+    // neighbouring split already created. That lookup is over the SEAMS
+    // THAT EXIST, and deferring the rebuild only means the graph is stale
+    // mid-batch. The reuse it enables is an OPTIMISATION (deduping a
+    // hanging anchor), not a correctness requirement: the fallback creates
+    // a fresh anchor, which the AnchorPool's position snapping then
+    // dedupes anyway.
+    //
+    // So: during a batch, the seam graph is rebuilt ONCE at the end, and
+    // the whole neighbourhood is restitched in one pass.
+    //
+    // The seam graph is left CONSISTENT when the batch ends -- this is not
+    // a "stale until someone notices" optimisation.
+    // -----------------------------------------------------------------------
+    // Begin a deferred-seam batch. Nested calls are counted.
+    void BeginSeamBatch();
+    // End a deferred-seam batch. Rebuilds the seam graph and restitches the
+    // touched neighbourhood ONCE, if anything changed.
+    void EndSeamBatch();
+    // True while a batch is open.
+    bool InSeamBatch() const { return seam_batch_depth_ > 0; }
+
     // Coarsen a region: merge every clean, low-error 4-group near center.
     // Detach a set of patches into a NEW independent body (used by
     // Fracture). The patches + their anchors are copied with remapped
@@ -182,6 +224,12 @@ private:
     std::vector<Patch>         patches;
     AnchorPool                 anchors;
     SeamGraph                  seams;
+    // The deferred-seam batch state (see the header's explanation).
+    // `seam_batch_depth_` counts nested batches; the touched-patch set
+    // accumulates across the whole batch so the final rebuild restitches
+    // EVERY patch that moved, not just the last one.
+    int                        seam_batch_depth_ = 0;
+    std::vector<uint32_t>      seam_batch_touched_;
     Vec3  bbox_min{}, bbox_span{};
     float s_scale = 0.0f;
     bool  anchors_dirty = false;
