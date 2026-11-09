@@ -1667,6 +1667,74 @@ makes it look like a retry while behaving like a worse first attempt.
 
 ---
 
+## 57. "Done" cannot mean both "finished" and "never started" (2026-11-09)
+
+G15's document worker used a single `bool doc_thread_done_` to coordinate
+between the worker thread and the main thread. It initialised to **true**
+("no worker has run yet") and the worker set it to **true** when it
+finished ("here is your result").
+
+**Symptom.** Every launch of the workspace reported a **spurious failure**:
+
+```
+document: FAILED --
+document: corpus is now 0 entries (0 ok, 0 failed)
+corpus: saved 0 entries to '/tmp/delirium_doc_corpus.txt'
+```
+
+— including launches that never asked for a document, and with an **empty
+reason**. It also wrote an empty corpus file on every run.
+
+**Cause.** `PollDocument()` read "done == true" as "apply the result". On
+the first frame that was true, so it applied a result that did not exist:
+`doc_thread_ok_` was false (its initial value), so the failure branch ran.
+
+**What was done.** A separate `std::atomic<bool> doc_has_result_` — which
+starts **false** and means exactly one thing: *there is a result waiting*.
+It is stored with **release** ordering by the worker AFTER the result fields
+are written, and loaded with **acquire** ordering by the main thread BEFORE
+they are read, so the fields are visible.
+
+**Lesson.** *A state flag that can mean two different things will eventually
+mean the wrong one.* "Done" and "has result" are different facts, and
+collapsing them into one boolean puts an ambiguous state into a state
+machine. The atomic's ordering is also load-bearing: without release/acquire
+the main thread can observe the flag before the fields it guards are
+visible — a race that would look like a random, unreproducible failure.
+
+---
+
+## 58. The model pipeline was fine — the MACHINE was out of memory (2026-11-09)
+
+G14's live escalation failed 6/6 at `transport`. The suspicion was the
+client's socket code, and the way to settle it was to compare the client
+against the server on the SAME machine in the SAME conditions:
+
+| probe | result |
+|---|---|
+| `llm_probe` (the real client, streaming) | **OK in 4.91 s** |
+| `curl` to `/v1/chat/completions` (the client's endpoint) | **correct SSE stream** |
+| `curl` to `/api/generate` | OK in 1.38 s |
+| `free -g` | **19 of 31 GB used, 4 GB free** |
+| `ps` | `helldivers2.exe` at **100% CPU**, 2 days uptime |
+
+The client was healthy. The machine had no room for two models (the 7B is
+8.5 GB, the 14B is 9.9 GB), so Ollama was thrashing them in and out of
+memory — a bare `"Say OK"` took **25.4 s**.
+
+After unloading the 14B (free memory **0 GB → 9 GB**), the identical probe
+**PASSED**: `attempt 1: OK (276.4s), sheets=2, patches=3766, anchors=4608,
+GEOMETRY OK`.
+
+**Lesson.** *When a model-backed pipeline fails, test the transport against
+the server directly before touching the client.* The two failures look
+identical from the outside — "the model returned nothing" — and one of them
+is a bug in your code while the other is a bug in your environment. The
+cheapest discriminator is to run the same request with `curl`: if `curl`
+works, the client is at fault; if `curl` is also slow, the machine is.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

@@ -41,6 +41,7 @@
 // =============================================================================
 #pragma once
 #include <functional>
+#include <atomic>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -386,7 +387,20 @@ private:
     // (the bake and the scene insertion), because the scene is not
     // thread-safe.
     std::thread             doc_thread_;
-    bool                    doc_thread_done_ = true;
+    // Whether there is a RESULT waiting to be applied on the main thread.
+    //
+    // It is ATOMIC with release/acquire ordering because the worker writes
+    // the result fields (ok, reason, tree) and THEN sets this flag, while
+    // the main thread reads the flag and THEN reads those fields. The
+    // ordering is what makes the fields visible.
+    //
+    // WHY A SEPARATE FLAG: the obvious design -- "done" means "apply the
+    // result" -- cannot distinguish "the worker finished" from "no worker
+    // ever ran", because both start as TRUE. That ambiguity made
+    // PollDocument() report a spurious "document: FAILED" (with an empty
+    // reason) and save an empty corpus on EVERY launch -- including
+    // launches that never asked for a document.
+    std::atomic<bool>       doc_has_result_{false};
     bool                    doc_thread_ok_ = false;
     std::string             doc_thread_reason_;
     // `Element` lives in the DeliRium namespace (not DeliRium::AI) -- the

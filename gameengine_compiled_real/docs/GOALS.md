@@ -532,16 +532,30 @@ Diagnosis (measured, not guessed):
   `helldivers2.exe` pinned at **100% CPU** (a game, running for 2 days).
 - The 7B and the 14B models (9.9 GB) were BOTH resident. The 14B could not
   coexist with the 7B in the free memory.
-- A bare `"Say OK"` to the 7B took **25.4 seconds** — pathologically slow,
-  and the reason is visible in the memory state.
+- A bare `"Say OK"` to the 7B took **25.4 seconds** — pathologically slow.
 - With only the 7B resident, the same request took **1.38 seconds**.
+- The client itself was **verified healthy** in the same conditions:
+  `llm_probe` completed a streaming request in **4.91 s**, and a direct
+  `curl` to `/v1/chat/completions` (the endpoint the client uses) returned
+  a correct SSE stream. So the fault was the **machine's memory**, not the
+  socket code.
 
-So the ladder never got to test anything: the requests were timing out in
-the transport before the model ever produced a tree. **Lesson: a transport
-failure is a statement about the MACHINE, not about the model or the
-prompt.** The distinction matters because a transport failure and a
-validation failure look identical in the summary table, and only one of
-them says anything about the reconstruction quality.
+After unloading the 14B (free memory went from **0 GB to 9 GB**), the same
+probe **PASSED**:
+
+```
+--- [1/1] A-100 gearbox housing ---
+    attempt 1: OK (276.4s)
+    sheets=2  patches=3766  anchors=4608
+    GEOMETRY OK
+valid trees: 1 | baked bodies: 1 | failures: 0 | successes: 1
+```
+
+**Lesson: a transport failure is a statement about the MACHINE, not about
+the model or the prompt.** The distinction matters because a transport
+failure and a validation failure look identical in the summary table, and
+only one of them says anything about the reconstruction quality. Read the
+STAGE before reading the reason.
 
 **The mitigation is in the client**: `AskModelSync` raises the token budget
 to 1400 and the timeout to 300 s (the defaults — 1024 tokens / 180 s — are

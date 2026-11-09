@@ -504,7 +504,7 @@ bool Workspace::InterpretLoadedDocument() {
     if (doc_thread_.joinable()) doc_thread_.join();
 
     doc_busy_ = true;
-    doc_thread_done_ = false;
+    doc_has_result_.store(false, std::memory_order_release);
     doc_thread_ok_ = false;
     doc_thread_reason_.clear();
     doc_thread_tree_.reset();
@@ -577,22 +577,24 @@ bool Workspace::InterpretLoadedDocument() {
         doc_thread_tree_ = std::move(r.tree);
         // The updated corpus goes back to the main thread.
         doc_log_ = std::move(worker_log);
-        doc_thread_done_ = true;
+        // The flag goes LAST, with release ordering: the main thread
+        // acquires it and then reads the fields above, so they are visible.
+        doc_has_result_.store(true, std::memory_order_release);
     });
 
     return true;
 }
 
 void Workspace::PollDocument() {
-    // The worker sets `doc_thread_done_` when it finishes. This function
+    // The worker sets `doc_has_result_` when it finishes. This function
     // runs on the MAIN thread, and it applies the result here -- the scene
     // is not thread-safe, so the bake and the insertion must not happen on
     // the worker.
-    if (!doc_thread_done_) return;
+    if (!doc_has_result_.load(std::memory_order_acquire)) return;
     if (doc_thread_.joinable()) doc_thread_.join();
 
     doc_busy_ = false;
-    doc_thread_done_ = false;   // reset for the next run
+    doc_has_result_.store(false, std::memory_order_release);  // reset for the next run
 
     if (!doc_thread_ok_) {
         Logf("document: FAILED -- %s", doc_thread_reason_.c_str());
