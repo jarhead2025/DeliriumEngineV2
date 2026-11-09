@@ -457,24 +457,57 @@ void LLMClient::Run(const std::string& payload) {
     size_t pos = 0;
     while (true) {
         if (cancel_.load()) { ::close(fd); state_.store(State::Idle, std::memory_order_release); return; }
+        // Read the CHUNK-SIZE line. It has the same sharp edge as the
+        // header read: the socket has an SO_RCVTIMEO, so a recv can time
+        // out (the server is still thinking) and the peer can close.
+        //
+        // The old code broke out on any recv failure and then set
+        // error_ = "the model returned nothing" -- a GENERIC message --
+        // and, because the state was not already Failed, stored
+        // State::Done. So a server that closed mid-response was reported as
+        // a SUCCESSFUL response with an empty body.
+        //
+        // Now: a timeout is retried, a close is named, and an empty
+        // response is a FAILURE (an empty reply is not an answer).
         size_t eol = body.find("\r\n", pos);
-        while (eol == std::string::npos) {
-            const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
-            if (n <= 0) {
-                if (n < 0 && errno == EINTR) continue;
-                ::close(fd);
-                {
-                    std::lock_guard<std::mutex> lk(mu_);
-                    if (partial_.empty()) error_ = "the model returned nothing";
-                    else { final_ = partial_; has_response_ = true; }
+        bool peer_closed = false;
+        {
+            const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
+            for (int waits = 0; waits < max_waits && eol == std::string::npos; ++waits) {
+                const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
+                if (n > 0) {
+                    body.append(buf, size_t(n));
+                    eol = body.find("\r\n", pos);
+                    if (eol != std::string::npos) break;
+                    continue;
                 }
-                state_.store(state_.load(std::memory_order_acquire) == State::Failed
-                                 ? State::Failed : State::Done,
-                             std::memory_order_release);
-                return;
+                if (n == 0) { peer_closed = true; break; }   // the peer closed
+                if (errno == EINTR) continue;
+                // A read timeout: the server is still thinking. Wait.
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
-            body.append(buf, size_t(n));
-            eol = body.find("\r\n", pos);
+        }
+        if (eol == std::string::npos) {
+            ::close(fd);
+            bool have_text = false;
+            {
+                std::lock_guard<std::mutex> lk(mu_);
+                if (peer_closed) {
+                    error_ = "the server closed the connection mid-response";
+                } else if (!partial_.empty()) {
+                    // Some text DID arrive before the trouble: keep it, and
+                    // report the response as finished rather than failed --
+                    // a partial answer is more useful than an error.
+                    final_ = partial_;
+                    has_response_ = true;
+                } else {
+                    error_ = "the response timed out before the first chunk";
+                }
+                have_text = !partial_.empty();
+            }
+            state_.store(have_text ? State::Done : State::Failed,
+                         std::memory_order_release);
+            return;
         }
         const unsigned long csize = std::strtoul(body.c_str() + pos, nullptr, 16);
         pos = eol + 2;
