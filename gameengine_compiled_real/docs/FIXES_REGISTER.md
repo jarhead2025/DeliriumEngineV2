@@ -1916,6 +1916,57 @@ accelerate the per-item work, it is to rebuild the global state once.
 
 ---
 
+## 62. The asset was the wrong FORMAT, and "MISSING" hid it (2026-11-09)
+
+**G18**: `assets/sphere.psf` was a UTF-8 **text** file — a human-readable
+parametric-surface description (`#` comments, `PATCH 0 / TYPE SPHERICAL /
+COEFFS ...`, six orientation anchors) — while its three siblings
+(`torus.psf`, `asteroid.psf`, `roughball.psf`) were all valid binaries
+(`PSF\0` magic). The binary loader rejected it on the magic check, and the
+gallery's scene N reported **"MISSING"**.
+
+> **"MISSING" was a lie.** The file was present and non-empty; it was the
+> wrong format. A diagnostic that says "missing" when the truth is
+> "unreadable" sends you looking for a file operation instead of a format
+> problem.
+
+**The fix** was a new tool (`examples/make_sphere_asset`) that bakes a
+**closed** sphere with the engine's own baker and writes the v3 container.
+Baked rather than hand-built, because every field in a hand-built sphere
+has a measured failure mode (a zero `bbox_span` collapses the mesh to a
+point; a zero `s_scale` makes every seam un-stitchable).
+
+**The tool reads the file back** before reporting success, and verifies the
+*reloaded* file is closed — so "wrote it" and "it loads" are one claim.
+
+### The bug that made the sphere not a sphere
+
+The first version **recomputed** the bbox from the anchor positions and
+wrote that. But the positions are **quantised against the box the baker
+used** — 1.1732 wide, with the baker's 5% margin. Writing a tight box
+(1.0000) made every stored position dequantise against the wrong box, so
+they all shrank by **14.7%**:
+
+```
+baked body  : z [-0.4998, +0.4998]   (correct)
+written file : z [-0.4260, +0.4260]   (14.7% short -- no longer a sphere)
+```
+
+> **Never recompute a quantisation box. Carry the one the quantiser used.**
+> The box is not a description of the geometry — it is the COORDINATE
+> SYSTEM the stored numbers are expressed in. Change it and every number
+> means something else.
+
+**The second bug was in the check, not the code.** The closure test
+compared the z-span to `BBoxSpan().x` — which includes the margin — so a
+correct sphere measured 0.85 and was rejected. The comparison must use the
+**geometric** extent of the anchors.
+
+**Lesson.** *When a tool regenerates a quantised asset, the box is part of
+the data, not metadata.* Carry it verbatim from the producer.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

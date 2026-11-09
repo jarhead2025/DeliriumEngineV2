@@ -715,9 +715,56 @@ guessed.
 `psf_validate.py` exists in the proven tree but not here. ARCHITECTURE.md
 invariant #2 currently has **no gate**.
 
-### G18. Fix `assets/sphere.psf` — `TODO`
+### G18. Fix `assets/sphere.psf` — `DONE`
 It is the legacy **text** format, so the binary loader rejects it and the
 gallery's scene N fails with a misleading "MISSING" message.
+
+**Landed.** The asset was a UTF-8 **text** file (a parametric-surface
+description with `#` comments, a `PATCH 0 / TYPE SPHERICAL / COEFFS ...`
+block, six orientation anchors) while its three siblings — `torus.psf`,
+`asteroid.psf`, `roughball.psf` — were all valid binaries (`PSF\0` magic).
+Only sphere.psf was broken.
+
+New tool `examples/make_sphere_asset` bakes a **closed** sphere with the
+engine's own baker and writes the v3 container. Baked rather than
+hand-built, because every field in a hand-built sphere has a measured
+failure mode: a zero `bbox_span` collapses the mesh to a point, a zero
+`s_scale` makes every seam un-stitchable, and a wrong bbox silently
+misplaces every quantised anchor.
+
+**The tool READS THE FILE BACK** before reporting success, so "wrote it"
+and "it loads" are one claim — and it verifies the result is **closed**
+(symmetric about z=0, z-span matching x-span) on the *reloaded* file.
+
+**Result:** 4,608 anchors / 3,666 surfaces, z-range ±0.4998 against an
+x-span of 1.0000 (ratio **0.9995**), max seam gap 0.147% of the diagonal.
+Gallery scene N: **"3 ok, 0 failed"** — and the render is a complete ball
+with a rounded bottom, not a flat-cut dome.
+
+### Two bugs found while writing it (both in the tool, not the engine)
+1. **Recomputing the bbox corrupted every position.** The anchor positions
+   are quantised against the box the *baker* used (1.1732 wide, with its 5%
+   margin). The tool recomputed a tight box from the anchor positions
+   (1.0000) and wrote that — so every position dequantised against the
+   wrong box and shrank by **14.7%**. The sphere's z-span went from
+   ±0.4998 to ±0.4260 and it stopped being a sphere. Fixed by writing the
+   **baker's** bbox.
+2. **The closure check compared against the wrong quantity.** It compared
+   the z-span to `BBoxSpan().x` — which includes the 5% margin — so a
+   correct sphere measured 0.85 and was rejected. The comparison must use
+   the **geometric** extent of the anchors.
+
+→ The ad-hoc probe (`/tmp/hermes-verify-sphere-asset.py`, 8 checks) asserts
+the rendered silhouette: it is an ellipse of the camera's shape (the
+gallery looks down at 30°, so a sphere is wider than tall), its ratio sits
+**between** the sibling assets' (asteroid 0.7219, sphere 0.7625, roughball
+0.7765), the bottom narrows to a rounded base, the centre is solid, and
+the silhouette is left-right symmetric.
+
+> **Lesson (already G3 in the skill).** An assertion that measures the
+> CAMERA rather than the GEOMETRY fails on a correct result. The first
+> version of this probe demanded a circular silhouette and failed on a
+> perfectly good sphere.
 
 ### G19. Move the ad-hoc probes into `tests/` — `WIP`
 The workspace-torus, layered-splat, path-switch and closed-body probes live

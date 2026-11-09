@@ -420,6 +420,27 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/closed_body_probe.cpp"
   target_link_libraries(closed_body_probe PRIVATE delirium_engine_lib)
 endif()
 
+# -----------------------------------------------------------------------
+# make_sphere_asset - regenerate assets/sphere.psf as a VALID binary.
+#
+# The asset was a legacy TEXT file (a parametric-surface description with
+# `#` comments), so the binary loader rejected it and the gallery's scene N
+# reported a misleading "MISSING" message. This tool bakes a CLOSED sphere
+# with the engine's own baker -- so the bbox, the s_scale, the position
+# quantisation and the corner-vanishing coefficients are all correct by
+# construction -- and writes the v3 container. It READS THE FILE BACK
+# before reporting success, so "wrote it" and "it loads" are the same
+# claim.
+#   cmake --build build_delirium --target make_sphere_asset
+#   ./build_delirium/make_sphere_asset --out assets/sphere.psf
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_sphere_asset/main.cpp")
+  add_executable(make_sphere_asset
+    examples/make_sphere_asset/main.cpp
+  )
+  target_link_libraries(make_sphere_asset PRIVATE delirium_engine_lib)
+endif()
+
 file(GLOB DELIRIUM_VALIDATE_TESTS CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/tests/validate_*.cpp")
 foreach(test_src ${DELIRIUM_VALIDATE_TESTS})
   get_filename_component(test_name ${test_src} NAME_WE)   # e.g. validate_eval
