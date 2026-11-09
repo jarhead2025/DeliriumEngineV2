@@ -653,12 +653,33 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
         //   reserved[0..3]   float  mass       (the authored mass, unbounded)
         //   reserved[4]      uint8  radius     (normalised 0..1)
         //   reserved[5]      uint8  stiffness  (already 0..1)
-        //   reserved[6..27]  zero
+        //   reserved[6..27]  the MATERIAL NAME, as a NUL-terminated string
+        //
+        // WHY THE MATERIAL IS A NAME AND NOT ITS PROPERTIES: a bone's
+        // field properties (permeability, conductivity, ...) are a whole
+        // struct, and 22 bytes cannot hold them. Storing the NAME means
+        // the registry stays the single source of truth for the numbers --
+        // so a "steel" bone and a "steel" bone in two different documents
+        // get IDENTICAL constants, and the material can be RE-resolved if
+        // the registry is ever extended.
+        //
+        // The name is truncated at 22 bytes (the space available). A
+        // longer name is TRUNCATED rather than rejected, because the name
+        // is descriptive -- the physics comes from the registry, and a
+        // truncated name still identifies the material's FIRST WORDS.
+        // (The registry's lookup strips separators, so "cortical bone"
+        // truncates to "cortical bone" at 13 bytes and survives intact.)
         {
             std::memcpy(br.reserved, &b->mass, sizeof(float));
             br.reserved[4] = uint8_t(std::max(0.f, std::min(1.f, b->radius)) * 255.f);
             br.reserved[5] = uint8_t(std::max(0.f, std::min(1.f, b->stiffness)) * 255.f);
             for (int k = 6; k < 28; ++k) br.reserved[k] = 0;
+            if (!b->material.empty()) {
+                const size_t room = 21;      // 22 bytes, one for the NUL
+                const size_t n = std::min(b->material.size(), room);
+                std::memcpy(br.reserved + 6, b->material.data(), n);
+                br.reserved[6 + n] = 0;
+            }
         }
         out.bones.push_back(br);
     }

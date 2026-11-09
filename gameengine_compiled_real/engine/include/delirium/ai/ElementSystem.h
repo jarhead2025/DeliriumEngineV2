@@ -304,6 +304,20 @@ struct Bone {
     // and resolved to an index after the whole tree is built. An unknown
     // name is REJECTED, not silently re-rooted.
     std::string parent_name;
+    // The MATERIAL this part is made of, as a name a document would use:
+    // "steel", "ABS plastic", "copper", "cortical bone".
+    //
+    // WHY A NAME AND NOT THE PROPERTIES: a document says "a steel
+    // housing", not "mu_r = 200, sigma = 1e7". The name is the authored
+    // thing; the NUMBERS come from the material registry
+    // (physics/FieldProperties.h), so every steel part in the world gets
+    // the SAME constants -- and a document can never state a physically
+    // inconsistent material.
+    //
+    // An EMPTY material means "not stated" -- which is honest, and is NOT
+    // the same as "generic plastic". The field layer treats a missing
+    // material as no material at all rather than inventing one.
+    std::string material;
     Vec3        head {0.f, 0.f, 0.f};       // pivot, in the element's LOCAL frame
     Vec3        tail {0.f, 0.f, 0.f};       // the far end of the segment
     Vec3        bend {0.f, 0.f, 0.f};       // the direction the segment deviates

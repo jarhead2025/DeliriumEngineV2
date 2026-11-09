@@ -322,4 +322,67 @@ bool LookupFieldProperties(const std::string& name, FieldProperties& out) {
     return false;
 }
 
+// -----------------------------------------------------------------------------
+// THE BONE MATERIALS.
+//
+// A bone's field properties are read from the MATERIAL NAME stored in the
+// frozen record's reserved bytes. The name is resolved through the
+// registry, so the registry stays the single source of truth for the
+// NUMBERS -- and two "steel" bones in two different documents get
+// IDENTICAL constants.
+//
+// WHY A RESOLVER AND NOT A STORED PROPERTY TABLE: the reserved bytes are
+// 22, and a FieldProperties is far larger. The name is the compact,
+// extensible representation; the numbers are derived.
+// -----------------------------------------------------------------------------
+
+// The material name stored in a bone record's reserved bytes, or "" if
+// the bone has no material.
+//
+// The bytes are NUL-terminated, and the field is zero-filled when there is
+// no material -- so an all-zero field reads as "no material" rather than
+// as an empty-named material.
+std::string BoneMaterialName(const BoneRecord& br) {
+    const char* p = reinterpret_cast<const char*>(br.reserved + 6);
+    // The field is 22 bytes and is always NUL-terminated by the baker.
+    // The length is bounded by the field size so a corrupted record cannot
+    // read past the end.
+    size_t n = 0;
+    while (n < 22 && p[n] != '\0') ++n;
+    return std::string(p, n);
+}
+
+// Resolve the bone records' materials into their field properties.
+//
+// `out` is indexed by bone index and holds a property table for the bones
+// that HAVE a material. `bone_material_names` receives the material name
+// of each bone (empty if none), so a caller can report which part is
+// missing a material.
+//
+// Returns false with `why` when a bone names a material the registry does
+// not know. An UNKNOWN material is an error, not a default: defaulting it
+// would assert physics the document never stated, and the document
+// pipeline's whole value is that it does not invent.
+//
+// A bone with NO material is not an error -- it simply has no properties.
+bool ResolveBoneMaterials(const std::vector<BoneRecord>& bones,
+                          std::vector<FieldProperties>& out,
+                          std::vector<std::string>& bone_material_names,
+                          std::string& why) {
+    out.assign(bones.size(), FieldProperties{});
+    bone_material_names.assign(bones.size(), std::string{});
+    for (size_t i = 0; i < bones.size(); ++i) {
+        const std::string name = BoneMaterialName(bones[i]);
+        bone_material_names[i] = name;
+        if (name.empty()) continue;           // no material stated
+        if (!LookupFieldProperties(name, out[i])) {
+            why = "unknown material \"" + name + "\" on bone " +
+                  std::to_string(i) +
+                  " -- use one of the known material names";
+            return false;
+        }
+    }
+    return true;
+}
+
 } // namespace DeliRium

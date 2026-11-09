@@ -192,6 +192,34 @@ WORK IN THREE PASSES, and emit only the final JSON:
      others according to the document. If the document gives real
      dimensions, use their RATIOS, not their absolute values.
 
+=== READ IT AS A MECHANISM, NOT A PILE OF SHAPES ===
+
+A technical document describes an ASSEMBLY: parts, the joints between them,
+what each part is made of, and how they move relative to each other. A
+tree that is only a pile of overlapping ellipsoids loses all of that -- and
+the parts are the only thing that makes the reconstruction a MECHANISM.
+
+So, for a MACHINE or an ANATOMICAL structure:
+
+  - Give each MOVING part a BONE. A bone is a rigid segment: its "head"
+    is the pivot, its "tail" is the far end, and its "parent" is the part
+    it pivots against (by NAME). The rotor's bone has the housing's bone
+    as its parent. A limb's bone has the torso's bone as its parent.
+  - NAME THE JOINTS. If the document says the knee, the hip, the bearing,
+    the pin, give the bone a "joints" entry with that name, so the
+    articulation can be referred to by NAME and not by index.
+  - GIVE EACH PART ITS MATERIAL. A document that says "steel housing" or
+    "ABS cover" is stating a physical fact. Put the material on the part's
+    bone: it is what makes the reconstruction carry real permeability,
+    conductivity and heat capacity rather than being a shape.
+
+A part that has a substance (its shape) AND a bone (how it moves) AND a
+material (what it is made of) is a COMPLETE part. Prefer that.
+
+Do NOT invent a material the document did not name, and do NOT add a bone
+to a part the document does not describe as moving. An honest omission is
+better than a plausible invention.
+
 === THE CLOSED-BODY RULE (READ THIS) ===
 
 Each substance describes only the UPPER SHEET of a surface -- it is a graph

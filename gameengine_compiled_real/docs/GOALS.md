@@ -402,7 +402,7 @@ cortical bone.
 poses a bone so its anchors move (that is the "live physical
 reparametrization" step, and it is the honest boundary of what is built).
 
-### G12. Re-point the doc-learner at bones — `TODO`
+### G12. Re-point the doc-learner at bones — `DONE`
 The prompt currently teaches substances and sheets. Once bones exist, a
 technical document is interpreted as *mechanisms and their parts*: a gearbox
 document becomes a shaft + housing + rotor with articulations, not four
@@ -415,6 +415,40 @@ name the material, and the reconstruction should carry it into the bone's
 field properties. The tree schema needs a `material` field on a bone, and
 the parser needs to resolve it through `LookupFieldProperties`. **That is
 the concrete form this goal takes now.**
+
+**LANDED** — the gate is `validate_bone_materials` (**46 checks, 0 failures**).
+
+**The chain it closes:**
+```
+document says "steel housing"
+  -> JSON:  "bone": { ..., "material": "steel" }
+  -> parser:  Bone::material
+  -> baker:   BoneRecord.reserved[6..27] = "steel\0"
+  -> resolver: FieldProperties (steel's REAL constants)
+```
+
+**The material is stored as a NAME, not as its properties.** The
+`FieldProperties` struct is far larger than the frozen record's reserved
+space, and the registry stays the single source of truth for the numbers —
+so two "steel" bones in two different documents get **identical**
+constants, and the material can be re-resolved if the registry is extended.
+
+**The prompts now teach:**
+- the schema prompt lists the `material` key and the vocabulary (steel,
+  copper, aluminium, mu-metal, neodymium, ABS, plastic, glass, water,
+  muscle, bone) — and the gate asserts **every name it teaches actually
+  resolves in the registry**, so the prompt cannot teach a material that
+  would be rejected;
+- the document prompt has a new section, **"READ IT AS A MECHANISM, NOT A
+  PILE OF SHAPES"**: give each moving part a bone, name the joints, give
+  each part its material — and do not invent either one the document did
+  not state.
+
+**Where the unknown material is caught.** The parser checks the material's
+*shape* but not its *existence*: an unknown material is a **DOCUMENT**
+problem, not a JSON problem, so it belongs in the error log (which is what
+lets the escalation prompt tell the model which word it got wrong). The
+resolver rejects it with the offending name.
 
 ---
 

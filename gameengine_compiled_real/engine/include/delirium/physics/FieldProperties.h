@@ -443,4 +443,34 @@ namespace FieldPresets {
 // plastic", because that would assert a physics the document never said.
 bool LookupFieldProperties(const std::string& name, FieldProperties& out);
 
+// -----------------------------------------------------------------------------
+// THE BONE MATERIALS.
+//
+// A bone's material is stored in its frozen record's reserved bytes as a
+// NAME, and resolved through the registry. So the registry stays the single
+// source of truth for the numbers -- two "steel" bones in two different
+// documents get IDENTICAL constants -- and a material can be re-resolved if
+// the registry is ever extended.
+// -----------------------------------------------------------------------------
+
+// The material name stored in a bone record's reserved bytes, or "" if
+// the bone has no material. The field is NUL-terminated and zero-filled
+// when there is no material.
+std::string BoneMaterialName(const BoneRecord& br);
+
+// Resolve the bone records' materials into their field properties.
+//
+// `out` is indexed by bone index; `bone_material_names` receives each
+// bone's material name (empty if none).
+//
+// Returns false with `why` when a bone names a material the registry does
+// not know. An UNKNOWN material is an ERROR, not a default: defaulting it
+// would assert physics the document never stated.
+//
+// A bone with NO material is not an error -- it simply has no properties.
+bool ResolveBoneMaterials(const std::vector<BoneRecord>& bones,
+                          std::vector<FieldProperties>& out,
+                          std::vector<std::string>& bone_material_names,
+                          std::string& why);
+
 } // namespace DeliRium

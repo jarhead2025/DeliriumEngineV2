@@ -600,6 +600,24 @@ bool BuildElement(const JsonValue& v, std::unique_ptr<Element>& out, std::string
                 if (!it.text.empty()) bone.joints.push_back(it.text);
             }
         }
+        // The MATERIAL, as a NAME.
+        //
+        // WHY THE NAME IS NOT VALIDATED HERE: the parser's job is to
+        // parse, and the registry's job is to know what exists. But the
+        // name IS checked for SHAPE (a non-string is a schema error), and
+        // an unknown name is caught LATER -- by the field layer, which
+        // reports it as "unknown material" rather than as a parse error.
+        //
+        // WHY THAT ORDER: a document that names a material the registry
+        // does not know is a DOCUMENT problem, not a JSON problem. The
+        // document pipeline's error log is where that belongs -- it is
+        // exactly the kind of failure the log exists to collect, and it
+        // is what lets the escalation prompt tell the model which word
+        // it got wrong.
+        if (const JsonValue* m = b->Find("material")) {
+            if (!m->IsString()) { why = "bone.material must be a string"; return false; }
+            bone.material = m->text;
+        }
         // The parent NAME is stashed in the bone's name field temporarily;
         // ResolveBoneParents rewrites it into an index. A name that also
         // names the bone would be ambiguous, so the parent goes in a
@@ -784,6 +802,7 @@ std::string ElementTreeSystemPrompt() {
 "    \"mass\":      0.5,                // optional: mass contribution\n"
 "    \"stiffness\": 1.0,                // optional: 0 = free to swing, 1 = rigid\n"
 "    \"joints\":    [\"knee\"],          // optional: named articulation points\n"
+"    \"material\":  \"steel\",           // optional: what this part is made of\n"
 "    \"parent\":    \"housing\"          // optional: the PARENT BONE'S NAME\n"
 "  }\n"
 "\n"
@@ -796,6 +815,28 @@ std::string ElementTreeSystemPrompt() {
 "  structure but no surface.\n"
 "- Name the articulations where two bones meet, so a document can refer to\n"
 "  \"the knee\" instead of an index.\n"
+"\n"
+"=== MATERIALS: what each part is made of ===\n"
+"A bone's \"material\" names what that part is MADE OF. It is how a\n"
+"technical document's materials become physics: the name is resolved\n"
+"against a registry of REAL material properties, so a \"steel\" housing\n"
+"carries steel's actual permeability, conductivity and heat capacity.\n"
+"\n"
+"Use ONLY these names (anything else is REJECTED):\n"
+"  metals:    \"steel\", \"copper\", \"aluminium\", \"mumetal\",\n"
+"             \"neodymium\" (a magnet)\n"
+"  polymers:  \"ABS\", \"plastic\"\n"
+"  ceramics:  \"glass\"\n"
+"  fluids:    \"water\"\n"
+"  biological:\"muscle\", \"bone\"\n"
+"\n"
+"Rules for materials:\n"
+"- Put the material on the BONE, not on the node -- a bone is a rigid PART,\n"
+"  and a part is made of one material.\n"
+"- Omit it if the document does not say. An omitted material means \"not\n"
+"  stated\", which is honest. Do NOT guess.\n"
+"- A part with a substance AND a bone AND a material is a complete part:\n"
+"  its shape, its articulation, and what it is made of.\n"
 "\n"
 "Rules:\n"
 "- Use 1..12 nodes. Nest with \"children\".\n"

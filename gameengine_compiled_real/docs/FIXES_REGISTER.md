@@ -1466,6 +1466,48 @@ name is for authoring; the solver reads the numbers.
 
 ---
 
+## 50. The material had to be stored as a NAME, not as its properties (2026-11-08)
+
+G12 (the doc-learner at bones) needed a document's "steel housing" to reach
+the physics layer. The obvious implementation — store the `FieldProperties`
+on the bone — does not fit: the struct is far larger than the frozen
+`BoneRecord`'s reserved space.
+
+**What was done.** The bone stores the MATERIAL NAME, NUL-terminated, in
+`reserved[6..27]` (22 bytes). The registry stays the single source of
+truth for the numbers, so:
+- two "steel" bones in two different documents get **identical** constants;
+- the material can be **re-resolved** if the registry is extended;
+- a document can never state a physically inconsistent material.
+
+**Why the name is truncated rather than rejected.** 22 bytes is 21
+characters. A longer name is truncated, because the name is *descriptive*
+— the physics comes from the registry, and a truncated name still identifies
+the material's first words. (The registry strips separators, so "cortical
+bone" fits at 13 bytes and survives intact.)
+
+**Why an unknown material is rejected LATER, not at parse time.** The
+parser's job is to parse; the registry's job is to know what exists. An
+unknown material is a **DOCUMENT problem**, not a JSON problem — so it
+belongs in the document pipeline's error log, which is exactly what the log
+exists to collect, and it is what lets the escalation prompt tell the model
+which word it got wrong. The parser checks the material's *shape* (a
+non-string is a schema error) but not its *existence*.
+
+**The gate** (`validate_bone_materials`, 46 checks) covers the whole chain:
+document → JSON → parser → baker → frozen record → resolver, and asserts
+the name survives byte-for-byte, resolves to the same constants, two
+materials stay distinguishable, the mass/radius/stiffness bytes are NOT
+disturbed by the new field, an unknown material is rejected, a bone with no
+material is not an error, and **every material the prompt teaches actually
+resolves in the registry**.
+
+**Lesson.** *A name in the frozen record plus a registry is how a bounded
+record carries unbounded data.* The record stays 64 bytes, and the data
+stays consistent across every document in the world.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |
@@ -1481,17 +1523,21 @@ the classic path's per-pixel winner is order-sensitive by construction.
 
 # Still open
 
-- **G12 (doc-learner at bones)** is the next spine goal. The bones and the
-  material vocabulary both exist; what does not is the pipeline that reads
-  a technical document as a *mechanism* — a shaft + housing + rotor with
-  articulations, each naming its material, rather than four overlapping
-  ellipsoids. The tree schema needs a `material` field on a bone, resolved
-  through `LookupFieldProperties`.
-- **Nothing yet POSES a bone.** The baker emits `BoneRecord`s and the
-  anchors carry `bone_index`, and the inertia layer reads them — but no
-  code transforms the anchors a bone owns when the bone moves. That is the
-  "live physical reparametrization" step, and it is the honest boundary of
-  what is built.
+- **G13 (the success log as a retrieval corpus) is the next learning goal.**
+  The failure log already feeds the escalation prompt; the success log
+  should feed the *normal* prompt as a retrieved worked example (the
+  nearest prior document → its tree). That turns "accumulates complaints"
+  into "improves with use" — few-shot over a local corpus, no neural net
+  required.
+- **G14** — the escalation path has never been driven against a real
+  larger model; it is unit-tested with a stub callback.
+- **G15** — the document pipeline is not wired into the workspace UI. The
+  `DocLearner` is a library with a gate, not yet a console button.
+- **Nothing yet POSES a bone.** The baker emits `BoneRecord`s, the anchors
+  carry `bone_index`, the material travels in the record's reserved bytes,
+  and the inertia and field layers read them — but no code transforms the
+  anchors a bone owns when the bone moves. That is the "live physical
+  reparametrization" step, and it is the honest boundary of what is built.
 - **Nothing yet SOLVES a field.** The field layer provides the material
   data, the exact relations, and the lumped effective medium. There is no
   PDE solver, and the layer does not pretend otherwise.
@@ -1505,13 +1551,6 @@ the classic path's per-pixel winner is order-sensitive by construction.
   there is no `MakeSphere()` convenience.
 - The **area-weighted path** is implemented, verified, and wired into the
   editor (the viewport's path buttons and the app's `--render-path` flag).
-- The document pipeline's escalation path is unit-tested with a stub
-  callback; it has **not** been driven against a real larger model.
-- The document pipeline is not yet wired into the **workspace UI** — the
-  `DocLearner` is a library with a gate, not yet a console button.
-- The **success log is not yet used as a retrieval corpus** — successful
-  (document → tree) pairs should be fed back as worked examples when
-  interpreting a new document.
 - The learned categorizer (stage-1 neural weights) does not exist — the
   procedural generator is still the stand-in.
 - The **stair-stepped rim** on baked bodies is fix 14 (the tangent-plane
