@@ -404,13 +404,19 @@ std::string Workspace::AskModelSync(const LLM::Config& cfg,
     // it can own its client for the duration.
     LLM::Config c = cfg;
     c.system = system;
-    // A document prompt is LARGE (the schema plus the document plus the
-    // worked examples), so the token budget and the timeout are both raised
-    // above the defaults. The default 1024 tokens is not enough for a
-    // schema-shaped JSON answer, and the default 180 s is not enough for a
-    // 14B model on a loaded machine.
+    // A document prompt is LARGE (the system prompt alone is ~2,900
+    // tokens -- 11.6 KB -- plus the document and the worked examples), so
+    // the token budget and the timeout are both raised above the defaults.
+    // The default 1024 tokens is not enough for a schema-shaped JSON
+    // answer.
+    //
+    // The timeout is 900 s rather than 300 s because a MEASURED successful
+    // run took 276.4 s on a loaded machine. A 300 s ceiling sat only 8%
+    // above the worst observed case, so any additional load turned a
+    // working request into a "transport" failure -- indistinguishable from
+    // "the model is unreachable".
     if (c.max_tokens < 1400) c.max_tokens = 1400;
-    if (c.timeout_seconds < 300) c.timeout_seconds = 300;
+    if (c.timeout_seconds < 900) c.timeout_seconds = 900;
 
     LLM::LLMClient client(c);
     if (!client.Send(user)) {

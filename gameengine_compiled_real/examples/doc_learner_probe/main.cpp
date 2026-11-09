@@ -75,18 +75,42 @@ std::string ask_model(const LLM::Config& cfg, const std::string& system,
                        std::string* err_out) {
     LLM::Config c = cfg;
     c.system = system;
+    // The document prompt is LARGE: the system prompt alone is ~2,900
+    // tokens (11.6 KB), and the document and the worked examples add more.
+    // 1,400 completion tokens is the measured requirement for a
+    // schema-shaped JSON answer.
     c.max_tokens = 1400;
-    c.timeout_seconds = 300;
+    // The timeout must exceed the MEASURED worst case by a wide margin.
+    //
+    // A measured successful run took 276.4 s on a loaded machine -- and
+    // the old 300 s socket timeout sat only 8% above it. Under any
+    // additional load the request crossed the timeout and was reported as
+    // a TRANSPORT failure, which looks exactly like "the model is
+    // unreachable" and sends you looking at the wrong code entirely.
+    //
+    // 900 s is ~3x the measured worst case. The request that would be
+    // killed by it has already failed for other reasons.
+    c.timeout_seconds = 900;
     LLM::LLMClient client(c);
     const auto t0 = std::chrono::steady_clock::now();
     if (!client.Send(user)) {
         if (err_out) *err_out = "could not start the request";
         return {};
     }
+    // The outer bound is DERIVED from the client's timeout rather than
+    // hard-coded: the two were 320 s and 300 s, which meant the outer loop
+    // could give up while the client was still legitimately working. The
+    // outer bound is now 30% above the socket timeout, so the CLIENT is
+    // always the thing that decides the request is over.
+    const int max_ticks = (c.timeout_seconds * 13) / 10;   // 100 ms per tick
     int ticks = 0;
     while (client.IsBusy()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        if (++ticks > 3200) { client.Cancel(); if (err_out) *err_out = "timed out"; return {}; }
+        if (++ticks > max_ticks) {
+            client.Cancel();
+            if (err_out) *err_out = "timed out";
+            return {};
+        }
     }
     if (client.CurrentState() == LLM::State::Failed) {
         if (err_out) *err_out = client.Error();
