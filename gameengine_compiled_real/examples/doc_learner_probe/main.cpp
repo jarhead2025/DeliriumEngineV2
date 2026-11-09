@@ -25,6 +25,8 @@
 #include <chrono>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <thread>
@@ -121,6 +123,20 @@ int main(int argc, char** argv) {
     std::string log_path = "/tmp/doc_learner_log.txt";
     int ndocs = (int)kCorpus.size();
     bool escalate = false;
+    // --file PATH: interpret a DOCUMENT FROM DISK instead of the built-in
+    // corpus.
+    //
+    // WHY: the built-in corpus is fixed, so it cannot be used to test a
+    // specific document -- and testing the escalation ladder needs a
+    // document the local model is known to struggle with. A file makes the
+    // probe's input a parameter instead of a constant.
+    //
+    // It can be given MORE THAN ONCE: each --file adds a document, and
+    // they are processed in order. That is how the CORPUS accumulates
+    // across documents in one run -- the second document benefits from
+    // the first.
+    std::vector<std::string> files;
+    std::string domain = "machine";
 
     for (int i = 1; i < argc; ++i) {
         if (!std::strcmp(argv[i], "--host") && i + 1 < argc) host = argv[++i];
@@ -132,9 +148,37 @@ int main(int argc, char** argv) {
         else if (!std::strcmp(argv[i], "--docs") && i + 1 < argc) ndocs = std::atoi(argv[++i]);
         else if (!std::strcmp(argv[i], "--save-log") && i + 1 < argc) log_path = argv[++i];
         else if (!std::strcmp(argv[i], "--escalate")) escalate = true;
+        else if (!std::strcmp(argv[i], "--file") && i + 1 < argc) files.push_back(argv[++i]);
+        else if (!std::strcmp(argv[i], "--domain") && i + 1 < argc) domain = argv[++i];
     }
     if (ndocs < 1) ndocs = 1;
     if (ndocs > (int)kCorpus.size()) ndocs = (int)kCorpus.size();
+
+    // The documents to process: the built-in corpus, or the files.
+    std::vector<Document> docs;
+    if (!files.empty()) {
+        for (const std::string& path : files) {
+            std::ifstream f(path, std::ios::binary);
+            if (!f) {
+                std::fprintf(stderr, "FAIL: cannot read '%s'\n", path.c_str());
+                return 1;
+            }
+            std::string text((std::istreambuf_iterator<char>(f)),
+                             std::istreambuf_iterator<char>());
+            if (text.empty()) {
+                std::fprintf(stderr, "FAIL: '%s' is empty\n", path.c_str());
+                return 1;
+            }
+            // The id is the file's stem.
+            std::string id = path;
+            const size_t slash = id.find_last_of('/');
+            if (slash != std::string::npos) id = id.substr(slash + 1);
+            docs.push_back(Document{id, text, domain});
+        }
+    } else {
+        docs.assign(kCorpus.begin(), kCorpus.begin() + ndocs);
+    }
+    ndocs = (int)docs.size();
 
     std::printf("=== DOC LEARNER PROBE (live model) ===\n");
     std::printf("server: %s:%d\nmodel:  %s\n", host.c_str(), port, model.c_str());
@@ -151,12 +195,40 @@ int main(int argc, char** argv) {
     LLM::Config cfg;
     cfg.host = host; cfg.port = port; cfg.model = model;
 
+    // The CORPUS is LOADED before the documents are interpreted, so the
+    // FIRST document in this run already benefits from every document
+    // interpreted in a PREVIOUS run.
+    //
+    // This is the whole point of the corpus: a corpus that starts empty on
+    // every run is not a corpus, it is a within-run cache. The load is
+    // best-effort -- a missing log is the cold-start case, not an error.
     DocErrorLog log;
+    if (log.Load(log_path)) {
+        std::printf("corpus: loaded %zu entries (%zu ok, %zu failed) from '%s'\n",
+                    log.Size(), log.SuccessCount(), log.FailureCount(),
+                    log_path.c_str());
+    } else {
+        std::printf("corpus: no corpus at '%s' (cold start)\n", log_path.c_str());
+    }
     int ok_docs = 0, failed_docs = 0, baked_docs = 0;
 
     for (int di = 0; di < ndocs; ++di) {
-        const Document& doc = kCorpus[di];
+        const Document& doc = docs[di];
         std::printf("--- [%d/%d] %s ---\n", di + 1, ndocs, doc.id.c_str());
+
+        // What the CORPUS supplies for THIS document. It is printed because
+        // a learning system whose learning is invisible cannot be
+        // distinguished from one that has not learned -- and because the
+        // whole point of the corpus is that this line changes as the corpus
+        // grows.
+        const auto retrieved = log.RetrieveSimilar(doc.text, doc.domain, 3);
+        if (retrieved.empty()) {
+            std::printf("    corpus: no similar worked example (cold for this doc)\n");
+        } else {
+            std::printf("    corpus: %zu worked example(s), best '%s' (%.0f%%)\n",
+                        retrieved.size(), retrieved[0].document_id.c_str(),
+                        retrieved[0].similarity * 100.0);
+        }
 
         double secs = 0.0;
         std::string err;
