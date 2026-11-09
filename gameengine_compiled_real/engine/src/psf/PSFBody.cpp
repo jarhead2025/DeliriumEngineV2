@@ -965,9 +965,25 @@ const std::vector<Vec3>& PSFBody::ComputeSmoothNormals() const {
         return smooth_n_cache;
 
     std::vector<Vec3> N(anchor_blob.size(), Vec3{0,0,0});
-    // anchor slot -> corner (u,v): A0=(0,0) A1=(0,1) A2=(1,1) A3=(1,0)
-    static const float CU[4] = {0,0,1,1};
-    static const float CV[4] = {0,1,1,0};
+    // anchor slot -> corner (u,v).
+    //
+    // THE CORNER ORDER IS CONVENTION A (u: P0->P3, v: P0->P1) -- the same
+    // convention the renderer uses in Patch::EvaluateDerivs and that the
+    // baker writes (a00, a10, a11, a01 = (i,j), (i+1,j), (i+1,j+1), (i,j+1)):
+    //
+    //   A0 = (0,0)   A1 = (1,0)   A2 = (1,1)   A3 = (0,1)
+    //
+    // This table used to be the TRANSPOSED one (A1=(0,1), A3=(1,0)) -- the
+    // convention B that Patch.cpp explicitly warns about ("the partials MUST
+    // use the SAME convention, or cross(dPdu,dPdv) flips sign"). The effect:
+    // two of the four corners of EVERY patch contributed the normal of the
+    // WRONG corner, so the smooth-normal field was a mixture of two
+    // different directions on every patch. The symptom is view-dependent:
+    // the shading normal points the wrong way on the faces where the
+    // transposition shows, and the object appears to lose its
+    // front-facing half as the camera swings around it.
+    static const float CU[4] = {0.f, 1.f, 1.f, 0.f};
+    static const float CV[4] = {0.f, 0.f, 1.f, 1.f};
     // AREA-WEIGHTED accumulation: each patch contributes its corner normal
     // scaled by the patch's screen-independent size, so a large patch sets
     // the dominant orientation where it meets small ones (an unweighted

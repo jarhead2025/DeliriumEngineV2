@@ -91,6 +91,9 @@ int main(int argc, char** argv) {
     std::string auto_prompt;
     std::string semantic = "orb";
     int render_path = -1;   // -1 = the workspace's default
+    // Camera placement, so a capture can be taken from a KNOWN angle.
+    // -1 = "not specified" (the workspace's own framing decides).
+    float cam_yaw = -999.f, cam_pitch = -999.f, cam_dist = -1.f;
 
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
@@ -110,6 +113,14 @@ int main(int argc, char** argv) {
         // --render-path N: 0 march, 1 raymarch, 2 splat classic,
         // 3 splat layered, 4 splat area (the pixel-footprint pyramid).
         else if (a == "--render-path") render_path = std::atoi(next("-1").c_str());
+        // --cam-yaw / --cam-pitch / --cam-dist: pin the orbit camera so a
+        // capture is taken from a KNOWN angle. A view-dependent defect (a
+        // normal that points the wrong way on one side of the object) is
+        // invisible unless the angle is an INPUT, not an uncontrolled
+        // variable that drifts between runs.
+        else if (a == "--cam-yaw")   cam_yaw   = std::atof(next("0").c_str());
+        else if (a == "--cam-pitch") cam_pitch = std::atof(next("0").c_str());
+        else if (a == "--cam-dist")  cam_dist  = std::atof(next("0").c_str());
         else {
             std::fprintf(stderr, "unknown option: %s\n", a.c_str());
             return 2;
@@ -176,6 +187,12 @@ int main(int argc, char** argv) {
     cfg.model = model;
     ws.SetLlmConfig(cfg);
     ws.Attach();
+    // Pin the camera AFTER Attach(): the workspace frames the scene during
+    // Attach (computing the distance from the objects' world bounds), so an
+    // override applied before that would be overwritten.
+    if (cam_yaw > -900.f)   ws.SetOrbitYaw(cam_yaw);
+    if (cam_pitch > -900.f) ws.SetOrbitPitch(cam_pitch);
+    if (cam_dist > 0.f)     ws.SetOrbitDist(cam_dist);
     if (render_path >= 0) {
         // The render path is a RUNTIME value the renderer reads every
         // frame, so this is instant -- the same mechanism the viewport's

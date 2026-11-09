@@ -1042,6 +1042,37 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
             // key light: toward-light from upper-front (camera side). Kernel shades with
 // dot(N, light) where light points TOWARD the light source, so pass +toward.
             float tlx = 0.55f, tly = -0.45f, tlz = 0.70f;
+            // DIAGNOSTIC: attach the key light to the camera's azimuth.
+            //
+            // WHY: the default key light is FIXED IN WORLD SPACE. As the
+            // camera orbits, the set of front-lit surfaces changes, so the
+            // render changes -- which is physically correct, but it makes
+            // "is the geometry symmetric?" unanswerable from the image
+            // alone: a dim surface and a missing surface look identical.
+            //
+            // With the light attached to the camera, every azimuth sees the
+            // same lighting, so any remaining variation in the coverage
+            // curve is GEOMETRY. This is the A/B that separates "the shape
+            // is wrong" from "the light moved".
+            if (const char* e = std::getenv("DELIRIUM_CAMERA_LIGHT")) {
+                if (std::strcmp(e, "1") == 0) {
+                    // The camera's right vector, in world space: with up=+Y,
+                    // cross(up, fwd) = (fwd.z, 0, -fwd.x). The light's
+                    // horizontal component is placed along it, so the light
+                    // stays at the camera's upper-left and turns WITH the
+                    // camera.
+                    Vec3 fwd = cam.target - cam.position;
+                    const float fl = std::sqrt(fwd.x*fwd.x + fwd.y*fwd.y + fwd.z*fwd.z);
+                    if (fl > 1e-6f) { fwd.x /= fl; fwd.y /= fl; fwd.z /= fl; }
+                    Vec3 r{fwd.z, 0.f, -fwd.x};
+                    const float rl = std::sqrt(r.x*r.x + r.y*r.y + r.z*r.z);
+                    if (rl > 1e-6f) { r.x /= rl; r.y /= rl; r.z /= rl; }
+                    // toward-light = right*0.55 + up*0.45 + fwd*0.70
+                    tlx = r.x * 0.55f + fwd.x * 0.70f;
+                    tly = r.y * 0.55f + 0.45f + fwd.y * 0.70f;
+                    tlz = r.z * 0.55f + fwd.z * 0.70f;
+                }
+            }
             float lf = 1.f / std::sqrt(tlx*tlx+tly*tly+tlz*tlz);
             cl_float3 light = {{tlx*lf, tly*lf, tlz*lf}};
             // MVP for NDC depth in march_draw (same matrix as the splat path)

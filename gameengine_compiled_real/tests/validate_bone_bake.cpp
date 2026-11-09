@@ -39,6 +39,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include <set>
 #include <string>
@@ -149,16 +150,19 @@ int main() {
             if (std::fabs(b.bind_pos[2] + 0.3f) < 1e-4f) { shaft = &b; break; }
         CHECK(shaft != nullptr, "D: the shaft's record exists");
         if (shaft) {
-            // reserved[0] = radius (normalised), [1] = stiffness, [2] = mass.
-            // The authored values are 0.05, 0.8, 0.4 -- radius and mass are
-            // normalised to 0..1, so the check is that the bytes are
-            // present and in range, and that the STIFFNESS (already 0..1)
-            // round-trips exactly.
-            CHECK(shaft->reserved[0] < 255, "D: the radius byte is written");
-            CHECK(std::fabs(shaft->reserved[1] / 255.f - 0.8f) < 0.01f,
+            // reserved[0..3] = the authored MASS as a float (unbounded --
+            // a normalised byte would clamp it), [4] = radius (normalised),
+            // [5] = stiffness (already 0..1).
+            float mass = 0.f;
+            std::memcpy(&mass, shaft->reserved, sizeof(float));
+            CHECK(std::fabs(mass - 0.4f) < 1e-5f,
+                  "D: the authored mass round-trips UNCLAMPED",
+                  "got %f, want 0.4", mass);
+            CHECK(std::fabs(shaft->reserved[4] / 255.f - 0.05f) < 0.01f,
+                  "D: the radius round-trips", "got %f", shaft->reserved[4] / 255.f);
+            CHECK(std::fabs(shaft->reserved[5] / 255.f - 0.8f) < 0.01f,
                   "D: the stiffness round-trips",
-                  "got %f", shaft->reserved[1] / 255.f);
-            CHECK(shaft->reserved[2] < 255, "D: the mass byte is written");
+                  "got %f", shaft->reserved[5] / 255.f);
         }
     }
 

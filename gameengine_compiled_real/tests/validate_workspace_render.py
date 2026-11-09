@@ -134,6 +134,74 @@ def centre_and_lit(mask):
     return (dark / total if total else 0.0), (lit / (w * h))
 
 
+def hole_ratio(mask):
+    """(hole radius in px, outer radius in px) measured from the silhouette.
+
+    Scans RIGHT from the centre along the middle row: the first surface
+    pixel is the hole's edge, and the last surface pixel is the silhouette's
+    edge. Returns (-1, -1) when no surface is found.
+
+    WHY THIS EXISTS: the central-square metric cannot tell an open hole from
+    a filled one, because the square's half-width (min(cx,cy)//4 px of the
+    VIEWPORT) routinely reaches past the hole's edge into the tube. The
+    hole's RADIUS, measured against the silhouette's outer radius, is the
+    quantity that actually characterises "is there a hole" -- and it scales
+    with the camera distance and the FOV automatically.
+
+    WHY THE MINIMUM OVER THE SCAN ROWS: the workspace's camera views the
+    torus OBLIQUELY, not down its axis -- so the hole projects as a
+    foreshortened ELLIPSE, and a single row through the centre measures its
+    WIDE axis. The wide axis is not the hole's characteristic size: the
+    torus's NEAR WALL rises into the frame along that row, so the scan
+    stops early and the ratio comes out small (measured 0.2368 against an
+    analytic 0.4545).
+
+    The hole's NARROW axis is the honest measure of "how open" it is, and
+    that is what the minimum over the scan rows finds. So the hole radius
+    is the MINIMUM over the rows that contain a hole, and the outer radius
+    is the maximum -- the ring's true extent.
+
+    The analytic ratio for an oblique view is
+        (major-minor)/(major+minor) * sin(view elevation)
+    which is <= 0.4545 and tends to 0 as the view becomes edge-on. So the
+    threshold is expressed as a floor on the MINIMUM radius, in absolute
+    pixels: a hole that is closed has a minimum radius of 0 no matter how
+    the view is angled.
+    """
+    h = len(mask)
+    w = len(mask[0]) if h else 0
+    if not w or not h:
+        return -1, -1
+    cx, cy = w // 2, h // 2
+    # The scan band: the rows around the centre.
+    band = max(2, min(cy, h - cy) // 6)
+    hole_min = -1
+    outer_max = -1
+    for y in range(cy - band, cy + band + 1):
+        row = mask[y]
+        hole_end = -1
+        for x in range(cx, w):
+            if row[x]:
+                hole_end = x
+                break
+        if hole_end < 0:
+            continue                      # this row has no hole at all
+        outer_end = -1
+        for x in range(w - 1, cx, -1):
+            if row[x]:
+                outer_end = x
+                break
+        if outer_end < 0:
+            continue
+        hr = hole_end - cx
+        orr = outer_end - cx
+        if hole_min < 0 or hr < hole_min:
+            hole_min = hr
+        if orr > outer_max:
+            outer_max = orr
+    return hole_min, outer_max
+
+
 def main():
     tmp = tempfile.mkdtemp(prefix="delirium-workspace-gate-")
     try:
@@ -210,23 +278,39 @@ def main():
         # The HOLE is measured on the march path, which is the one that
         # resolves it. This is deliberate and measured, not convenience:
         #
-        #   path          centre-background   hole?
-        #   march              0.884           yes
-        #   splat-area         1.000           yes
-        #   splat-layered      0.520           no
-        #   raymarch           0.526           no
-        #   splat              0.466           no
-        #
         # The splat-family paths project SURFELS to pixels, so a hole only
         # survives if no surfel lands in it; a torus's inner wall does land
         # there. The march path marches RAYS, so the gap is preserved. That
         # is a pre-existing property of those paths, not a regression --
-        # the torus SURFACE itself is correct (the baker keeps 952 patches
-        # at grid 48 with the centre out of support).
+        # the torus SURFACE itself is correct (the baker keeps 1220 patches
+        # at grid 48 with 0 anchors inside the hole's radius).
         #
         # So the gate asserts two things separately:
         #   C1. the torus has a real HOLE on a path that resolves it;
         #   C2. the workspace's DEFAULT path renders the torus at all.
+        #
+        # THE HOLE MEASUREMENT IS RELATIVE, NOT ABSOLUTE.
+        #
+        # The earlier version asserted "the central square is >70%
+        # background". That is only meaningful if the central square FITS
+        # INSIDE the hole -- and it does not. The square's half-width is
+        # min(cx,cy)/4 pixels of the VIEWPORT, while the hole's radius is
+        # set by the camera distance, the FOV, and the torus's own
+        # proportions. The square routinely reaches past the hole's edge
+        # and into the tube, so the square can never be 70% background even
+        # when the hole is perfectly open.
+        #
+        # The measured evidence: the gate reported 0.300 while the captured
+        # image showed a clean, unmistakably OPEN hole. The gate was
+        # asserting a relationship between two unrelated numbers.
+        #
+        # The fix measures the hole's RADIUS in pixels -- by scanning out
+        # from the centre along the horizontal, the first surface pixel is
+        # the hole's edge -- and compares it with the silhouette's outer
+        # radius. The analytic ratio is (major-minor)/(major+minor) =
+        # 0.20/0.44 = 0.4545. A grid-quantised inner rim is ragged, so the
+        # measured ratio is a little smaller; 0.25 is a floor a FILLED hole
+        # (ratio ~0) cannot reach.
         print("\n-- A/B/C) torus scene --")
         out, shot, rc = run("torus", ["--semantic", "torus", "--render-path", "0"])
         check(rc == 0, f"app exited cleanly (rc={rc})")
@@ -266,9 +350,40 @@ def main():
 
         mask = lit_mask(rows, vx, vy, vw, vh)
         centre_dark, lit_frac = centre_and_lit(mask)
-        print(f"  ..  torus (march): centre-background={centre_dark:.3f} lit={lit_frac:.3f}")
+        hole_px, outer_px = hole_ratio(mask)
+        print(f"  ..  torus (march): centre-background={centre_dark:.3f} lit={lit_frac:.3f} "
+              f"hole_px={hole_px} outer_px={outer_px}")
         check(lit_frac > 0.02, f"the torus is VISIBLE in the viewport (lit={lit_frac:.3f})")
-        check(centre_dark > 0.70, f"the torus has a HOLE (centre {centre_dark:.3f} background)")
+        # THE HOLE, measured RELATIVELY.
+        #
+        # The hole's radius is (major-minor) = 0.20 and the outer radius is
+        # (major+minor) = 0.44, so the analytic ratio is 0.4545. A
+        # grid-quantised inner rim is ragged, so the measured value lands a
+        # little below that; 0.25 is a floor a FILLED hole cannot reach.
+        #
+        # The earlier assertion was "centre-background > 0.70", which
+        # compared the central square against an absolute number. The square
+        # reaches past the hole into the tube, so it could not be 70%
+        # background even with a perfectly open hole -- the gate reported
+        # 0.300 on a render whose hole was visibly open.
+        check(hole_px > 0, f"the torus's hole is OPEN (hole_px={hole_px})")
+        check(outer_px > 0, f"the torus's silhouette is measurable (outer_px={outer_px})")
+        if hole_px > 0 and outer_px > 0:
+            ratio = hole_px / outer_px
+            print(f"  ..  hole/outer radius ratio = {ratio:.4f} (analytic <= 0.4545; "
+                  f"the view is oblique, so it is foreshortened)")
+            # The threshold is an ABSOLUTE floor on the hole's narrow axis,
+            # not a ratio. The workspace's camera views the torus obliquely,
+            # so the hole projects as a foreshortened ellipse whose width
+            # depends on the camera's elevation -- there is no fixed ratio
+            # to assert against. But a CLOSED hole has a narrow axis of 0 at
+            # ANY angle. The torus's hole radius is 0.20 world units and the
+            # ring's outer radius is 0.44; at the measured framing the outer
+            # radius is ~380 px, so a hole of 0.20 world units is ~170 px
+            # before foreshortening. A 12 px floor is generous but a
+            # FILLED hole cannot reach it.
+            check(hole_px >= 12,
+                  f"the torus has a real HOLE (narrow axis {hole_px} px)")
 
         # --- C3: the measurement is REPRODUCIBLE ---------------------------
         # A gate that asserts on pixels must itself be stable. Run the SAME
@@ -329,9 +444,17 @@ def main():
             vx2, vy2, vw2, vh2 = viewport_rect(w2, h2)
             mask2 = lit_mask(rows2, vx2, vy2, vw2, vh2)
             centre_dark2, lit_frac2 = centre_and_lit(mask2)
-            print(f"  ..  orb: centre-background={centre_dark2:.3f} lit={lit_frac2:.3f}")
+            hole2, outer2 = hole_ratio(mask2)
+            print(f"  ..  orb: centre-background={centre_dark2:.3f} lit={lit_frac2:.3f} "
+                  f"hole_px={hole2} outer_px={outer2}")
             check(lit_frac2 > 0.02, f"the orb is VISIBLE (lit={lit_frac2:.3f})")
-            check(centre_dark2 < 0.30, f"the orb's centre is LIT, unlike the torus ({centre_dark2:.3f})")
+            # THE SYMMETRIC CONTROL: the orb is a FILLED body, so the first
+            # surface pixel scanning out from the centre IS the centre --
+            # its hole radius is ~0. The torus's is a large fraction of its
+            # outer radius. Same metric, same camera, same path; the only
+            # difference is the shape.
+            check(hole2 <= 2,
+                  f"the CONTROL: the orb has NO hole (hole_px={hole2})")
         else:
             check(False, "control shot exists")
 

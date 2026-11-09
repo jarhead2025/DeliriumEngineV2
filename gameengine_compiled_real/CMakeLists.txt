@@ -363,6 +363,36 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/torus_probe.cpp")
 endif()
 
 # -----------------------------------------------------------------------
+# torus_bake_probe - attributes the torus's SHREDDED SURFACE to a specific
+# layer: degenerate (out-of-support) anchors, patches that reference them,
+# the baker-vs-renderer corner CONVENTION, and analytic-vs-baked fidelity.
+# Diagnostic, not a gate -- it prints the numbers that identify the defect.
+#   cmake --build build_delirium --target torus_bake_probe
+#   ./build_delirium/torus_bake_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/torus_bake_probe/main.cpp")
+  add_executable(torus_bake_probe
+    examples/torus_bake_probe/main.cpp
+  )
+  target_link_libraries(torus_bake_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# camera_probe - is the yaw-dependent silhouette change in the CAMERA or in
+# the RENDERER?  Projects the body's real anchor cloud AND the analytic
+# dome through the same Camera::BuildMVP the renderer uses, per yaw.
+# Diagnostic: prints the numbers that separate the two.
+#   cmake --build build_delirium --target camera_probe
+#   ./build_delirium/camera_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/camera_probe/main.cpp")
+  add_executable(camera_probe
+    examples/camera_probe/main.cpp
+  )
+  target_link_libraries(camera_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
 # sphere_probe - shows why an ellipsoid with a plane child came out as a
 # flat face, and proves the depth-weighted contribution fixes it.
 #   cmake --build build_delirium --target sphere_probe

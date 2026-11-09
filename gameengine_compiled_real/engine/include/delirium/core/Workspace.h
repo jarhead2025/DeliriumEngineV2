@@ -294,6 +294,22 @@ public:
         ApplyRenderPath();
     }
     int  GetRenderPath() const { return render_path_; }
+
+    // --- camera placement (for reproducible captures) ---------------------
+    //
+    // WHY THIS EXISTS: a pixel gate that measures "the object covers X% of
+    // the viewport" is only comparable between runs if the CAMERA is the
+    // same. The orbit camera is driven by mouse drags and by the framing
+    // pass, so two runs can land on different angles -- and a
+    // view-dependent defect (a normal that points the wrong way on one side)
+    // then shows up as a flaky gate instead of a reproducible number.
+    //
+    // These setters let a harness pin the orbit, so "rotate the camera" is
+    // an INPUT to a measurement rather than an uncontrolled variable.
+    void SetOrbitYaw(float y)   { orbit_yaw_ = y; }
+    void SetOrbitPitch(float p) { orbit_pitch_ = p; }
+    void SetOrbitDist(float d)  { orbit_dist_ = d; }
+    void SetOrbitTarget(const Vec3& t) { orbit_target_ = t; }
 private:
 
     // --- model reachability probe (background thread) ---------------------

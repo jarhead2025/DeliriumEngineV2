@@ -1088,6 +1088,310 @@ optional; the stale-binary trap has now cost this project several rounds.
 
 ---
 
+## 39. The bake sampled the shared CANVAS, not each substance's own support
+
+**Symptom.** The inertia tensor of a rod was **25x too small**. The body
+looked correct — the patches were there, the extent was right — but its
+MASS sat at a single point.
+
+**Cause.** The baker sampled every sheet on the shared canvas:
+
+```cpp
+const float lx = (u - 0.5f) * extent;   // extent = 1.0 for the whole tree
+```
+
+A substance much smaller than the canvas therefore got almost NO samples.
+Measured on a rod (`sx=0.5, sy=0.02`, canvas 1.0, grid 32):
+
+| grid | samples in support |
+|---|---|
+| 8 | **0** (0.0%) |
+| 16 | **0** (0.0%) |
+| 32 | 36 of 1024 (3.5%) |
+| 64 | 116 of 4096 (2.8%) |
+| 128 | 496 of 16384 (3.0%) |
+
+And the samples that DID land were clustered: the anchor histogram showed
+**990 of 1024 anchors at x = -0.019** (one bin) and only ~34 spread along
+the rod's length.
+
+**Fix.** `ISubstance::Domain(half_x, half_y)` — each substance states the
+region it occupies, and the baker stretches that sheet's grid over it:
+
+- `EllipsoidSubstance` → `(sx, sy)` — the footprint IS the domain
+- `TorusSubstance` → `(major + minor, major + minor)` — the ring's outer rim
+- `GaussianSystemSubstance` → `(3 sigma, 3 sigma)` — where the bump fades
+- `PlaneSubstance`, `HeightfieldSubstance` → the default canvas (unbounded)
+
+The domain is **clipped to the canvas**: the canvas is the world the tree
+occupies, so a support reaching past it is not represented anyway — and
+clipping stops the grid step from getting *coarser* than it was before
+(the gaussian's 3 sigma = 0.9 would otherwise stretch the grid over 1.8
+units and halve the resolution inside the canvas).
+
+**Measured after:** the rod's extent became 0.935 (was 0.548 — it was
+being clipped by the canvas), and `mean x^2` over the mass-carrying anchors
+went from 0.000985 to **0.061277**, against the exact ellipse value
+`sx^2/4 = 0.062500` — **98% of the analytic answer**.
+
+**Lesson.** *A grid sized to the container samples the container, not the
+content.* When the content is much smaller than the container, most of the
+grid is spent on empty space and what remains is wherever the content
+happens to cross the grid lines — which looks like a shape but is not one.
+
+---
+
+## 40. The inertia counted the baker's PLACEHOLDER anchors as mass
+
+**Symptom.** After fix 39 the rod's mass was spread correctly along its
+length, but the inertia was still ~25% of the analytic value.
+
+**Cause.** The baker writes an anchor for **every** grid cell, and the
+cells outside a bounded substance's support get a well-formed placeholder
+record parked at the bbox centre (the baker's own comment: "purely a
+well-formed unused record"). Those placeholders are the **absence** of
+skin, but the inertia code counted every anchor with a bone index — so
+**97% of the rod's mass sat at the bbox centre**.
+
+**Fix.** Build a `referenced` mask from the surface blob (the anchors the
+patches actually point at) and give mass only to those:
+
+```cpp
+std::vector<char> referenced(n, 0);
+for (const SurfaceRecord& s : body.SurfaceBlob())
+    for (int k = 0; k < 4; ++k)
+        if (s.anchor_idx[k] < n) referenced[s.anchor_idx[k]] = 1;
+```
+
+**Measured after:** the rod's transverse moment went from 0.021067 to
+**0.061297**, against the exact ellipse value 0.062800 — **97.6%**.
+
+**Lesson.** *A record that exists is not a record that means something.*
+The baker's placeholder anchors are well-formed and validate — they are
+simply not part of the surface. Anything that reasons about the body's
+EXTENT or MASS must ask the surface which anchors are real, not count the
+blob.
+
+---
+
+## 41. The bbox was re-derived with a DIFFERENT sampling than the bake
+
+**Symptom.** The rod's dequantized extent was 0.548 when the analytic
+extent is 0.935, and its positions were subtly wrong.
+
+**Cause.** `ElementSystem::Bake` and `ElementSystem::BakeBody` each
+computed the quantization box independently — and after fix 39 the baker
+sampled each sheet over its **own domain** while `BakeBody` still sampled
+the **shared canvas**. Two different grids, two different boxes, and every
+stored position was dequantized against the wrong one.
+
+**Fix.** `BakeBody` re-derives the box with the **same** per-sheet domain
+(and the same clip to the canvas). The comment now says why the two must
+match.
+
+**Lesson.** *Duplicated geometry is two geometries.* The bbox, the
+sampling and the quantization must be derived from ONE place. The
+deeper fix is for `Bake` to publish its box in `ModelOutput` so there is
+only one derivation at all — noted as the remaining structural improvement.
+
+---
+
+## 42. A fidelity gate with an ABSOLUTE threshold across resolutions
+
+**Symptom.** `validate_reconstruction` failed: "body near analytic
+ellipsoid (<0.06)" — the measured residual was 0.07524.
+
+**Cause.** The residual is a **discretisation** property, and the gate's
+fixed threshold was calibrated at the old sampling. Measured:
+
+| grid | residual |
+|---|---|
+| 16 | 0.07524 |
+| 24 | 0.05435 |
+| 32 | 0.04879 |
+| 48 | 0.04013 |
+
+The error grows with `r` (it is the RIM, where the ellipsoid turns nearly
+vertical and the tangent-plane patch fit chords it) and **converges with
+resolution** — the textbook signature of a discretisation error rather than
+a defect.
+
+**Fix.** The gate now asserts:
+- the residual is **O(cell)** — a fixed multiple of the grid cell, so an
+  error that does NOT scale with the cell (a real defect) still fails;
+- the residual **CONVERGES** with resolution — the stronger statement, and
+  the one that separates a discretisation error from a defect.
+
+**Lesson.** *An absolute threshold is only meaningful at one resolution.*
+Prefer a bound expressed in the discretisation's own unit (the cell), plus
+a convergence property. A defect does not improve when you add samples.
+
+---
+
+## 43. The patch-fit target sampled the CANVAS while the anchors sampled the sheet
+
+**Symptom.** A baked body showed **radial "dandelion" spokes** splaying out
+of it — and the user read it as "only front forward faces are displayed",
+because the spokes were all the outward-facing parts and the body's own
+surface was lost inside them.
+
+**Cause.** `ElementSystem.cpp:742` evaluated the patch-fit target over the
+**canvas**:
+
+```cpp
+const float lx = (wu - 0.5f) * extent;      // extent = the whole tree
+```
+
+while the anchors were sampled over the **per-sheet domain** (`hx`, `hy`).
+Fix 39 changed the anchors to the sheet's own domain but did not change the
+target. So each patch was fitted against a *different part of the sheet* than
+its own corners occupied, and the fitted displacement was wrong by the
+difference between the two domains.
+
+**Fix.** One `SheetDomain(el, extent, hx, hy)` helper, used at **all three**
+sites — the anchor sampling, the patch-fit target, and `BakeBody`'s bbox
+recompute — so the rule cannot drift again.
+
+**Measured after** (azimuth sweep, 24 angles):
+
+| | before | after |
+|---|---|---|
+| closed sphere, equator | 1.43x | **1.13x** |
+| closed sphere, polar | 1.24x | **1.004x** |
+| splat silhouette bbox @az0 | 292x292 | **226x226** (square at every azimuth) |
+| dandelion spokes | present | **gone** |
+
+**Lesson.** *A rule expressed three times is three chances to drift.* When a
+fix changes one site's rule, every site that shares the rule must be found
+by search, not by memory — and the rule belongs in one named helper.
+
+---
+
+## 44. Two of my own probes measured the wrong thing
+
+**Symptom.** The closed-sphere A/B reported the below-seam view **2.909x
+dimmer** than the above-seam view, which read as "the sphere is not closed".
+
+**Cause.** The metric was `lit`, and `lit` is a **luminance threshold**
+(`lum > 28`). A surface turned away from the key light counts as *absent* —
+so the measurement was of **illumination**, not geometry. The world-space key
+light is correct physics, but it made the coverage curve track the light
+rather than the shape.
+
+A second probe, the azimuth sweep, had the same class of error in a
+different disguise: it orbited in the **XY plane with `up = +Y`**, which is
+**parallel to the view at azimuth 90** — a gimbal-lock artifact that looked
+exactly like a cull.
+
+**Fix.**
+- The A/B compares **silhouette area** (pixels differing from the modal
+  background), which is the correct invariant: a closed sphere is a disc of
+  the same area from any direction. Result: **1.0002x**.
+- The sweep's orbit plane is now perpendicular to the view axis, and the
+  gate carries a **control** — a half dome, which must collapse when seen
+  from below.
+
+**And a third trap, in the control itself.** The control swept elevation only
+from **+70**, so the camera never went *below* the body and the dome could
+not collapse. The control therefore could not fail, which made it worthless
+as a control.
+
+**Lesson.** *A control that cannot fail is not a control — and a metric that
+answers a different question than the one asked will fail in the direction
+that looks most like the bug you are hunting.* Two of my three "the engine is
+broken" conclusions this session were measurement errors.
+
+---
+
+## 45. A hard-coded threshold in a control rotted when the geometry improved
+
+**Symptom.** `validate_azimuth_sweep` failed on its control: "the half dome
+collapses when viewed from below (spread 1.3920x)" against a required
+`> 1.50x`.
+
+**Cause.** The threshold was a **guess** about the dome's geometry, written
+before the multi-layer bake and the rim margin existed. After those landed,
+the dome's real polar spread is **1.39x** — the geometry got *better*, and
+the constant threshold did not move with it.
+
+**Fix.** The assertion is now a **relation**: the control must be at least
+**20% worse than the closed body it controls for**, comparing the two
+*measured* spreads (`half_polar > 1.20 * closed_polar`). A constant
+threshold rots the moment the geometry improves; the relation cannot.
+
+**Lesson.** *Prefer an assertion that states the invariant over one that
+states a number.* The invariant here is "the control is measurably worse
+than the body" — that is what makes the sweep a valid detector. The number
+1.50 was never the point.
+
+---
+
+## 46. A square grid over an annulus wastes the cells that matter
+
+**Symptom.** The torus's tube was only **6.1 grid cells across** — below the
+8 needed for a clean inner rim — and its patch count was **612 against the
+sphere's 3250** on the same grid.
+
+**Cause.** The baker's grid is a square of `N x N` cells over the
+substance's domain. A torus's support is an **annulus**, so the square spends
+most of its cells on the hole. What matters is the cells that land on the
+**tube**, and the tube is the minority of the square.
+
+The grid step over the 0.92-wide square at N=48 is 0.0196, and the tube is
+0.12 wide: `0.12 / 0.0196 = 6.1 cells`.
+
+**Fix.** `ISubstance::SamplingRefinement()` — a substance can ask for a
+finer grid when its own shape needs one. The unit is "how many cells must
+span this substance's smallest feature".
+
+```cpp
+// TorusSubstance
+float SamplingRefinement() const override {
+    const float need = 8.5f * (major_ + minor_) / std::max(1e-6f, minor_);
+    return std::max(1.f, need / 48.f);
+}
+```
+
+The factor is the **MAX over the sheets** (the grid is global — one `N x N`
+block per sheet), and it scales with the caller's coarseness budget rather
+than overriding it. The workspace's fat torus (minor 0.12) needs **no**
+refinement; the thin one (minor 0.06) gets a 28% finer grid.
+
+**Measured after:** N 48 → **64**, tube **6.1 → 8.2 cells**. The closed
+sphere's azimuth spread is **1.020x** and its polar spread **1.016x**.
+
+**Lesson.** *A grid sized to the bounding box spends its cells on the box.*
+When the content is a fraction of its container, ask the content how fine it
+needs to be — the substance knows its own smallest feature, and the baker
+does not.
+
+---
+
+## 47. The gate asserted against a grid size the baker is free to change
+
+**Symptom.** The same torus-tube assertion failed at exactly 8.0 cells
+against a `>= 8.0` requirement — the comparison was on the wrong side of a
+floating-point rounding.
+
+**Cause.** Two things at once. The assertion **hard-coded** `N_GRID = 48`,
+but the baker now *refines* the grid, so the requested `grid_n` is not the
+grid that was used — the gate was asserting against a number the baker is
+free (and expected) to change. And the target was exactly 8.0, which lands
+on 7.99... after the baker rounds to an integer N.
+
+**Fix.** Both sides.
+- The gate **derives** the grid from the baked body: one `N x N` block per
+  sheet means `N = sqrt(anchor_count)`, which is ground truth rather than an
+  assumption.
+- The requirement is **8.5 cells**, so the invariant is true rather than
+  borderline.
+
+**Lesson.** *A gate that hard-codes a value the implementation is allowed to
+choose will fail for the right reason and be fixed for the wrong one.* Derive
+the value from the artifact.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |
@@ -1142,8 +1446,13 @@ the classic path's per-pixel winner is order-sensitive by construction.
 - `kernels/psf_area.cl` is a leftover scratch file (the logic was inlined
   into `psf_splat.cl`); its deletion was blocked by a confirmation gate.
   Nothing references it.
-- The **multi-layer bake has no dedicated CTest gate** yet — it is
-  covered by the complex-scene probe and the live renders, but CTest
-  renders nothing and so cannot see it. This is the highest-value
-  remaining gate.
-- Nothing is committed — the tree is on `main` with all this untracked.
+- The **multi-layer bake** now has a dedicated gate
+  (`validate_closed_body`, `validate_azimuth_sweep`) — see fixes 30, 43–47.
+- The **inertia layer reads the mass-carrying anchors only** — the
+  placeholder anchors are excluded (fix 40). What it does not yet do is
+  derive *directional* inertia (the tensor's principal axes) as a first
+  class result; it reports the diagonalised eigenvalues.
+- The **closed body is still two sheets, not one watertight mesh** — they
+  meet at a rim that now overlaps (the rim margin) rather than sharing an
+  edge. The overlap is deliberate: it is the "average out at the edges"
+  rule, and it costs a thin double-surface band at the seam.

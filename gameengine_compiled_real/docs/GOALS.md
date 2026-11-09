@@ -267,14 +267,47 @@ therefore found by **pointer**, so the traversals cannot drift.
 
 **Suite: 29/29** (was 22 at the start of the bone work).
 
-### G9. Inertia from conservation laws — `TODO`
+### G9. Inertia from conservation laws — `DONE`
 With a skeleton: mass distribution per bone → centre of mass, and the
 inertia tensor → **rotational** and **directional** inertia. Computed from
 the anchor mass distribution, not from a mesh.
 
-**Done when:** the inertia tensor of a known simple body (a rod, a disc)
-matches the analytic value within a stated tolerance, and is invariant under
-rigid translation.
+**Landed:** `engine/include/delirium/physics/Inertia.h` +
+`engine/src/physics/Inertia.cpp`.
+- `ComputeMassProperties(body, bones, bone_mass, fallback_density, out, why)`
+  → the total mass, the centre of mass, and the symmetric inertia tensor
+  about the **centre of mass**.
+- `MassProperties::InertiaAbout(unit_axis)` — the **directional** inertia,
+  `u . I . u`: the "how hard is it to spin about THIS axis" question,
+  answered directly from the tensor.
+- `MassProperties::PrincipalMoments(moments, axes)` — the eigenvalues
+  (Jacobi) and their axes, sorted descending.
+- **The mass belongs to the BONE, not the surface.** A bone's authored mass
+  is spread EQUALLY over that bone's anchors, so the total mass is
+  independent of the tessellation — which is exactly what the coarseness
+  budget (G10) depends on.
+
+**Four bugs were found and fixed on the way** (fixes 39–42 in
+`docs/FIXES_REGISTER.md`):
+1. the bake sampled the shared **canvas** rather than each substance's own
+   support, so a small substance got 3.5% of the grid and 97% of its mass
+   piled up at one point;
+2. the inertia counted the baker's **placeholder** anchors (the well-formed
+   "no surface here" records parked at the bbox centre) as mass;
+3. `BakeBody` re-derived the quantization box with a **different sampling**
+   than `Bake`, so every position was dequantized against the wrong box;
+4. a fidelity gate used an **absolute** threshold across resolutions.
+
+**Measured against the analytic answer** (a rod, `sx=0.5, sy=0.02`,
+mass 1): the exact uniform-ellipse value for `⟨x²⟩` is `sx²/4 = 0.062500`;
+the computed mass-weighted value is **0.061277** — **98%**. The transverse
+moment is **0.061297** against the exact **0.062800** — **97.6%**.
+
+**Gate:** `tests/validate_inertia.cpp` — **30 checks, 0 failures**. It
+asserts against ANALYTIC values (a rod, a disc), not snapshots, plus
+conservation of mass, translation invariance, LOD-independence of the
+mass, and that a body with no mass reports a MISSING result rather than a
+zero tensor.
 
 ### G10. Coarseness as an explicit budget — `DONE`
 "Complete in representation, coarse for speed" maps onto two knobs the
@@ -368,13 +401,28 @@ The workspace-torus, layered-splat, path-switch and closed-body probes live
 in `/tmp` and will be lost. CTest renders nothing, so these are the *only*
 render evidence — they belong in-tree as permanent gates.
 
-**Landed so far — the suite is now 26 gates (was 22):**
+**Landed so far — the suite is now 33 gates (was 22):**
 - `tests/validate_closed_body.cpp` — **21 checks, 0 failures.** Pins the
   measured closure rule: the correct rule spans exactly `[-sz, +sz]` and is
   centred; an offset origin opens a gap; an unflipped lower sheet is
   inside-out; anchors == `sheets * n^2` at three grid sizes; no orphan
   anchors (every anchor is either referenced or an out-of-support
   placeholder).
+- `tests/validate_workspace_torus.cpp` — **the workspace's OWN fat torus**
+  (major 0.32, minor 0.12) measured down its own axis, with **two controls**:
+  the orb must have a LIT centre (so "the centre is dark" cannot mean "nothing
+  rendered"), and no surface anchor may lie inside the hole's radius (a
+  geometry-level assertion, independent of the renderer). This gate exists
+  separately from the azimuth sweep because the sweep's thin torus cannot see
+  the fat torus's failure.
+- `tests/validate_azimuth_sweep.cpp` — **19 checks, 0 failures.** Orbits the
+  camera and asserts the coverage curve is **flat** on two paths, with a
+  **control** that proves the sweep can detect the bug. The control's
+  assertion is a **relation** (the half dome must be ≥20% worse than the
+  closed body), not a constant — a constant rotted when the geometry improved
+  (fix 45).
+- `tests/validate_inertia.cpp`, `tests/validate_bone_bake.cpp` — the bones
+  spine (G7/G8/G10).
 - `render_sphere` (CTest) — the closed-sphere A/B, asserting a **geometric**
   silhouette balance (1.0002×).
 - `render_paths` (CTest) — all five paths, each with its own banner, plus
@@ -383,9 +431,63 @@ render evidence — they belong in-tree as permanent gates.
   **byte-identical**. This is the gate that would have caught the
   `build_grid` race automatically; it now fails the moment a render stops
   agreeing with itself.
+- `validate_workspace_render` (CTest, a Python gate) — the windowed app:
+  the panels paint, the AI loop completes, the torus's hole is open on a
+  path that can resolve it. Uses `--auto-frames N` (a **frame** count, not a
+  wall clock) so the measurement is reproducible.
 
-**Still to land:** the workspace-torus probe (needs the windowed app), and
-the layered-splat probe.
+**Still to land:** the layered-splat probe.
+
+---
+
+## G20. The closed body's representation — `TODO`
+
+The closed body is currently **two sheets that overlap at a rim** (the rim
+margin, fixes 26/43). That closes the gap and kills the knife-edge, but it
+costs a **thin double-surface band** at the seam, and the body is not a
+single watertight surface.
+
+**Done when:** the seam band is either eliminated (the sheets share an edge
+rather than overlapping) or is explicitly accepted as the "average out at the
+edges" rule and documented as the cost. The second is a legitimate answer;
+the first is not yet attempted.
+
+---
+
+## G21. The support-aware grid, generalised — `WIP`
+
+`ISubstance::SamplingRefinement()` (fix 46) lets a substance ask for a finer
+grid. It is currently a **factor applied to a square grid**, so an annular
+support still spends most of its cells on the hole.
+
+**Done when:** either the grid can be shaped to the support (an annulus of
+cells rather than a square with a hole in it), or the factor is measured
+sufficient for every substance in the vocabulary. The current state: the
+factor is sufficient for the torus (8.2 cells across the tube) and the
+workspace's fat torus needs none.
+
+---
+
+## The Vulkan deferral — triggers, not a date
+
+`docs/VULKAN_ASSESSMENT.md` has the full reasoning. The short version: the
+kernels use **no images, no shared memory, no barriers, no subgroups** — a
+pure compute pipeline over storage buffers with integer `atomic_min` /
+`atomic_add`. So the port is mechanically easy, and the benefit is
+**deployment** (no OpenCL ICD), not rendering quality or speed.
+
+**Port when ANY of these is true — not before:**
+1. A target platform has **no installable OpenCL ICD**. This is the only
+   trigger that makes the port *necessary*.
+2. G7–G12 have landed **and** per-bone GPU transforms are measurably the
+   limiting cost. A bone palette changes the storage layout, so the backend
+   choice must follow it.
+3. A specific kernel needs **subgroup ops**.
+
+**Hard prerequisite:** option (1) means reimplementing 13 kernels in SPIR-V
+against the CPU mirror. Without the CPU/GPU bit-compat validator (**G17**,
+still `TODO`) that reimplementation is **unverifiable**. If the port is
+chosen, **G17 moves ahead of it** — that is an order change, recorded below.
 
 ---
 
@@ -397,3 +499,8 @@ it, and what it displaced.)*
 - **2026-11-08** — G1/G2/G3 raised above G4/G5/G6. Reason: the render-path
   measurements they protect were taken before the anchor-count fix, so
   landing them first would record stale numbers as current.
+- **2026-11-08** — **G17 (the bit-compat validator) is promoted to a
+  prerequisite of any Vulkan port**, not merely a parallel goal. Reason: the
+  port re-implements 13 kernels, and without a CPU/GPU bit-compat gate that
+  work cannot be verified. It does not displace a goal — it gates an
+  *option*, not a task.

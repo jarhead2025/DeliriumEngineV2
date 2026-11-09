@@ -67,6 +67,84 @@ class ISubstance {
 public:
     virtual ~ISubstance() = default;
     virtual SubstancePoint Eval(float x, float y) const = 0;
+
+    // The region this substance actually occupies, in its own frame.
+    //
+    // WHY THIS EXISTS: the baker samples each sheet on a grid. If the grid
+    // is sized to the shared CANVAS (the whole tree's extent) rather than to
+    // the substance's own support, then a substance much smaller than the
+    // canvas gets almost NO samples -- and the ones it does get are
+    // clustered wherever the support happens to cross the grid.
+    //
+    // Measured (a rod: sx=0.5, sy=0.02, on a 1.0-wide canvas, grid 32):
+    // only 36 of 1024 samples (3.5%) landed in support, and 990 of the
+    // 1024 anchors were the out-of-support default at the bbox centre. The
+    // body looked fine but its MASS sat at one point -- so its inertia
+    // tensor was 25x too small.
+    //
+    // The default is the full canvas [-0.5,0.5]^2, which is correct for
+    // the unbounded substances (plane, heightfield). A bounded substance
+    // OVERRIDES it with its own footprint.
+    //
+    // `half_x`/`half_y` are the HALF-EXTENTS of the sampling region, centred
+    // on the substance's own origin. The baker CLIPS this to the canvas: the
+    // canvas is the world the tree occupies, so a support that reaches past
+    // it is not represented anyway -- and clipping keeps the grid step from
+    // getting COARSER than it was before the per-substance domains existed.
+    virtual void Domain(float& half_x, float& half_y) const {
+        half_x = 0.5f; half_y = 0.5f;
+    }
+
+    // -------------------------------------------------------------------------
+    // THE SAMPLING REFINEMENT.
+    //
+    // A substance can ask the baker for a FINER grid than the default, when
+    // its own shape needs one. The unit is "how many grid cells must span
+    // this substance's SMALLEST FEATURE" -- for a torus, the tube's width.
+    //
+    // WHY THIS EXISTS: the baker's grid is a square of N x N cells over the
+    // substance's domain. A torus's support is an ANNULUS, so the square
+    // wastes most of its cells on the hole -- and what matters is the cells
+    // that land on the TUBE, which must be enough to resolve its inner rim.
+    //
+    // Measured (major 0.4, minor 0.06, grid 48): the grid step over the
+    // 0.92-wide square is 0.0196, so the 0.12-wide tube was only 6.1 cells
+    // across -- below the 8 cells needed for a clean inner rim. The torus's
+    // patch count was 612 against the sphere's 3250 on the same grid, and
+    // the rim came out serrated.
+    //
+    // The refinement is a FACTOR applied to the requested grid size, not an
+    // absolute count, so it scales with the user's chosen resolution (the
+    // coarseness budget). A substance that needs no refinement returns 1.
+    virtual float SamplingRefinement() const { return 1.f; }
+
+    // -------------------------------------------------------------------------
+    // THE RIM MARGIN.
+    //
+    // A bounded substance has an EDGE, and at that edge the surface stops
+    // abruptly. When two sheets are meant to meet (a closed body: an upper
+    // hemisphere and a flipped lower one), their edges land at DIFFERENT
+    // places -- the grid's outermost row lands at |z| > 0, never exactly at
+    // the seam. So the two sheets leave a GAP of height 2*|z_rim| straight
+    // through the body, which renders as a vertical slit with serrated
+    // teeth.
+    //
+    // The rim margin fixes this the way the USER described it: "surfaces
+    // that overlap at edges and average out during calculations ... as long
+    // as they're pre calculated enough to fit the original geometry". Each
+    // sheet's edge is EXTENDED past its footprint into a rim band, and the
+    // rim carries the EDGE's own tangent direction -- so the two sheets
+    // overlap in an annulus where their normals AGREE, instead of meeting
+    // at a knife edge where they oppose.
+    //
+    // The rim's width is a FRACTION of the footprint, so it scales with the
+    // substance and stays proportional to the grid step at any resolution.
+    //
+    // `RimMargin` returns the rim's width as a fraction of the footprint's
+    // half-extent (0 = no rim). A substance with no bounded edge -- the
+    // plane, the heightfield -- has no rim, because it has no edge to
+    // extend.
+    virtual float RimMargin() const { return 0.f; }
 };
 
 // A flat plane z = 0 (infinite domain), facing +Z.
@@ -84,6 +162,30 @@ public:
     EllipsoidSubstance(float sx = 0.5f, float sy = 0.5f, float sz = 0.5f)
         : sx_(sx), sy_(sy), sz_(sz) {}
     SubstancePoint Eval(float x, float y) const override;
+    // The footprint IS the domain: the samples must cover x in [-sx,sx],
+    // y in [-sy,sy], or the sheet is sampled at a handful of points.
+    //
+    // THE DOMAIN INCLUDES THE RIM. The rim lives OUTSIDE the footprint, so
+    // a domain of exactly (sx, sy) never samples it -- and the rim is the
+    // whole point of the mechanism. The domain is therefore the footprint
+    // PLUS the rim's reach.
+    //
+    // The rim's reach is `RimMargin() * half_extent`, and the rim extends
+    // along the footprint's gradient, so the largest coordinate it reaches
+    // is the footprint's half-extent times (1 + rim) in the worst case
+    // (along an axis). That is the bound used here.
+    void Domain(float& half_x, float& half_y) const override {
+        const float rim = RimMargin();
+        half_x = sx_ * (1.f + rim);
+        half_y = sy_ * (1.f + rim);
+    }
+    // THE RIM. See ISubstance::RimMargin for what this is for.
+    //
+    // The rim is 6% of the footprint. That is wide enough to cover the
+    // grid's last row (which lands within one grid step of the edge) at
+    // any reasonable resolution, and narrow enough that it does not eat
+    // into the body.
+    float RimMargin() const override { return 0.06f; }
 private:
     float sx_, sy_, sz_;
 };
@@ -112,6 +214,35 @@ public:
     TorusSubstance(float major = 0.32f, float minor = 0.12f)
         : major_(major), minor_(minor) {}
     SubstancePoint Eval(float x, float y) const override;
+    // The ring's outer extent: the tube reaches major + minor from the
+    // axis, so the samples must cover that disc -- and must also reach the
+    // INNER rim (major - minor), or the hole's edge is not resolved.
+    void Domain(float& half_x, float& half_y) const override {
+        const float r = major_ + minor_;
+        half_x = r; half_y = r;
+    }
+    // The tube must be at least 8 grid cells across for its inner rim to
+    // resolve cleanly. The grid step is 2*(major+minor)/(N-1), and the tube
+    // is 2*minor wide, so:
+    //
+    //     cells = 2*minor / (2*(major+minor)/(N-1)) = minor*(N-1)/(major+minor)
+    //
+    // Requiring cells >= 8 gives N >= 8*(major+minor)/minor. The factor
+    // returned here is that requirement relative to a "typical" grid of 48:
+    // for the workspace torus (major 0.32, minor 0.12) it is
+    // 8*0.44/0.12 / 48 = 0.61 -- i.e. NO refinement is needed, because the
+    // fat tube is already well resolved. For a thin torus (major 0.4, minor
+    // 0.06) it is 8*0.46/0.06 / 48 = 1.28 -- a 28% finer grid.
+    //
+    // The requirement is 8.5 cells, not 8.0: the cells-across figure is
+    // computed from the grid's ACTUAL step, which is derived from the
+    // integer N the baker picked, so an exact 8.0 target lands on 7.99...
+    // after rounding. The margin keeps the invariant true rather than
+    // borderline.
+    float SamplingRefinement() const override {
+        const float need = 8.5f * (major_ + minor_) / std::max(1e-6f, minor_);
+        return std::max(1.f, need / 48.f);
+    }
 private:
     float major_, minor_;
 };
@@ -125,6 +256,11 @@ public:
     GaussianSystemSubstance(float amp = 0.2f, float sigma = 0.35f)
         : amp_(amp), sigma_(sigma) {}
     SubstancePoint Eval(float x, float y) const override;
+    // The bump fades out at ~3 sigma; sample there, or the tails are cut.
+    void Domain(float& half_x, float& half_y) const override {
+        const float r = 3.f * sigma_;
+        half_x = r; half_y = r;
+    }
 private:
     float amp_, sigma_;
 };

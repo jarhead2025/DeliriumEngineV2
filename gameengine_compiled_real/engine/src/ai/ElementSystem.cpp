@@ -195,6 +195,90 @@ ElementSystem::Field SheetAt(const Sheet& s, float lx, float ly) {
 } // namespace
 
 // =============================================================================
+// THE SHEET'S SAMPLING DOMAIN.
+//
+// WHY THIS IS A SHARED HELPER (and not an inline computation at each site):
+//
+// A sheet's surface is sampled on a GRID, and the grid must cover the
+// sheet's own domain -- not the whole canvas. A substance much smaller
+// than the canvas would otherwise get almost no samples, and the few it
+// got would cluster wherever its support happened to cross the grid.
+//
+// But there are THREE places that must agree on that domain:
+//
+//   1. the ANCHOR sampling (where each grid cell's point is evaluated),
+//   2. the PATCH-FIT TARGET (where the fitted patch is compared against
+//      the sheet's surface), and
+//   3. the BBOX derivation in BakeBody (which must produce the identical
+//      quantization box the baker used).
+//
+// When site 1 moved to the per-sheet domain and site 2 did not, the
+// mismatch produced a body whose patch coefficients were fitted against
+// the WRONG surface -- the patch's displaced position came from the anchor
+// positions but its SHAPE was fitted to a target elsewhere on the sheet.
+// The visible result was a body with radial "spokes" splaying out of it
+// (a dandelion), and a coverage that swung with the camera's azimuth even
+// though the anchors were perfectly symmetric.
+//
+// One helper, three call sites: the domain cannot drift again.
+//
+// THE RULES:
+//   * Start from the canvas.
+//   * Ask the substance for its own domain (a substance with no domain
+//     leaves the canvas alone).
+//   * A degenerate domain (a zero-radius substance) would divide by zero;
+//     fall back to the canvas.
+//   * CLIP to the canvas: the canvas is the world the tree occupies, so a
+//     support reaching past it is not represented anyway -- and clipping
+//     keeps the grid step from getting COARSER than it was before the
+//     per-substance domains existed (a gaussian with 3 sigma = 0.9 would
+//     otherwise stretch the grid over 1.8 units and halve the resolution
+//     inside the canvas).
+// =============================================================================
+static void SheetDomain(const Element& el, float extent, float& hx, float& hy) {
+    hx = extent * 0.5f;
+    hy = extent * 0.5f;
+    if (el.substance) el.substance->Domain(hx, hy);
+    if (hx < 1e-6f) hx = extent * 0.5f;
+    if (hy < 1e-6f) hy = extent * 0.5f;
+    if (hx > extent * 0.5f) hx = extent * 0.5f;
+    if (hy > extent * 0.5f) hy = extent * 0.5f;
+}
+
+// =============================================================================
+// THE EFFECTIVE GRID SIZE.
+//
+// The grid is GLOBAL: one N x N block of anchors per sheet. A substance whose
+// shape does not fill its square domain asks for a FINER grid (see
+// ISubstance::SamplingRefinement) -- the torus is the case that matters,
+// because its support is an annulus and the cells that land on the TUBE are
+// what resolve its inner rim.
+//
+// The factor is the MAX over the sheets, so a tree with a torus and a plane
+// gets the torus's finer grid and the plane simply gains samples it did not
+// need.
+//
+// WHY THIS IS A SHARED HELPER: Bake and BakeBody BOTH need the same N --
+// BakeBody re-derives the quantization box by re-sampling the field on the
+// grid, and if its N differed from the baker's, every stored position would
+// be dequantized against a different box (which is exactly the bug that made
+// a rod's mass sit at 25% of its true spread). Two copies of the rule is
+// two chances to drift.
+// =============================================================================
+static int EffectiveGridN(int grid_n, const std::vector<Sheet>& sheets) {
+    int n = std::max(2, std::min(64, grid_n));
+    float refine = 1.f;
+    for (const Sheet& sh : sheets)
+        if (sh.el && sh.el->substance)
+            refine = std::max(refine, sh.el->substance->SamplingRefinement());
+    if (refine > 1.f) {
+        const int want = int(std::ceil(float(n) * refine));
+        n = std::max(n, std::min(64, want));
+    }
+    return n;
+}
+
+// =============================================================================
 // Substances (the leaf "physical substance")
 // =============================================================================
 SubstancePoint PlaneSubstance::Eval(float x, float y) const {
@@ -204,7 +288,57 @@ SubstancePoint PlaneSubstance::Eval(float x, float y) const {
 SubstancePoint EllipsoidSubstance::Eval(float x, float y) const {
     // upper hemisphere: z = sz*sqrt(1 - x^2/sx^2 - y^2/sy^2)
     const float q = (x*x) / (sx_*sx_) + (y*y) / (sy_*sy_);
-    if (q >= 1.0f) return { Vec3{x, y, 0.f}, Vec3{0.f, 0.f, 1.f}, false };
+    if (q >= 1.0f) {
+        // --- THE RIM ------------------------------------------------------
+        // Past the footprint there is no hemisphere -- but there IS an EDGE,
+        // and an edge needs a surface that continues past it so two sheets
+        // can OVERLAP there rather than meet at a knife edge.
+        //
+        // The rim's shape: the footprint is the ellipse q = 1. Outside it,
+        // the rim is a flat annulus at z = 0 whose normal is the OUTWARD
+        // HORIZONTAL direction (the footprint's own gradient). That is the
+        // surface's tangent direction at the edge -- so the rim continues
+        // the surface's direction instead of stopping dead.
+        //
+        // WHY THE RIM'S NORMAL IS THE FOOTPRINT'S GRADIENT:
+        //
+        // The upper hemisphere's normal at the equator is horizontal (+radial
+        // outward). The lower, flipped hemisphere's normal there is -radial
+        // -- so at the seam the two sheets' normals still OPPOSE, and a
+        // knife-edge meeting is what produced the serrated slit.
+        //
+        // The rim's normal is the footprint's GRADIENT -- the direction the
+        // surface is moving as it leaves the footprint -- and the flip is in
+        // Z, while the gradient is in the XY plane. So the flip does NOT
+        // mirror it: BOTH sheets' rims carry the SAME normal. In the
+        // overlap annulus the two surfaces therefore agree about which way
+        // is "out", and the overlap is shaded as one continuous surface.
+        //
+        // The rim's width is a fraction of the footprint, so it stays
+        // proportional to the grid step at any resolution.
+        const float rim = RimMargin();
+        if (rim > 0.f) {
+            // The footprint's gradient direction (outward, in the XY plane).
+            Vec3 g{ x / (sx_*sx_), y / (sy_*sy_), 0.f };
+            const float gl = std::sqrt(g.x*g.x + g.y*g.y);
+            if (gl > 1e-9f) { g.x /= gl; g.y /= gl; }
+            // How far past the footprint are we, in the gradient direction?
+            // The rim extends `rim * half_extent` beyond the boundary.
+            const float edge_x = sx_ * g.x, edge_y = sy_ * g.y;
+            const float over = (x - edge_x) * g.x + (y - edge_y) * g.y;
+            const float reach = rim * std::sqrt((sx_*g.x)*(sx_*g.x) + (sy_*g.y)*(sy_*g.y));
+            if (over <= reach) {
+                // On the rim: a flat annulus at z = 0, normal = the
+                // footprint's gradient. Its RADIUS is clamped to the
+                // footprint's edge so the rim is a true annulus.
+                const float r_edge = std::sqrt(edge_x*edge_x + edge_y*edge_y);
+                const float scale = (r_edge > 1e-9f) ? (r_edge + over) / r_edge : 1.f;
+                Vec3 p{ edge_x * scale, edge_y * scale, 0.f };
+                return { p, vnorm(g) };
+            }
+        }
+        return { Vec3{x, y, 0.f}, Vec3{0.f, 0.f, 1.f}, false };
+    }
     const float z = sz_ * std::sqrt(1.0f - q);
     // implicit F = x^2/sx^2 + y^2/sy^2 + z^2/sz^2 = 1 -> grad = (2x/sx^2, 2y/sy^2, 2z/sz^2)
     Vec3 n{ x / (sx_*sx_), y / (sy_*sy_), z / (sz_*sz_) };
@@ -353,8 +487,9 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     if (grid_n < 2) { why = "grid_n must be >= 2"; return false; }
     if (grid_n > 64) grid_n = 64;
     if (extent <= 1e-6f) { why = "extent must be > 0"; return false; }
-    const int N = grid_n;
-    const int npatch = N - 1;
+    const int N_requested = grid_n;
+    int N = N_requested;
+    int npatch = N - 1;
 
     // The sheets to bake. A tree with ONE sheet keeps the exact historical
     // behaviour (blended field, one layer). A tree with SEVERAL sheets is
@@ -445,6 +580,14 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     CollectSheets(root, sheets, &bones);
     if (sheets.empty()) { why = "the tree has no substance to bake"; return false; }
 
+    // --- the SAMPLING REFINEMENT --------------------------------------------
+    //
+    // A substance whose shape does not fill its square domain asks for a
+    // finer grid. See EffectiveGridN for the rule and the reason the helper
+    // is shared with BakeBody.
+    N = EffectiveGridN(N_requested, sheets);
+    npatch = N - 1;
+
     out.bones.clear();
     out.bones.reserve(bones.size());
     for (const Bone* b : bones) {
@@ -495,13 +638,28 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
         // The reserved bytes carry the authored physical properties, so the
         // inertia and field layers can read them straight from the frozen
         // record -- no re-parse, no side table.
-        auto put = [&](int i, float v) {
-            const float c = std::max(0.f, std::min(1.f, v));
-            br.reserved[i] = uint8_t(c * 255.f);
-        };
-        put(0, b->radius);                       // radius, normalised
-        put(1, b->stiffness);                    // stiffness, already 0..1
-        put(2, std::min(1.f, b->mass));           // mass, normalised
+        //
+        // --- WHY MASS IS A FLOAT, NOT A NORMALISED BYTE ---
+        // Mass is UNBOUNDED: a 2 kg housing and a 20 kg frame are both
+        // legitimate. The earlier encoding packed it as a normalised byte
+        // (`min(1, mass)`), which meant an authored mass of 2.0 stored as
+        // 1.0 -- and 0.5 stored as 0.5 -- so the mass was silently
+        // CLAMPED. Two bodies with masses 2.0 and 8.0 were
+        // indistinguishable. That is exactly the kind of loss that makes a
+        // mass property wrong rather than missing.
+        //
+        // The reserved bytes are 28 -- plenty of room for a float. The
+        // layout is:
+        //   reserved[0..3]   float  mass       (the authored mass, unbounded)
+        //   reserved[4]      uint8  radius     (normalised 0..1)
+        //   reserved[5]      uint8  stiffness  (already 0..1)
+        //   reserved[6..27]  zero
+        {
+            std::memcpy(br.reserved, &b->mass, sizeof(float));
+            br.reserved[4] = uint8_t(std::max(0.f, std::min(1.f, b->radius)) * 255.f);
+            br.reserved[5] = uint8_t(std::max(0.f, std::min(1.f, b->stiffness)) * 255.f);
+            for (int k = 6; k < 28; ++k) br.reserved[k] = 0;
+        }
         out.bones.push_back(br);
     }
 
@@ -525,14 +683,39 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     Vec3 mn{1e30f,1e30f,1e30f}, mx{-1e30f,-1e30f,-1e30f};
     for (size_t si = 0; si < nsheets; ++si) {
         const Sheet& sh = sheets[si];
+        // The sheet's OWN sampling domain, in its own frame.
+        //
+        // WHY PER-SHEET AND NOT THE SHARED CANVAS: the canvas is sized for
+        // the whole tree, so a substance much smaller than the canvas would
+        // get almost no samples -- and the few it got were clustered
+        // wherever its support happened to cross the grid. Measured on a
+        // rod (sx=0.5, sy=0.02) on a 1.0 canvas: 36 of 1024 samples in
+        // support, and 990 of the 1024 anchors were the out-of-support
+        // default at the bbox centre -- so the body's MASS sat at one point
+        // and its inertia tensor was 25x too small.
+        //
+        // The grid is now stretched to the substance's domain, so the same
+        // N x N samples cover the substance wherever it is. A substance
+        // with no stated domain keeps the canvas.
+        //
+        // The domain is CLIPPED to the canvas. The canvas is the world the
+        // tree occupies, so a support reaching past it is not represented
+        // anyway -- and clipping keeps the grid step from getting COARSER
+        // than it was before the per-substance domains existed (a gaussian
+        // with 3 sigma = 0.9 would otherwise stretch the grid over 1.8
+        // units and halve the resolution inside the canvas).
+        // The sheet's OWN sampling domain, in its own frame. MUST be the
+        // SAME domain the patch-fit target uses (see SheetDomain).
+        float hx = 0.f, hy = 0.f;
+        SheetDomain(*sh.el, extent, hx, hy);
         for (int j = 0; j < N; ++j)
             for (int i = 0; i < N; ++i) {
                 const float u = i / float(N - 1), v = j / float(N - 1);
-                // The sheet's local (x, y): the grid is the canvas in the
-                // sheet's OWN frame, so a sheet with its own origin and
-                // scale samples its own domain.
-                const float lx = (u - 0.5f) * extent;
-                const float ly = (v - 0.5f) * extent;
+                // The sheet's local (x, y): the grid is the sheet's OWN
+                // domain, so a sheet with its own origin and scale samples
+                // its own region.
+                const float lx = (u - 0.5f) * (hx * 2.0f);
+                const float ly = (v - 0.5f) * (hy * 2.0f);
                 const Field f = SheetAt(sh, lx, ly);
                 const size_t id = si * per + (size_t)j * N + i;
                 // weight==0: no surface here (e.g. outside a bounded
@@ -648,6 +831,14 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     out.surfaces.reserve((size_t)npatch * npatch * nsheets);
     const int G = 8;  // LSQ sample grid per patch (same as SplitPatch)
     for (size_t si = 0; si < nsheets; ++si) {
+    // The sheet's sampling domain -- MUST match the anchor sampling
+    // exactly. The patch-fit target below is evaluated on this domain; if
+    // it used the canvas instead, the patch would be fitted against a
+    // DIFFERENT part of the sheet than the corners it sits between, and
+    // the fitted displacement would be wrong by the difference between the
+    // two domains. That is the "dandelion spokes" artifact.
+    float phx = 0.f, phy = 0.f;
+    SheetDomain(*sheets[si].el, extent, phx, phy);
     for (int j = 0; j < npatch; ++j) {
         for (int i = 0; i < npatch; ++i) {
             // corner ordering matches the renderer bilinear: A0(0,0) A1(1,0) A2(1,1) A3(0,1)
@@ -694,7 +885,14 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                     // would drag the upper layer back down toward the
                     // average -- which is the flat-bottomed dome again.
                     const float wu = (i + cu) / float(N - 1), wv = (j + cv) / float(N - 1);
-                    const float lx = (wu - 0.5f) * extent, ly = (wv - 0.5f) * extent;
+                    // The target is evaluated on the SHEET'S OWN DOMAIN --
+                    // the same domain the anchor grid was sampled on. Using
+                    // the canvas here (as an earlier version did) samples a
+                    // different part of the sheet than the patch's corners
+                    // occupy, and the fitted displacement is then wrong by
+                    // the difference between the two domains.
+                    const float lx = (wu - 0.5f) * (phx * 2.0f);
+                    const float ly = (wv - 0.5f) * (phy * 2.0f);
                     const Field f = SheetAt(sheets[si], lx, ly);
                     // target in the SAME frame as bil (dequant = world,
                     // i.e. field point + placement offset)
@@ -776,15 +974,27 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
     // has its own origin and scale), so this must too -- using the blended
     // field here would compute a DIFFERENT box and every position would be
     // dequantized wrong.
+    //
+    // The bbox is RE-DERIVED here with the SAME per-sheet domain the baker
+    // used. An earlier version sampled the shared canvas while the baker
+    // sampled each sheet's own domain -- so the two boxes disagreed and
+    // every position was dequantized against the wrong box, which showed up
+    // as a rod whose mass sat at 25% of its true spread.
     Vec3 mn{1e30f,1e30f,1e30f}, mx{-1e30f,-1e30f,-1e30f};
-    const int N = std::max(2, std::min(64, grid_n));
     std::vector<Sheet> sheets;
     CollectSheets(root, sheets);
-    for (const Sheet& sh : sheets)
+    // The SAME grid the baker used -- including the sampling refinement. If
+    // this N differed from the baker's, the box would be different and every
+    // stored position would be dequantized wrong.
+    const int N = EffectiveGridN(grid_n, sheets);
+    for (const Sheet& sh : sheets) {
+        float hx = 0.f, hy = 0.f;
+        SheetDomain(*sh.el, extent, hx, hy);
     for (int j = 0; j < N; ++j)
         for (int i = 0; i < N; ++i) {
             const float u = i / float(N - 1), v = j / float(N - 1);
-            const Field f = SheetAt(sh, (u - 0.5f) * extent, (v - 0.5f) * extent);
+            const Field f = SheetAt(sh, (u - 0.5f) * (hx * 2.0f),
+                                       (v - 0.5f) * (hy * 2.0f));
             // MUST match Bake's bbox: out-of-support samples (weight==0) are
             // collapsed to the origin by the sheet evaluation and are excluded
             // there, so they must be excluded here too or dequant uses a
@@ -793,6 +1003,7 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
             mn.x = std::min(mn.x, f.point.x + world_offset.x); mn.y = std::min(mn.y, f.point.y + world_offset.y); mn.z = std::min(mn.z, f.point.z + world_offset.z);
             mx.x = std::max(mx.x, f.point.x + world_offset.x); mx.y = std::max(mx.y, f.point.y + world_offset.y); mx.z = std::max(mx.z, f.point.z + world_offset.z);
         }
+    }
     if (mn.x > 1e29f) { why = "no in-support samples on the grid"; return nullptr; }
     const Vec3 span0{ mx.x-mn.x, mx.y-mn.y, mx.z-mn.z };
     const float diag0 = std::sqrt(span0.x*span0.x + span0.y*span0.y + span0.z*span0.z) + 1e-9f;
