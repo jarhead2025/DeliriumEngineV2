@@ -177,26 +177,36 @@ buggy code" discipline. This session added:
 - `SKILL.md`'s reference index now lists both.
 
 ### G6. Commit — `DONE`
-**Commit `ae9811d`** — "feat(engine): workspace editor, document-driven
-reconstruction, 5 render paths". 205 files, +53,999 / −2,324.
+Two commits:
 
-Two things needed care:
+- **`480fac7`** — "feat(engine): workspace editor, document-driven
+  reconstruction, 5 render paths". 205 files, +53,999 / −2,324.
+- **`10832d1`** — "chore: untrack the build tree". 446 files removed from
+  tracking; **the files are untouched on disk** (`git rm --cached`, not a
+  deletion).
 
-1. **The repo root is `/home/josias/Desktop/Tartarus`**, and **158 files
-   from a sibling directory (`gameengine_compiled`) were already staged**
-   before this session — not mine. The commit used `--only` with an
-   explicit pathspec so the sibling was excluded; those 158 files remain
-   staged, exactly as they were.
+Three things needed care:
+
+1. **The repo root is `/home/josias/Desktop/Tartarus`**, and 158 files from
+   a sibling directory (`gameengine_compiled`) were staged before this
+   session — not my work. The commit used an explicit pathspec so the
+   sibling was excluded. Verified afterwards: the sibling's 2,281 files are
+   **byte-identical to HEAD** and match the initial import.
 2. **`build_delirium` was tracked** from the initial import (450 files) and
-   churned on every build. It is now **gitignored** and untracked — the
-   files are untouched on disk. A `.gitignore` was added for `build*/`,
-   `__pycache__/` and editor noise.
-
-The commit message carries the substance: what was built, the six measured
-bugs, and the gates that back each claim.
+   churned on every build (168 modified artefacts per build — absolute
+   paths, compiler probes, object files). Now gitignored and untracked, with
+   a `.gitignore` for `build*/`, `__pycache__/` and editor noise.
+3. **`git commit --only --amend` re-adds from the working tree**, not the
+   index — so amending after `git rm --cached` silently put the build files
+   back. The untracking had to be its own commit.
 
 **Verified after committing:** the tree builds and **27/27 tests pass** from
-the committed source.
+the committed source, and a focused ad-hoc probe
+(`/tmp/hermes-verify-gitignore.py`) asserts the `.gitignore` in BOTH
+directions — the build tree and python caches are ignored, and **no source
+file is ignored** (the load-bearing check: a pattern reaching into
+`engine/` or `tests/` would drop real code from every future commit
+silently).
 
 ---
 
