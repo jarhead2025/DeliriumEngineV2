@@ -1589,6 +1589,84 @@ have forced the implementation to fake a capability it does not have.
 
 ---
 
+## 54. A transport failure is a statement about the MACHINE (2026-11-09)
+
+G14's live escalation run failed **6 of 6 attempts, all at the `transport`
+stage** — "the model returned nothing (unreachable, or an empty reply)". The
+escalations failed too, which initially looked like a broken ladder.
+
+**It was not.** The ladder never got to test anything:
+- The machine had **19 GB of 31 GB RAM used, only 4 GB free**.
+- Both the 7B and the 14B (9.9 GB) were resident. They cannot coexist in
+  the free memory.
+- A bare `"Say OK"` to the 7B took **25.4 seconds**.
+- With only the 7B resident, the same request took **1.38 seconds**.
+
+The requests were timing out in the transport before the model ever
+produced a tree.
+
+**Why this is worth recording.** In the probe's summary table, a transport
+failure and a validation failure look the same — "the document did not
+become a body". But they say completely different things: one is about the
+machine's memory and load, the other is about the model's reasoning. The
+log's stage field is what separates them, and it is the reason the stage
+exists.
+
+**Lesson.** *When a model-backed pipeline fails, read the STAGE before
+reading the reason.* A transport failure is infrastructure; only a parse or
+validate failure is a statement about the model, the prompt or the schema.
+Chasing a transport failure as if it were a reasoning failure sends you
+looking in the wrong code entirely.
+
+---
+
+## 55. A 20-minute model call in a frame hook freezes the window (2026-11-09)
+
+G15 (the document loop in the workspace) called `InterpretDocument` directly
+from `OnFrame()`. The model call takes 20-280 s, so the window would have
+been frozen for minutes — which reads as a **crashed app**, not as a slow
+model.
+
+**What was done.** The interpretation runs on a **worker thread**. The
+worker does the model call, the parse and the validation; the **main**
+thread does the bake and the scene insertion, because the scene is not
+thread-safe. The corpus gets its own **copy** in the worker and is merged
+back when it finishes — sharing one `std::vector` across the two threads
+would be a data race.
+
+**Two more thread-safety defects found in the same change:**
+- `Logf` appends to a `std::vector` with no lock, and the worker appends
+  to it while the main thread paints it. `Logf` now takes a mutex, and
+  `Log()` returns a **copy** — a reference would outlive the lock that
+  protected it.
+- The destructor did not join the new worker. A `std::thread` destroyed
+  while joinable calls `std::terminate`, so the app would have **aborted on
+  exit** instead of shutting down cleanly.
+
+**Lesson.** *A blocking call in a frame hook is a UI freeze, and a new
+thread is a new set of lifetime obligations.* The three defects — the
+freeze, the race, and the abort — all came from adding one thread, and all
+three would have been invisible in a headless test.
+
+---
+
+## 56. The escalation was taught by a weaker rule than the first attempt (2026-11-09)
+
+After G13 made retrieval the corpus's selection rule, the **escalation**
+prompt still took the most *recent* successes. So the first attempt was
+taught by similarity and the retry by recency.
+
+**What was done.** The escalation now uses `AsRetrievedContext` too, with
+the recency path kept only as a fallback for a cold corpus (where recent
+successes beat nothing).
+
+**Lesson.** *Two paths that consume the same data must consume it the same
+way.* A retry taught by a different and weaker rule than the original is
+not a retry — it is a fresh attempt with extra text, and the extra text
+makes it look like a retry while behaving like a worse first attempt.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

@@ -42,6 +42,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -55,6 +56,7 @@
 #include "delirium/llm/LLMClient.h"
 #include "delirium/ai/ElementSystem.h"
 #include "delirium/ai/ElementTreeParser.h"
+#include "delirium/ai/DocLearner.h"
 
 namespace DeliRium {
 
@@ -138,7 +140,15 @@ public:
     // True once a posted action has run.
     bool RanNextFrameAction() const { return ran_next_frame_; }
     // The console log (newest last). The AI panel shows the tail.
-    const std::vector<std::string>& Log() const { return log_; }
+    //
+    // It returns a COPY, not a reference: the document worker thread (G15)
+    // appends to the log while the main thread reads it, and a reference
+    // would outlive the lock that protects it. A copy is cheap (the log is
+    // capped at 400 lines) and it cannot dangle.
+    std::vector<std::string> Log() const {
+        std::lock_guard<std::mutex> guard(log_mutex_);
+        return log_;
+    }
     void Logf(const char* fmt, ...);
 
     // Build a body from an element tree and add it to the scene. Returns
@@ -174,6 +184,92 @@ public:
     // Where the gizmo is drawn, in window pixels. Public so a test can
     // reason about it without a window.
     const UI::Rect& GizmoRect() const { return gizmo_rect_; }
+
+    // ======================================================================
+    // DOCUMENT MODE (G15)
+    //
+    // The document loop, made usable from the editor: load a technical
+    // document, interpret it through the document pipeline (corpus +
+    // closed-body rule + error log + escalation), and drop the resulting
+    // body into the scene.
+    // ======================================================================
+
+    // Switch the console between the SEMANTIC contract ("make a torus") and
+    // the DOCUMENT contract (a path to a technical document).
+    void SetDocumentMode(bool on) { doc_mode_ = on; }
+    bool DocumentMode() const { return doc_mode_; }
+
+    // Read a document from disk into the document slot. Returns false with
+    // the reason logged (a missing file, or an empty one).
+    bool LoadDocument(const std::string& path);
+    // The document's text (empty if none is loaded).
+    const std::string& DocumentText() const { return doc_text_; }
+    const std::string& DocumentPath() const { return doc_path_; }
+    // The domain used for the retrieval prior.
+    void SetDocumentDomain(const std::string& d) { doc_domain_ = d; }
+    const std::string& DocumentDomain() const { return doc_domain_; }
+
+    // Run the document pipeline. This is the SAME path the console's
+    // "interpret" button takes.
+    //
+    // It is ASYNCHRONOUS. The model call takes 20-280 s, and the learner
+    // drives the model itself (InterpretDocument owns the request and the
+    // escalation ladder), so it cannot be expressed in the workspace's
+    // asynchronous LLM state machine without restructuring the learner.
+    //
+    // It runs on a WORKER THREAD: the document path is driven from
+    // OnFrame(), and a blocking call there would freeze the window for
+    // minutes -- which reads as a crashed app, not as a slow model. The
+    // worker does the model call, the parse and the validation; the MAIN
+    // thread does the baking and the scene insertion, because the scene is
+    // not thread-safe.
+    //
+    // Returns true if the request was STARTED (not if it succeeded).
+    bool InterpretLoadedDocument();
+
+    // Poll the document worker. Called from the frame hook; it applies the
+    // result on the main thread when the worker finishes.
+    void PollDocument();
+
+    // The corpus: the accumulated successes and failures.
+    const AI::DocErrorLog& DocCorpus() const { return doc_log_; }
+    // Save/load the corpus so it survives a restart.
+    bool SaveDocCorpus();
+    bool LoadDocCorpus();
+    // The corpus's size, for the status line.
+    size_t DocCorpusSize() const { return doc_log_.Size(); }
+    size_t DocCorpusFailures() const { return doc_log_.FailureCount(); }
+    size_t DocCorpusSuccesses() const { return doc_log_.SuccessCount(); }
+    // The escalation model (empty = none). Set it to a larger model's name
+    // to enable the ladder's second rung.
+    void SetEscalateModel(const std::string& m) { doc_escalate_model_ = m; }
+    const std::string& EscalateModel() const { return doc_escalate_model_; }
+    // Where the corpus is saved/loaded. It must be settable, because the
+    // corpus is a FILE and the path a user wants is not the default.
+    void SetDocCorpusPath(const std::string& p) { doc_corpus_path_ = p; }
+    const std::string& DocCorpusPath() const { return doc_corpus_path_; }
+    // True while a document request is in flight.
+    bool DocBusy() const { return doc_busy_; }
+
+    // Arm an AUTOMATIC document interpretation.
+    //
+    // The callback fires on a LATER frame, once the model has been probed
+    // as online -- the probe is asynchronous, so the first frame is too
+    // early. The callback is invoked at most once, and the runner is
+    // disarmed afterwards whether it succeeded or failed.
+    //
+    // WHY IT IS A CALLBACK AND NOT A LOOP: the probe result is set by
+    // PollProbe(), which runs in OnFrame(). A loop that waited for it from
+    // inside a frame callback would deadlock on the very thing it waits
+    // for -- the condition it needs can only be satisfied by the next
+    // frame, and the next frame cannot start until the current one returns.
+    void SetAutoDocumentRunner(std::function<bool()> fn) {
+        auto_doc_runner_ = std::move(fn);
+        auto_doc_armed_ = true;
+    }
+    // True if an automatic document interpretation has been attempted (or
+    // was never armed). A test uses this to know the run is over.
+    bool AutoDocumentDone() const { return !auto_doc_armed_; }
 
 private:
     Engine&  engine_;
@@ -233,9 +329,73 @@ private:
     bool        model_probed_ = false;
     std::string model_status_ = "not probed";
     std::vector<std::string> log_;
+    // Guards the log: the document worker thread (G15) appends to it while
+    // the main thread reads it for the console panel.
+    mutable std::mutex log_mutex_;
     int         console_scroll_ = 0;
     int         tree_scroll_ = 0;
     bool        busy_ = false;
+
+    // --- DOCUMENT MODE (G15) ----------------------------------------------
+    //
+    // The console has two contracts, and mixing them is why the document
+    // loop was not usable:
+    //
+    //   SEMANTIC  "make a torus"  -> one prompt -> an element tree. The
+    //                                prompt IS the specification.
+    //   DOCUMENT  a path to a file -> the file IS the specification, and
+    //                                the pipeline runs the DOCUMENT path:
+    //                                the retrieval corpus, the closed-body
+    //                                rule, the error log, and the escalation
+    //                                ladder.
+    //
+    // The two need DIFFERENT prompts, DIFFERENT validation (the document
+    // path rejects a single sheet) and DIFFERENT bookkeeping (the corpus).
+    // Running a document through the semantic path would skip every one of
+    // those -- and would silently accept a one-face body, which is exactly
+    // the failure the document path exists to prevent.
+    bool        doc_mode_ = false;
+    // The document's path, and the text read from it.
+    std::string doc_path_;
+    std::string doc_text_;
+    // The document's domain ("machine", "biological", ...). It selects the
+    // retrieval prior: a same-domain worked example outranks a
+    // cross-domain one.
+    std::string doc_domain_ = "machine";
+    // The corpus. It PERSISTS across documents -- that is what makes the
+    // second document better than the first.
+    AI::DocErrorLog doc_log_;
+    // Where the corpus is saved/loaded, so it survives a restart.
+    std::string doc_corpus_path_ = "/tmp/delirium_doc_corpus.txt";
+    // The escalation rung: the larger model consulted when the local one
+    // fails. Empty = no escalation.
+    std::string doc_escalate_model_;
+    // True while a DOCUMENT request is in flight. The document path drives
+    // the model itself (through InterpretDocument), so the workspace's own
+    // LLM state machine is not used for it.
+    bool        doc_busy_ = false;
+    // The automatic document runner (G15): armed by the app, fired on a
+    // LATER frame once the model has been probed as online.
+    std::function<bool()> auto_doc_runner_;
+    bool        auto_doc_armed_ = false;
+    // The document WORKER (G15).
+    //
+    // The model call takes minutes, and it is driven from OnFrame() -- so
+    // it must not block the frame. The worker thread does the model call,
+    // the parse and the validation; the main thread applies the result
+    // (the bake and the scene insertion), because the scene is not
+    // thread-safe.
+    std::thread             doc_thread_;
+    bool                    doc_thread_done_ = true;
+    bool                    doc_thread_ok_ = false;
+    std::string             doc_thread_reason_;
+    // `Element` lives in the DeliRium namespace (not DeliRium::AI) -- the
+    // AI namespace holds the PARSER and the LEARNER, and the element tree
+    // itself is the engine's data model.
+    std::unique_ptr<Element> doc_thread_tree_;
+    // The corpus is TOUCHED by the worker (it records the attempt), and
+    // READ by the main thread. The worker owns it while it runs; the main
+    // thread only reads it after the worker has finished.
 
     // --- viewport picking -------------------------------------------------
     bool hover_viewport_ = false;
@@ -342,6 +502,20 @@ private:
     void StartProbe();
     void PollProbe();
     void HandleModelReply(const std::string& reply);
+    // A SYNCHRONOUS model call: send, wait, return the reply.
+    //
+    // WHY IT EXISTS: the document path (G15) drives the model itself --
+    // InterpretDocument owns the request and the escalation ladder -- and
+    // that cannot be expressed in the workspace's asynchronous LLM state
+    // machine without restructuring the learner. So the document path needs
+    // a blocking call, and this is it.
+    //
+    // It uses its OWN LLMClient rather than the workspace's `llm_`, because
+    // that client is a single in-flight state machine: overwriting its
+    // config mid-request would corrupt a request already running.
+    std::string AskModelSync(const LLM::Config& cfg,
+                             const std::string& system,
+                             const std::string& user);
     void UpdateCamera();
     void HandleCameraInput();     // orbit / pan / dolly / object drag
     void HandleKeyboardCamera(float dt);  // WASD-style camera movement

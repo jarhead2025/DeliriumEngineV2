@@ -545,9 +545,21 @@ DocResult InterpretDocument(
                 break;
             }
         }
+        // The worked examples for the escalation are the RETRIEVED ones (the
+        // successes whose vocabulary matches this document), not the most
+        // recent ones. The normal attempt uses retrieval; the escalation
+        // using recency would mean the retry is taught by a DIFFERENT and
+        // weaker rule than the first attempt -- and a retry that is taught
+        // worse than the original is not a retry, it is a fresh attempt
+        // with extra text.
+        //
+        // The recency fallback matters: on a cold corpus (nothing retrieved)
+        // the recent successes are better than nothing.
+        std::string successes = log.AsRetrievedContext(doc.text, doc.domain);
+        if (successes.empty()) successes = log.AsSuccessContext();
         user = DocToTreeEscalationPrompt(doc.text, prior,
                                          log.AsPromptContext(),
-                                         log.AsSuccessContext());
+                                         successes);
     }
 
     // --- TRANSPORT ---------------------------------------------------------

@@ -493,13 +493,112 @@ Gate: `tests/validate_retrieval.cpp` — 43 checks, 0 failures. It asserts the
 failures-never-offered, no-self-retrieval, corpus-reaches-the-normal-prompt,
 round-trip, legacy-log compatibility), not snapshots.
 
-### G14. Exercise escalation against a real larger model — `TODO`
+### G14. Exercise escalation against a real larger model — `WIP`
 The ladder is unit-tested against a stub and has never run against a second
 endpoint.
 
-### G15. Wire the document loop into the workspace UI — `TODO`
+**Wiring landed.** `tests/validate_escalation.cpp` — 36 checks, 0 failures.
+It asserts the CONTRACT of the ladder, not a snapshot:
+- the escalated attempt goes to the **larger** model, and **only** to it (the
+  local model is not re-asked);
+- the escalated attempt carries the **failed stage**, the **failure reason**,
+  the **error log**, and the **worked examples**;
+- the escalation prompt is **self-contained** — it restates the document,
+  because a retry that depends on the caller's memory of the previous turn is
+  not a retry;
+- the escalation is recorded as escalated, and a **successful** escalation is
+  logged as a success — so it becomes retrievable corpus, and the ladder is
+  cumulative rather than per-document;
+- a **failed** escalation does not erase the original failure (both remain
+  logged — losing the original would erase the evidence of what the local
+  model got wrong);
+- with **no** larger model supplied, the escalation re-asks the local model
+  with the enriched context — a legitimate, weaker rung.
+
+**The escalation now uses RETRIEVAL, not recency.** It previously took the
+most recent successes, while the normal attempt took the retrieved ones. A
+retry taught by a *different and weaker* rule than the first attempt is not a
+retry — it is a fresh attempt with extra text. The recency fallback remains
+for a cold corpus (nothing retrieved), because recent successes beat nothing.
+
+**Live run against a second endpoint — the first attempt FAILED, and the
+reason was environmental, not a code defect.** The run failed **6/6 at the
+`transport` stage** — "the model returned nothing (unreachable, or an empty
+reply)" — including the escalations. A transport failure means the model
+never replied; it is not a statement about the tree.
+
+Diagnosis (measured, not guessed):
+- The machine had **19 GB of 31 GB RAM used, only 4 GB free**, with
+  `helldivers2.exe` pinned at **100% CPU** (a game, running for 2 days).
+- The 7B and the 14B models (9.9 GB) were BOTH resident. The 14B could not
+  coexist with the 7B in the free memory.
+- A bare `"Say OK"` to the 7B took **25.4 seconds** — pathologically slow,
+  and the reason is visible in the memory state.
+- With only the 7B resident, the same request took **1.38 seconds**.
+
+So the ladder never got to test anything: the requests were timing out in
+the transport before the model ever produced a tree. **Lesson: a transport
+failure is a statement about the MACHINE, not about the model or the
+prompt.** The distinction matters because a transport failure and a
+validation failure look identical in the summary table, and only one of
+them says anything about the reconstruction quality.
+
+**The mitigation is in the client**: `AskModelSync` raises the token budget
+to 1400 and the timeout to 300 s (the defaults — 1024 tokens / 180 s — are
+not enough for a schema-shaped JSON answer from a 14B on a loaded machine),
+and it uses a **fresh client per call** so a config change cannot corrupt a
+request already in flight.
+
+### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner
 is a library with a CLI probe, not something usable.
+
+**Landed.** The console has **two explicit contracts**, and the toggle
+between them is a button, not an inference:
+
+| | SEMANTIC | DOCUMENT |
+|---|---|---|
+| the specification | the prompt itself | a file's path |
+| the prompt | the element schema | the schema + the document + the retrieved worked examples |
+| validation | one sheet is allowed | one sheet is **rejected** (a closed body needs several) |
+| bookkeeping | none | the corpus, the error log, the escalation ladder |
+
+**The mode is explicit because the validation differs.** The document path
+*rejects* a single sheet; the semantic path allows one. Inferring the mode
+from the text would make that rejection unpredictable — the same prompt
+could be accepted or refused depending on how it was phrased.
+
+Wired: `LoadDocument` (reads the TEXT, not just the path; refuses a missing
+or empty file and **names the path** in the refusal), `InterpretLoadedDocument`,
+`SaveDocCorpus`/`LoadDocCorpus`, a corpus readout in the console
+(`corpus: N ok / M failed`), and CLI flags `--document`, `--doc-domain`,
+`--escalate-model`, `--doc-corpus`, `--auto-document`.
+
+**Three real defects found and fixed while building it:**
+1. **The interpretation froze the window.** The first version called
+   `InterpretDocument` directly from `OnFrame()`, and the model call takes
+   20-280 s — the window would have been frozen for minutes, which reads as
+   a crashed app rather than a slow model. It now runs on a **worker
+   thread**; the worker does the model call, the parse and the validation,
+   and the **main** thread does the bake and the scene insertion (the scene
+   is not thread-safe).
+2. **A data race on the console log.** The worker appends to `log_` while
+   the main thread paints it. `Logf` now takes a mutex, and `Log()` returns
+   a **copy** (a reference would outlive the lock that protected it).
+3. **`std::terminate` on exit.** The destructor now joins the document
+   worker — a `std::thread` destroyed while joinable aborts the process.
+
+Also: the corpus gets its own **copy** in the worker and is merged back
+when it finishes, so the corpus still accumulates without being shared
+across threads. The editor drops to 10 FPS while the document worker runs
+(the same throttle the semantic path uses — the frame rate competes with
+the model for the same cores).
+
+Gate: `tests/validate_document_mode.cpp` — 25 checks, 0 failures. It asserts
+the two contracts are mutually exclusive, the corpus persists **with its
+documents** across a restart, the self-exclusion survives the round-trip,
+the corpus accumulates across documents, and a failure is recorded with its
+stage.
 
 ---
 

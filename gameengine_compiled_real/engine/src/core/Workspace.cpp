@@ -12,6 +12,8 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <fstream>
+#include <iterator>
 
 #if defined(DELIRIUM_HAS_SDL) && DELIRIUM_HAS_SDL
 #include <SDL.h>
@@ -48,6 +50,12 @@ Workspace::~Workspace() {
     // The probe thread may still be blocked in a connect() -- join it so the
     // process never outlives a socket in flight.
     if (probe_thread_.joinable()) probe_thread_.join();
+    // The DOCUMENT worker (G15) may still be waiting on a model reply.
+    // It MUST be joined: a std::thread destroyed while joinable calls
+    // std::terminate, so the app would abort on exit instead of shutting
+    // down cleanly. The join waits for the model (up to its timeout), which
+    // is the price of a clean exit.
+    if (doc_thread_.joinable()) doc_thread_.join();
     llm_.Cancel();
 }
 
@@ -204,6 +212,11 @@ void Workspace::Logf(const char* fmt, ...) {
     va_start(ap, fmt);
     std::vsnprintf(buf, sizeof(buf), fmt, ap);
     va_end(ap);
+    // The log is written from the MAIN thread AND from the document worker
+    // thread (G15) -- the worker's model call can fail, and that failure
+    // must be reported. A std::vector append from two threads is a data
+    // race, so the append is guarded.
+    std::lock_guard<std::mutex> guard(log_mutex_);
     log_.emplace_back(buf);
     if (log_.size() > 400) log_.erase(log_.begin(), log_.begin() + 100);
 }
@@ -380,6 +393,229 @@ GameObject* Workspace::AddFromTree(const std::unique_ptr<Element>& tree,
 }
 
 // =============================================================================
+// DOCUMENT MODE (G15)
+// =============================================================================
+std::string Workspace::AskModelSync(const LLM::Config& cfg,
+                                    const std::string& system,
+                                    const std::string& user) {
+    // A FRESH client per call: the workspace's `llm_` is a single in-flight
+    // state machine, and overwriting its config while a request is running
+    // would corrupt that request. The document path is a blocking call, so
+    // it can own its client for the duration.
+    LLM::Config c = cfg;
+    c.system = system;
+    // A document prompt is LARGE (the schema plus the document plus the
+    // worked examples), so the token budget and the timeout are both raised
+    // above the defaults. The default 1024 tokens is not enough for a
+    // schema-shaped JSON answer, and the default 180 s is not enough for a
+    // 14B model on a loaded machine.
+    if (c.max_tokens < 1400) c.max_tokens = 1400;
+    if (c.timeout_seconds < 300) c.timeout_seconds = 300;
+
+    LLM::LLMClient client(c);
+    if (!client.Send(user)) {
+        Logf("document: could not start the request");
+        return {};
+    }
+    // Wait for the reply. The timeout is the CLIENT's own timeout (it fails
+    // the request), so the loop is bounded by it; the extra bound here is a
+    // belt-and-braces ceiling so a client that never transitions cannot
+    // hang the UI forever.
+    const int max_ticks = c.timeout_seconds * 20 + 60;   // 50 ms per tick
+    int ticks = 0;
+    while (client.IsBusy()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        if (++ticks > max_ticks) {
+            client.Cancel();
+            Logf("document: the request timed out after %ds", c.timeout_seconds);
+            return {};
+        }
+    }
+    if (client.CurrentState() == LLM::State::Failed) {
+        Logf("document: model error: %s", client.Error().c_str());
+        return {};
+    }
+    return client.TakeResponse();
+}
+
+bool Workspace::LoadDocument(const std::string& path) {
+    if (path.empty()) {
+        Logf("document: no path given");
+        return false;
+    }
+    std::ifstream f(path, std::ios::binary);
+    if (!f) {
+        // A missing document is the most likely mistake, and the message
+        // must NAME THE PATH -- "document not found" without the path is
+        // useless when the user typed it.
+        Logf("document: cannot read '%s'", path.c_str());
+        return false;
+    }
+    std::string text((std::istreambuf_iterator<char>(f)),
+                     std::istreambuf_iterator<char>());
+    if (text.empty()) {
+        Logf("document: '%s' is empty", path.c_str());
+        return false;
+    }
+    doc_path_ = path;
+    doc_text_ = std::move(text);
+    Logf("document: loaded '%s' (%zu bytes, domain=%s)", path.c_str(),
+         doc_text_.size(), doc_domain_.c_str());
+    return true;
+}
+
+bool Workspace::SaveDocCorpus() {
+    if (!doc_log_.Save(doc_corpus_path_)) {
+        Logf("corpus: could not save '%s'", doc_corpus_path_.c_str());
+        return false;
+    }
+    Logf("corpus: saved %zu entries to '%s'", doc_log_.Size(),
+         doc_corpus_path_.c_str());
+    return true;
+}
+
+bool Workspace::LoadDocCorpus() {
+    if (!doc_log_.Load(doc_corpus_path_)) {
+        // A missing corpus is NOT an error -- it is the cold-start case.
+        Logf("corpus: no corpus at '%s' yet (starting cold)", doc_corpus_path_.c_str());
+        return false;
+    }
+    Logf("corpus: loaded %zu entries (%zu ok, %zu failed) from '%s'",
+         doc_log_.Size(), doc_log_.SuccessCount(), doc_log_.FailureCount(),
+         doc_corpus_path_.c_str());
+    return true;
+}
+
+bool Workspace::InterpretLoadedDocument() {
+    if (doc_text_.empty()) {
+        Logf("document: nothing loaded -- set a document path first");
+        return false;
+    }
+    if (doc_busy_) {
+        Logf("document: already working");
+        return false;
+    }
+    if (!model_online_) {
+        Logf("document: the local model is offline");
+        return false;
+    }
+    // A previous worker must be joined before a new one starts -- joining
+    // a joinable std::thread destroys it.
+    if (doc_thread_.joinable()) doc_thread_.join();
+
+    doc_busy_ = true;
+    doc_thread_done_ = false;
+    doc_thread_ok_ = false;
+    doc_thread_reason_.clear();
+    doc_thread_tree_.reset();
+
+    // The document id is the file's stem: it identifies the document in the
+    // corpus and in the error log, so it must be stable and human-readable.
+    std::string id = doc_path_;
+    const size_t slash = id.find_last_of('/');
+    if (slash != std::string::npos) id = id.substr(slash + 1);
+
+    AI::Document doc;
+    doc.id = id;
+    doc.text = doc_text_;
+    doc.domain = doc_domain_;
+
+    Logf("document: interpreting '%s' (%zu bytes)", id.c_str(), doc.text.size());
+
+    // The retrieval corpus is consulted for the worked examples -- and the
+    // log line makes it VISIBLE, because a learning system whose learning is
+    // invisible is indistinguishable from one that has not learned.
+    const auto retrieved = doc_log_.RetrieveSimilar(doc.text, doc.domain, 3);
+    if (retrieved.empty()) {
+        Logf("document: corpus has no similar success (cold start)");
+    } else {
+        Logf("document: corpus supplied %zu worked example(s), best '%s' (%.0f%%)",
+             retrieved.size(), retrieved[0].document_id.c_str(),
+             retrieved[0].similarity * 100.0);
+    }
+
+    // The worker gets its OWN COPY of the corpus. The corpus is written by
+    // the worker (it records the attempt) and read by the main thread (the
+    // console shows its size) -- sharing one object across the two would be
+    // a data race on a std::vector. The copy is merged back when the worker
+    // finishes, so the corpus still accumulates.
+    AI::DocErrorLog worker_log = doc_log_;
+    const LLM::Config base = llm_.GetConfig();
+    const std::string escalate_model = doc_escalate_model_;
+
+    doc_thread_ = std::thread([this, doc, base, escalate_model,
+                               worker_log]() mutable {
+        // The model call. The document path drives the model ITSELF, so the
+        // workspace's asynchronous LLM client is not used -- the learner
+        // owns the request and the ladder.
+        const auto ask = [this, base](const std::string& system,
+                                      const std::string& user) {
+            return AskModelSync(base, system, user);
+        };
+
+        AI::DocResult r = AI::InterpretDocument(doc, ask, worker_log,
+                                                /*escalate=*/false);
+
+        // The ESCALATION rung: if the local model failed and a larger model
+        // is configured, the SAME document is retried against it with the
+        // failure reason, the error log and the worked examples attached.
+        if (!r.ok && !escalate_model.empty()) {
+            LLM::Config big = base;
+            big.model = escalate_model;
+            const auto ask_big = [this, big](const std::string& system,
+                                             const std::string& user) {
+                return AskModelSync(big, system, user);
+            };
+            const std::function<std::string(const std::string&, const std::string&)>
+                larger_fn = ask_big;
+            r = AI::InterpretDocument(doc, ask_big, worker_log,
+                                      /*escalate=*/true, &larger_fn);
+        }
+
+        doc_thread_ok_ = r.ok;
+        doc_thread_reason_ = r.ok ? std::string() : r.reason;
+        doc_thread_tree_ = std::move(r.tree);
+        // The updated corpus goes back to the main thread.
+        doc_log_ = std::move(worker_log);
+        doc_thread_done_ = true;
+    });
+
+    return true;
+}
+
+void Workspace::PollDocument() {
+    // The worker sets `doc_thread_done_` when it finishes. This function
+    // runs on the MAIN thread, and it applies the result here -- the scene
+    // is not thread-safe, so the bake and the insertion must not happen on
+    // the worker.
+    if (!doc_thread_done_) return;
+    if (doc_thread_.joinable()) doc_thread_.join();
+
+    doc_busy_ = false;
+    doc_thread_done_ = false;   // reset for the next run
+
+    if (!doc_thread_ok_) {
+        Logf("document: FAILED -- %s", doc_thread_reason_.c_str());
+        Logf("document: corpus is now %zu entries (%zu ok, %zu failed)",
+             doc_log_.Size(), doc_log_.SuccessCount(), doc_log_.FailureCount());
+        SaveDocCorpus();
+        return;
+    }
+
+    Logf("document: parsed -- %s", AI::DescribeTree(*doc_thread_tree_).c_str());
+    GameObject* obj = AddFromTree(doc_thread_tree_, "doc:" + doc_path_);
+    if (obj) {
+        Logf("document: created '%s' (%zu patches, %zu anchors)", obj->name.c_str(),
+             obj->Body().Patches().size(), obj->Body().AnchorBlob().size());
+    }
+    Logf("document: corpus is now %zu entries (%zu ok, %zu failed)",
+         doc_log_.Size(), doc_log_.SuccessCount(), doc_log_.FailureCount());
+    // Persist immediately: the corpus is the system's memory, and a memory
+    // that is lost on exit is not a memory.
+    SaveDocCorpus();
+}
+
+// =============================================================================
 // Model reachability probe
 // =============================================================================
 void Workspace::StartProbe() {
@@ -428,6 +664,33 @@ void Workspace::OnFrame() {
     PollModel();
     PollProbe();
 
+    // Apply the document worker's result, if it finished. This is where the
+    // bake and the scene insertion happen -- on the MAIN thread, because the
+    // scene is not thread-safe.
+    PollDocument();
+
+    // The AUTOMATIC DOCUMENT runner (G15).
+    //
+    // It fires here -- AFTER PollProbe() -- because the probe result only
+    // lands in PollProbe(), and the document path refuses to run against an
+    // offline model. Firing it before the probe would mean the very first
+    // run always failed with "the local model is offline".
+    //
+    // It is disarmed BEFORE the callback runs, so a callback that somehow
+    // re-enters the frame cannot fire it twice.
+    //
+    // The callback returns whether the request was STARTED (the work is
+    // asynchronous now), so the log line says "started" -- not "succeeded".
+    // The outcome arrives later, through PollDocument().
+    if (auto_doc_armed_ && model_online_ && auto_doc_runner_) {
+        auto_doc_armed_ = false;
+        auto fn = std::move(auto_doc_runner_);
+        auto_doc_runner_ = nullptr;
+        const bool started = fn();
+        Logf("document: automatic interpretation %s",
+             started ? "started" : "could not start");
+    }
+
     // GIVE THE CPU BACK WHILE THE MODEL WORKS.
     //
     // The editor renders every frame at full resolution; a local 7B model
@@ -437,7 +700,11 @@ void Workspace::OnFrame() {
     // slow". Dropping to 10 FPS while a request is in flight costs nothing
     // visually (the user is reading the console, not the viewport) and
     // hands the cores back to the model.
-    if (busy_)
+    //
+    // The DOCUMENT path needs the same throttle: its model call runs on a
+    // worker thread, so the editor's frame rate competes with it exactly
+    // as the semantic path's does.
+    if (busy_ || doc_busy_)
         engine_.SetMaxFps(10.0);
     else
         engine_.SetMaxFps(60.0);
@@ -919,6 +1186,65 @@ void Workspace::DrawConsole() {
     Rect log_r{ content.x + 4, prompt_r.Bottom() + 3, content.w - 8,
                 content.Bottom() - prompt_r.Bottom() - 5 };
 
+    // ---------------------------------------------------------------------
+    // THE DOCUMENT ROW (G15).
+    //
+    // The console has TWO contracts, and they are mutually exclusive:
+    //
+    //   SEMANTIC  "make a torus"        -- the prompt IS the spec.
+    //   DOCUMENT  a path to a .txt file -- the FILE is the spec, and the
+    //                                       document pipeline runs (corpus,
+    //                                       closed-body rule, error log,
+    //                                       escalation ladder).
+    //
+    // The toggle is explicit rather than inferred from the text, because
+    // the two paths need different prompts AND different validation: the
+    // document path REJECTS a single sheet (a closed body needs several),
+    // while the semantic path allows one. Inferring the mode from the text
+    // would make that rejection unpredictable -- the same prompt could be
+    // accepted or refused depending on how it was phrased.
+    // ---------------------------------------------------------------------
+    {
+        const int toggle_w = 78;
+        const Rect toggle_r{ content.x + 4, prompt_r.Bottom() + 3, toggle_w, kRowH };
+        const char* mode_label = doc_mode_ ? "document" : "semantic";
+        if (ui_.Button(toggle_r, mode_label)) {
+            doc_mode_ = !doc_mode_;
+            Logf("console: %s mode", doc_mode_ ? "DOCUMENT" : "semantic");
+        }
+
+        if (doc_mode_) {
+            // The document path field: the path to the technical document.
+            const Rect path_r{ toggle_r.Right() + 6, toggle_r.y,
+                               content.w - toggle_r.w - 130, kRowH };
+            ui_.TextField(path_r, "doc_path", &doc_path_, "document .txt path...");
+            const Rect load_r{ path_r.Right() + 6, path_r.y, 52, kRowH };
+            if (ui_.Button(load_r, "load")) {
+                if (!doc_path_.empty()) LoadDocument(doc_path_);
+            }
+            const Rect run_r{ load_r.Right() + 6, load_r.y, 66, kRowH };
+            const bool can_run = !doc_busy_ && !doc_text_.empty() && model_online_;
+            if (ui_.Button(run_r, doc_busy_ ? "working" : "interpret")) {
+                if (can_run) InterpretLoadedDocument();
+            }
+        } else {
+            // The corpus readout: the learning system's memory, made
+            // visible. A learning loop whose learning is invisible cannot
+            // be distinguished from one that has not learned.
+            const Rect corpus_r{ toggle_r.Right() + 6, toggle_r.y,
+                                 content.w - toggle_r.w - 12, kRowH };
+            char buf[128];
+            std::snprintf(buf, sizeof(buf),
+                          "corpus: %zu ok / %zu failed  (domain: %s)",
+                          doc_log_.SuccessCount(), doc_log_.FailureCount(),
+                          doc_domain_.c_str());
+            ui_.Text(corpus_r, buf, th.fg_dim);
+        }
+    }
+    // The log starts BELOW the document row.
+    log_r.y = prompt_r.Bottom() + 3 + kRowH + 4;
+    log_r.h = content.Bottom() - log_r.y - 5;
+
     // SHOW THE STREAM WHILE THE MODEL WORKS.
     //
     // A local model can take a minute to answer. A console that shows
@@ -941,11 +1267,14 @@ void Workspace::DrawConsole() {
     // Pin the view to the newest line when the user has not scrolled up.
     if (ui_.mouse_y > log_r.y && ui_.mouse_y < log_r.Bottom() && ui_.wheel != 0)
         console_scroll_ += 0;  // LogView adjusts it
-    ui_.LogView(log_r, "console_log", log_, &console_scroll_);
+    // A COPY of the log: the document worker thread appends to it while the
+    // main thread paints it, and LogView takes a reference.
+    const std::vector<std::string> log_copy = Log();
+    ui_.LogView(log_r, "console_log", log_copy, &console_scroll_);
     // Auto-follow the tail: keep the scroll pinned to the bottom.
     const int lh = BitmapFont::kGlyphH + 2;
     const int visible = std::max(1, (log_r.h - 4) / lh);
-    const int max_scroll = std::max(0, int(log_.size()) - visible);
+    const int max_scroll = std::max(0, int(log_copy.size()) - visible);
     if (console_scroll_ >= max_scroll - 1) console_scroll_ = max_scroll;
 }
 

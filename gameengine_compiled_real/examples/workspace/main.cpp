@@ -94,6 +94,13 @@ int main(int argc, char** argv) {
     // Camera placement, so a capture can be taken from a KNOWN angle.
     // -1 = "not specified" (the workspace's own framing decides).
     float cam_yaw = -999.f, cam_pitch = -999.f, cam_dist = -1.f;
+    // --- document mode (G15) ----------------------------------------------
+    std::string document;        // the technical document to interpret
+    bool        doc_mode = false;
+    std::string doc_domain = "machine";
+    std::string escalate_model;  // the larger model rung
+    std::string doc_corpus;      // where the corpus is saved/loaded
+    bool        auto_document = false;
 
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
@@ -110,6 +117,25 @@ int main(int argc, char** argv) {
         else if (a == "--shot") shot = next("");
         else if (a == "--auto-prompt") auto_prompt = next("");
         else if (a == "--semantic") semantic = next("orb");
+        // --document PATH: switch the console into DOCUMENT mode and load
+        // the technical document at PATH. The document pipeline runs the
+        // corpus, the closed-body rule and the escalation ladder -- a
+        // different contract from the semantic prompt.
+        else if (a == "--document") { document = next(""); doc_mode = true; }
+        // --doc-domain D: the retrieval prior's domain ("machine",
+        // "biological", ...). A same-domain worked example outranks a
+        // cross-domain one.
+        else if (a == "--doc-domain") doc_domain = next("machine");
+        // --escalate-model M: the LARGER model consulted when the local one
+        // fails a document. Empty = no escalation rung.
+        else if (a == "--escalate-model") escalate_model = next("");
+        // --doc-corpus PATH: where the retrieval corpus is saved/loaded.
+        // It PERSISTS across documents -- that is what makes the second
+        // document better than the first.
+        else if (a == "--doc-corpus") doc_corpus = next("");
+        // --auto-document: interpret the loaded document automatically once
+        // the model is online, then quit. This is the scripted path.
+        else if (a == "--auto-document") auto_document = true;
         // --render-path N: 0 march, 1 raymarch, 2 splat classic,
         // 3 splat layered, 4 splat area (the pixel-footprint pyramid).
         else if (a == "--render-path") render_path = std::atoi(next("-1").c_str());
@@ -199,6 +225,27 @@ int main(int argc, char** argv) {
         // path buttons use. The renderer announces the change itself.
         ws.SetRenderPath(render_path);
     }
+
+    // --- document mode (G15) ----------------------------------------------
+    //
+    // The corpus is LOADED before the document is interpreted, so the FIRST
+    // document already benefits from every document interpreted before it.
+    // That ordering is the whole point of the corpus -- a corpus that is
+    // saved after the interpretation is a log, not memory.
+    if (doc_mode || !document.empty()) {
+        ws.SetDocumentMode(true);
+        ws.SetDocumentDomain(doc_domain);
+        if (!escalate_model.empty()) ws.SetEscalateModel(escalate_model);
+        if (!doc_corpus.empty()) {
+            ws.SetDocCorpusPath(doc_corpus);
+            ws.LoadDocCorpus();
+        }
+        if (!document.empty()) {
+            std::printf("document: %s (domain=%s)\n", document.c_str(),
+                        doc_domain.c_str());
+            ws.LoadDocument(document);
+        }
+    }
     if (!probe) {
         // The probe is what turns the status bar from "not probed" into
         // "online"/"offline"; skipping it is only useful for a headless
@@ -220,6 +267,26 @@ int main(int argc, char** argv) {
                 std::printf("[auto-prompt] submit failed\n");
             else
                 std::printf("[auto-prompt] request sent\n");
+        });
+    }
+
+    if (auto_document && !document.empty()) {
+        // Drive the REAL document path.
+        //
+        // It must WAIT for the model to come online: the document path
+        // refuses to run against an offline model (there is no point
+        // sending a request that cannot be delivered), and the probe is
+        // ASYNCHRONOUS -- it runs on its own thread and lands in a later
+        // frame's PollProbe().
+        //
+        // So the driver is a STATE MACHINE, not a loop: it is armed here and
+        // it fires on a LATER frame. A loop inside this callback would spin
+        // on a condition that only a LATER frame can satisfy -- the probe
+        // result is set by PollProbe(), which runs in OnFrame(). It would
+        // deadlock on the very thing it waits for.
+        ws.SetAutoDocumentRunner([&ws] {
+            // Returns true once the interpretation has been attempted.
+            return ws.InterpretLoadedDocument();
         });
     }
 
