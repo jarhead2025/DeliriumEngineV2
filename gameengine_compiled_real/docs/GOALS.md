@@ -493,12 +493,42 @@ Gate: `tests/validate_retrieval.cpp` — 43 checks, 0 failures. It asserts the
 failures-never-offered, no-self-retrieval, corpus-reaches-the-normal-prompt,
 round-trip, legacy-log compatibility), not snapshots.
 
-**Live, end-to-end (still open).** The unit gates prove the retrieval
-*works*; the live claim — "the second document benefits from the first" —
-has been verified only in the unit gates. The live run keeps failing at the
-`transport` stage, and each failure turned out to be a *different* real
-defect in the client or the probe (see the FIXES_REGISTER entries 54, 58,
-59, 60). The last of those is fixed; the live run is in flight.
+**Live, end-to-end — PROVEN (2026-11-09).** The unit gates prove the
+retrieval *works*; the live run proves it *helps*:
+
+```
+--- [1/2] doc_gearbox.txt ---
+    corpus: no similar worked example (cold for this doc)
+    attempt 1: OK (582.0s)
+    sheets=4  patches=7354  anchors=9216
+    GEOMETRY OK
+
+--- [2/2] doc_gearbox2.txt ---
+    corpus: 1 worked example(s), best 'doc_gearbox.txt' (85%)
+    attempt 1: OK (345.8s)
+    sheets=4  patches=7226  anchors=9216
+    GEOMETRY OK
+
+valid trees: 2 | baked bodies: 2 | failures: 0 | successes: 2
+```
+
+The second document **retrieved the first as a worked example at 85%
+similarity**, and produced a 4-sheet, 7,226-patch, 9,216-anchor body that
+baked and passed the geometry check — and did it **faster** (345.8 s vs
+582.0 s). The worked example is real context, not decoration.
+
+Both documents also produced **4 sheets**, which is the closed-body rule
+working: one sheet is a dome, four compose a housing with a rotor, a shaft
+and a top.
+
+**Reaching this took four separate real defects**, each of which presented
+as the same opaque "the model returned nothing": the machine was out of
+memory (not a code bug); a socket read timeout was treated as a truncated
+response (three read paths); a close mid-response was reported as a
+*successful empty reply*; and the probe's outer bound was **117 s — shorter
+than the timeout it derived from**. Only the live run could see any of
+them; the unit gates were green throughout. See FIXES_REGISTER entries 54,
+58, 59, 60.
 
 ### G14. Exercise escalation against a real larger model — `WIP`
 The ladder is unit-tested against a stub and has never run against a second
@@ -565,10 +595,18 @@ only one of them says anything about the reconstruction quality. Read the
 STAGE before reading the reason.
 
 **The mitigation is in the client**: `AskModelSync` raises the token budget
-to 1400 and the timeout to 300 s (the defaults — 1024 tokens / 180 s — are
+to 1400 and the timeout to 900 s (the defaults — 1024 tokens / 180 s — are
 not enough for a schema-shaped JSON answer from a 14B on a loaded machine),
 and it uses a **fresh client per call** so a config change cannot corrupt a
 request already in flight.
+
+**Still open: the ladder's RESCUE behaviour.** Every live run so far has
+**succeeded on attempt 1**, so the escalation rung has never actually fired
+against a real second endpoint. The wiring is proven by the 36-check gate;
+the *rescue* — "a bigger model fixes what the local model could not" — is
+not yet demonstrated. Exercising it needs a document the local model
+reliably fails (a single-sheet answer is the obvious candidate, since the
+document path rejects those).
 
 ### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner
