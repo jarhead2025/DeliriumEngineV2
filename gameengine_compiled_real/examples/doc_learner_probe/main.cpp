@@ -98,29 +98,53 @@ std::string ask_model(const LLM::Config& cfg, const std::string& system,
         return {};
     }
     // The outer bound is DERIVED from the client's timeout rather than
-    // hard-coded: the two were 320 s and 300 s, which meant the outer loop
-    // could give up while the client was still legitimately working. The
-    // outer bound is now 30% above the socket timeout, so the CLIENT is
-    // always the thing that decides the request is over.
-    const int max_ticks = (c.timeout_seconds * 13) / 10;   // 100 ms per tick
+    // hard-coded.
+    //
+    // WHY: the two were 320 s and 300 s -- independent constants that must
+    // agree. When they disagree, the outer loop can give up while the
+    // client is still legitimately working, and the request is cancelled
+    // mid-flight and reported as a transport failure.
+    //
+    // (The first attempt at this derivation was WRONG in a way that
+    // mattered: `timeout_seconds * 13 / 10` on a 900 s timeout gives 1170
+    // ticks, which at 100 ms per tick is **117 s** -- SHORTER than the
+    // socket timeout, not longer. The measured model time is ~230 s, so
+    // every request was cancelled by the outer loop at 117 s.)
+    //
+    // The bound is 30% ABOVE the socket timeout, so the CLIENT is always
+    // the thing that decides the request is over. The arithmetic is in
+    // SECONDS, then converted to ticks.
+    const int max_ticks = (c.timeout_seconds * 13 / 10) * 10;   // 100 ms per tick
     int ticks = 0;
+    // Report the elapsed time on EVERY path, including the failures.
+    //
+    // WHY: the old code set `secs_out` only on the success path, so every
+    // failure reported "0.0s". That number was actively misleading: the
+    // requests were dying at exactly 117 s (the outer bound), and "0.0s"
+    // made it look like they had failed instantly. The elapsed time is the
+    // single most diagnostic number in a timeout investigation, and it was
+    // the one number being thrown away.
+    auto elapsed = [&]() -> double {
+        return std::chrono::duration<double>(
+            std::chrono::steady_clock::now() - t0).count();
+    };
     while (client.IsBusy()) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (++ticks > max_ticks) {
             client.Cancel();
             if (err_out) *err_out = "timed out";
+            if (secs_out) *secs_out = elapsed();
             return {};
         }
     }
     if (client.CurrentState() == LLM::State::Failed) {
         if (err_out) *err_out = client.Error();
+        if (secs_out) *secs_out = elapsed();
         return {};
     }
     const std::string reply = client.TakeResponse();
     if (reply.empty() && err_out) *err_out = "the client finished with an empty reply";
-    if (secs_out)
-        *secs_out = std::chrono::duration<double>(
-            std::chrono::steady_clock::now() - t0).count();
+    if (secs_out) *secs_out = elapsed();
     return reply;
 }
 
