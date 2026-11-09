@@ -59,6 +59,65 @@ std::vector<std::string> SplitTabs(const std::string& line) {
     return out;
 }
 
+// -----------------------------------------------------------------------------
+// Tokenisation for the retrieval similarity.
+//
+// WHY WORDS AND NOT SUBSTRINGS: a substring match scores "rot" against
+// "rotor" and "rotation" and "rotational" identically, which is exactly
+// the distinction the corpus needs to make ("a rotor" is about the same
+// kind of thing as "another rotor"; it is not about "rotation" the act).
+//
+// WHY A STOPWORD LIST: the words that carry the most overlap in technical
+// documents are the ones that carry the least information -- "the", "a",
+// "of", "is", "with", "and", "in", "to", "that", "it", "at", "by", "for",
+// "on", "as", "from". Left in, two documents about completely different
+// machines ("the housing and the shaft") score a high overlap on "the",
+// "and" and "of" alone, and the retrieval degenerates into "all documents
+// are equally similar" -- which is the same as recency with extra steps.
+//
+// The list is small and domain-neutral on purpose: a domain-specific
+// stopword list would need to be maintained per corpus, and the cost of a
+// slightly worse score is far lower than the cost of a corpus that
+// silently stops discriminating.
+const char* const kStopwords[] = {
+    "the", "a", "an", "and", "or", "of", "is", "are", "was", "were", "be",
+    "been", "being", "to", "in", "on", "at", "by", "for", "with", "from",
+    "as", "that", "this", "these", "those", "it", "its", "which", "has",
+    "have", "had", "not", "no", "but", "into", "than", "then", "so", "such",
+    "each", "other", "any", "all", "can", "will", "would", "there", "their",
+    "they", "we", "you", "our", "its", "mm", "cm", "kg", "ms", "rpm",
+};
+
+// Lowercase, split on non-alphanumerics, drop stopwords and 1-char tokens.
+std::vector<std::string> Tokenize(const std::string& text) {
+    std::vector<std::string> out;
+    std::string cur;
+    auto flush = [&]() {
+        if (cur.empty()) return;
+        // Lowercase (ASCII only -- the corpus is technical English and a
+        // Unicode-aware case fold would drag in a dependency for nothing).
+        for (char& c : cur) {
+            if (c >= 'A' && c <= 'Z') c = char(c - 'A' + 'a');
+        }
+        if (cur.size() > 1) {
+            bool stop = false;
+            for (const char* sw : kStopwords) {
+                if (cur == sw) { stop = true; break; }
+            }
+            if (!stop) out.push_back(cur);
+        }
+        cur.clear();
+    };
+    for (const char c : text) {
+        const bool alnum = (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+                           (c >= '0' && c <= '9');
+        if (alnum) cur += c;
+        else flush();
+    }
+    flush();
+    return out;
+}
+
 } // namespace
 
 // ---------------------------------------------------------------------------
@@ -132,7 +191,9 @@ bool DocErrorLog::Save(const std::string& path) const {
           << EscapeField(e.attempt.document_id) << '\t'
           << EscapeField(e.attempt.failed_stage) << '\t'
           << EscapeField(e.attempt.reason) << '\t'
-          << EscapeField(e.attempt.raw_reply) << '\n';
+          << EscapeField(e.attempt.raw_reply) << '\t'
+          << EscapeField(e.attempt.document_text) << '\t'
+          << EscapeField(e.attempt.domain) << '\n';
     }
     return f.good();
 }
@@ -144,17 +205,139 @@ bool DocErrorLog::Load(const std::string& path) {
     std::string line;
     while (std::getline(f, line)) {
         if (line.empty()) continue;
-        const std::vector<std::string> f6 = SplitTabs(line);
-        if (f6.size() < 6) continue;
+        const std::vector<std::string> f8 = SplitTabs(line);
+        if (f8.size() < 6) continue;
         DocAttempt a;
-        a.ok = (f6[0] == "OK");
-        a.document_id = UnescapeField(f6[2]);
-        a.failed_stage = UnescapeField(f6[3]);
-        a.reason = UnescapeField(f6[4]);
-        a.raw_reply = UnescapeField(f6[5]);
-        entries_.push_back(Entry{a, f6[1] == "ESC"});
+        a.ok = (f8[0] == "OK");
+        a.document_id = UnescapeField(f8[2]);
+        a.failed_stage = UnescapeField(f8[3]);
+        a.reason = UnescapeField(f8[4]);
+        a.raw_reply = UnescapeField(f8[5]);
+        // The document text and domain are OPTIONAL trailing fields: a log
+        // written by an older build has only six, and it must still load
+        // (otherwise the corpus would be unreadable until it was rebuilt).
+        if (f8.size() >= 8) {
+            a.document_text = UnescapeField(f8[6]);
+            a.domain = UnescapeField(f8[7]);
+        }
+        entries_.push_back(Entry{a, f8[1] == "ESC"});
     }
     return true;
+}
+
+// -----------------------------------------------------------------------------
+// RETRIEVAL
+// -----------------------------------------------------------------------------
+
+double DocErrorLog::Similarity(const std::string& a, const std::string& b) {
+    const std::vector<std::string> ta = Tokenize(a);
+    const std::vector<std::string> tb = Tokenize(b);
+    if (ta.empty() || tb.empty()) return 0.0;
+
+    // Sets, not multisets: a document that says "rotor" eight times is not
+    // eight times more about rotors than one that says it once.
+    std::vector<std::string> ua = ta, ub = tb;
+    std::sort(ua.begin(), ua.end());
+    ua.erase(std::unique(ua.begin(), ua.end()), ua.end());
+    std::sort(ub.begin(), ub.end());
+    ub.erase(std::unique(ub.begin(), ub.end()), ub.end());
+
+    // Intersection size (both sorted -> a linear merge).
+    size_t i = 0, j = 0, common = 0;
+    while (i < ua.size() && j < ub.size()) {
+        if (ua[i] == ub[j]) { ++common; ++i; ++j; }
+        else if (ua[i] < ub[j]) ++i;
+        else ++j;
+    }
+    // Jaccard: |A n B| / |A u B|. Chosen over "intersection over min" so a
+    // short query that matches a long document is NOT scored at 1.0 --
+    // otherwise a two-word query would match every document that happens to
+    // contain those two words and the ranking would be meaningless.
+    const double denom = double(ua.size() + ub.size() - common);
+    if (denom <= 0.0) return 0.0;
+    return double(common) / denom;
+}
+
+std::vector<DocErrorLog::Retrieved> DocErrorLog::RetrieveSimilar(
+    const std::string& document_text, const std::string& domain,
+    size_t max_entries) const {
+    std::vector<Retrieved> hits;
+
+    for (const Entry& e : entries_) {
+        // Only SUCCESSES are candidates. A worked example has to be a tree
+        // that passed validation -- teaching the model from a tree the
+        // pipeline REJECTED would teach it the failure mode.
+        if (!e.attempt.ok) continue;
+        // A prior attempt on the SAME document is not a worked example for
+        // this one -- it is this document's own earlier attempt, and it is
+        // already carried by the escalation path. Including it would let a
+        // document bootstrap itself from its own output.
+        if (!e.attempt.document_text.empty() &&
+            e.attempt.document_text == document_text) {
+            continue;
+        }
+
+        Retrieved r;
+        r.document_id = e.attempt.document_id;
+        r.document_text = e.attempt.document_text;
+        r.raw_reply = e.attempt.raw_reply;
+        r.similarity = Similarity(document_text, e.attempt.document_text);
+        r.same_domain = !domain.empty() && !e.attempt.domain.empty() &&
+                        domain == e.attempt.domain;
+        hits.push_back(std::move(r));
+    }
+
+    // Rank. The domain bonus is a MULTIPLIER on the similarity, not an
+    // addition: an addition could let a zero-overlap cross-domain example
+    // outrank a strongly-overlapping one, which is the opposite of what
+    // the domain prior is for.
+    //
+    // The bonus is 1.25 -- enough to break a close tie, not enough to
+    // promote an unrelated document over a clearly-related one.
+    for (Retrieved& r : hits) {
+        if (r.same_domain) r.similarity *= 1.25;
+    }
+    std::stable_sort(hits.begin(), hits.end(),
+                     [](const Retrieved& a, const Retrieved& b) {
+                         return a.similarity > b.similarity;
+                     });
+
+    // A similarity of zero means "shares no vocabulary at all" -- that is
+    // not a worked example, it is noise in the prompt. Drop those.
+    hits.erase(std::remove_if(hits.begin(), hits.end(),
+                              [](const Retrieved& r) { return r.similarity <= 0.0; }),
+               hits.end());
+
+    if (hits.size() > max_entries) hits.resize(max_entries);
+    return hits;
+}
+
+std::string DocErrorLog::AsRetrievedContext(const std::string& document_text,
+                                             const std::string& domain,
+                                             size_t max_entries) const {
+    const std::vector<Retrieved> hits =
+        RetrieveSimilar(document_text, domain, max_entries);
+    if (hits.empty()) return std::string();
+
+    std::string out;
+    out += "WORKED EXAMPLES FROM SIMILAR DOCUMENTS (these were accepted by "
+           "the validator -- reuse their shape):\n";
+    for (const Retrieved& r : hits) {
+        out += "\n--- document " + r.document_id;
+        if (r.same_domain) out += " (same domain)";
+        out += " ---\n";
+        // The prior document, truncated: it is context, not the payload.
+        std::string prior = r.document_text;
+        if (prior.size() > 400) prior = prior.substr(0, 400) + "...";
+        if (!prior.empty()) {
+            out += "ITS DOCUMENT:\n" + prior + "\n";
+        }
+        // The WORKED EXAMPLE: the validated tree. This is the payload.
+        std::string tree = r.raw_reply;
+        if (tree.size() > 1200) tree = tree.substr(0, 1200) + "...";
+        out += "ITS ACCEPTED ANSWER:\n" + tree + "\n";
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------------
@@ -339,8 +522,19 @@ DocResult InterpretDocument(
 
     std::string user;
     if (!escalate) {
+        // The NORMAL attempt also gets the corpus. This is the whole point
+        // of G13: the first attempt should start from what the pipeline has
+        // already learned, not from nothing. The escalation path exists for
+        // when that is not enough -- but if the normal path never gets the
+        // corpus, escalation is doing all the work and the system is a
+        // one-shot generator with a retry button.
+        const std::string retrieved = log.AsRetrievedContext(doc.text, doc.domain);
         user = "DOCUMENT (" + doc.domain + ", id=" + doc.id + "):\n";
         user += doc.text;
+        if (!retrieved.empty()) {
+            user += "\n\n";
+            user += retrieved;
+        }
         user += "\n\nReconstruct this object as an element tree.\n";
     } else {
         std::string prior;
@@ -361,6 +555,8 @@ DocResult InterpretDocument(
     if (reply.empty()) {
         DocAttempt a;
         a.document_id = doc.id;
+        a.document_text = doc.text;
+        a.domain = doc.domain;
         a.failed_stage = "transport";
         a.reason = "the model returned nothing (unreachable, or an empty reply)";
         a.ok = false;
@@ -377,6 +573,8 @@ DocResult InterpretDocument(
     if (!ParseElementTree(reply, tree, why)) {
         DocAttempt a;
         a.document_id = doc.id;
+        a.document_text = doc.text;
+        a.domain = doc.domain;
         a.raw_reply = reply;
         a.failed_stage = "parse";
         a.reason = why;
@@ -420,6 +618,8 @@ DocResult InterpretDocument(
         // and not in ParseElementTree.)
         DocAttempt a;
         a.document_id = doc.id;
+        a.document_text = doc.text;
+        a.domain = doc.domain;
         a.raw_reply = reply;
         a.failed_stage = "validate";
         a.reason = "the tree describes only ONE sheet, so it cannot be a "
@@ -436,6 +636,8 @@ DocResult InterpretDocument(
     // --- SUCCESS -----------------------------------------------------------
     DocAttempt a;
     a.document_id = doc.id;
+    a.document_text = doc.text;
+    a.domain = doc.domain;
     a.raw_reply = reply;
     a.ok = true;
     log.Record(a, escalate);

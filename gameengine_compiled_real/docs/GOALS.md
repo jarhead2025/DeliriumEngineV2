@@ -454,11 +454,44 @@ resolver rejects it with the offending name.
 
 ## Tier 3 — Make the learning loop genuinely good
 
-### G13. Success log → retrieval corpus — `TODO`
+### G13. Success log → retrieval corpus — `DONE`
 The failure log already feeds the escalation prompt. The **success** log
 should feed the *normal* prompt as a retrieved worked example (nearest prior
 document → its tree). That turns "accumulates complaints" into "improves with
 use" — few-shot over a local corpus, no neural net required.
+
+**Landed.** `DocErrorLog::RetrieveSimilar` / `AsRetrievedContext` / `Similarity`.
+The corpus now reaches the **normal** attempt, not only the escalation — if it
+only reached the escalation, escalation would be doing all the work and the
+system would be a one-shot generator with a retry button.
+
+Design decisions and their reasons:
+- **The log now stores the document TEXT and DOMAIN.** They were not there
+  before, which made "nearest prior document" *not computable* — a document id
+  is a label, not a content. This was the blocking gap, not the ranking.
+- **Similarity is Jaccard token overlap** over stopword-filtered words.
+  Dependency-free, deterministic, offline, explainable — and therefore
+  auditable, which matters for a prompt a human is meant to be able to check.
+- **A stopword list is required.** Without it, two documents about different
+  machines score high on "the"/"of"/"and" alone and retrieval degenerates
+  into "everything is equally similar" — recency with extra steps.
+- **Only successes are candidates.** A worked example must be a tree that
+  passed validation; teaching from a rejected tree teaches the failure mode.
+- **A document never retrieves its own earlier attempt** (that is the
+  escalation path's job, and self-retrieval would let a document teach
+  itself).
+- **Zero-overlap documents retrieve nothing** — noise in a prompt is a cost.
+- **The domain prior is a bounded multiplier (1.25×), not an addition.** An
+  addition could promote a zero-overlap cross-domain example over a strongly
+  overlapping one, which is the opposite of the prior's purpose.
+- **The log format gains two optional trailing fields.** A log written by an
+  older build still loads — otherwise the corpus would be unreadable until it
+  was rebuilt, and every accumulated failure would be lost.
+
+Gate: `tests/validate_retrieval.cpp` — 43 checks, 0 failures. It asserts the
+*invariants* (symmetry, boundedness, discrimination, similarity-beats-recency,
+failures-never-offered, no-self-retrieval, corpus-reaches-the-normal-prompt,
+round-trip, legacy-log compatibility), not snapshots.
 
 ### G14. Exercise escalation against a real larger model — `TODO`
 The ladder is unit-tested against a stub and has never run against a second

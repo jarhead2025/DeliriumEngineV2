@@ -1508,6 +1508,87 @@ stays consistent across every document in the world.
 
 ---
 
+## 51. The corpus was impossible to build — the log had no DOCUMENTS in it (2026-11-09)
+
+G13 turned the document learner's log into a retrieval corpus. The first
+implementation attempt was a ranking function over the successes. It could not
+be written, and the reason was not the ranking.
+
+**Symptom.** `DocAttempt` stored a `document_id` and a `raw_reply` — but not
+the document's **text**. "Find the past success most similar to THIS
+document" is therefore not computable: an id is a label, not a content. The
+only selection rule available was **recency**, which is the weakest possible
+one — it picks the example that happened to be logged last, which has no
+relationship to whether it teaches anything.
+
+**What was done.** `DocAttempt` gained `document_text` and `domain`, and the
+log's on-disk format gained them as **optional trailing fields** (a log
+written by an older build still loads — otherwise the corpus would be
+unreadable until it was rebuilt, and every accumulated failure would be
+lost).
+
+**Lesson.** *Before designing a ranking, check that the thing being ranked
+over contains the thing being ranked BY.* The interesting defect here was not
+"the ranking is bad" but "the ranking has no input". A feature that sounds
+like it is about algorithms is sometimes about data that was never captured.
+
+---
+
+## 52. The corpus must reach the FIRST attempt, not only the retry (2026-11-09)
+
+**Symptom.** The learner's escalation prompt already carried the failure log
+and the recent successes. The retrieval corpus was initially wired into the
+same place. That would have left the system a **one-shot generator with a
+retry button**: attempt 1 always starts from nothing, and only attempt 2
+knows anything.
+
+**What was done.** The **normal** attempt now carries the retrieved worked
+examples too — the prior document and the tree that the validator accepted.
+The escalation path is then what it should be: the response to the corpus
+being insufficient, not the mechanism that does the learning.
+
+**Why this matters more than it looks.** A worked example is worth far more
+than a description of one. The retrieval carries the prior document's
+**text** and the prior **accepted tree** — the payload — not a summary of
+them. The failure log, by contrast, carries a reason, because that is all a
+failure has.
+
+**Lesson.** *A learning loop that only teaches on retry is not a learning
+loop.* If the first attempt cannot benefit from what the system has already
+learned, the corpus is decorative.
+
+---
+
+## 53. Two of the retrieval gate's first failures were the GATE's fault (2026-11-09)
+
+`validate_retrieval` (43 checks) failed twice on its first run. Both failures
+were **wrong expectations**, and both are worth recording because the wrong
+expectation was itself a false claim about the system.
+
+**Failure 1 — "a gearbox must be more similar to a femur than to a recipe".**
+The two scores were **both exactly 0.0**, because neither document shares a
+single content word with a gearbox. A lexical-overlap measure **cannot**
+distinguish "about a femur" from "about a recipe"; asserting a strict order
+between them demanded a discrimination the measure does not have. The
+assertion was replaced with the claim that actually matters: both unrelated
+pairs sit **below** the related pair, and the related pair scores strictly
+between 0 and 1.
+
+**Failure 2 — "an empty corpus produces empty context".** The test called
+`InterpretDocument` first — which **succeeds** and populates the corpus — and
+then asserted the context was empty. That is only true if the *retrieval*
+fails, not if the corpus is *empty*. The two were conflated, and the test was
+split into two: an empty corpus, and a corpus holding only a **failure**
+(which must also retrieve nothing, because a worked example must be a tree
+that passed).
+
+**Lesson.** *A failing assertion is a claim about the system. When it fails,
+decide which is wrong — the code or the claim.* Both of these were claims
+about what lexical overlap *can* do, and both were wrong in a way that would
+have forced the implementation to fake a capability it does not have.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |

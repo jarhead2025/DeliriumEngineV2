@@ -48,6 +48,19 @@ namespace AI {
 struct DocAttempt {
     // The document that was interpreted.
     std::string document_id;
+    // The document's TEXT.
+    //
+    // WHY THIS IS IN THE LOG (G13): the corpus is a RETRIEVAL corpus. To
+    // find the prior document most similar to the one being interpreted, the
+    // log has to be able to compare documents -- and a document id is a
+    // label, not a content. Without the text, "nearest prior document" is
+    // not computable and the success log can only ever be replayed by
+    // RECENCY, which is the weakest possible selection rule.
+    std::string document_text;
+    // The domain the document belongs to ("machine", "biological", ...).
+    // A same-domain document is a better worked example than a
+    // cross-domain one even when the words overlap less.
+    std::string domain;
     // The model's raw reply.
     std::string raw_reply;
     // The stage that failed (empty on success).
@@ -83,6 +96,59 @@ public:
     // the POSITIVE examples, which matter as much as the negative ones.
     std::string AsSuccessContext(size_t max_entries = 6) const;
 
+    // -----------------------------------------------------------------------
+    // RETRIEVAL (G13): the corpus.
+    //
+    // "Give me the past success most like THIS document" is the difference
+    // between a log and a corpus. Recency is the weakest possible rule: it
+    // picks the example that happened to be logged last, which has no
+    // relationship to whether it teaches anything. Retrieval picks the
+    // example that SHARES VOCABULARY with the document being read, so the
+    // model sees a worked example of the shape it is about to produce.
+    //
+    // The similarity is a token-overlap score (Jaccard-style) over the
+    // document's words. It is deliberately simple and dependency-free:
+    //   - no embeddings, no model, no network -- the corpus works offline;
+    //   - deterministic, so a retrieval is reproducible and testable;
+    //   - explainable ("these words overlap"), which matters when the
+    //     corpus is a prompt that a human is meant to be able to audit.
+    //
+    // A DOMAIN BONUS applies: a prior document in the same domain outranks
+    // a cross-domain one even when the raw overlap is lower, because the
+    // SHAPE of the answer differs by domain (a machine wants parts and
+    // joints; a biological structure wants bones and articulations).
+    // -----------------------------------------------------------------------
+
+    // One retrieved worked example.
+    struct Retrieved {
+        std::string document_id;
+        std::string document_text;   // the prior document (truncated)
+        std::string raw_reply;       // the WORKED EXAMPLE: a validated tree
+        double       similarity = 0.0;  // 0..1, the token-overlap score
+        bool         same_domain = false;
+    };
+
+    // The successful attempts most similar to `document_text`, best first.
+    // `max_entries` bounds how many are returned. `domain` (may be empty)
+    // biases the ranking toward the same domain. Only SUCCESSFUL attempts
+    // are candidates -- a worked example must be a tree that passed.
+    std::vector<Retrieved> RetrieveSimilar(const std::string& document_text,
+                                            const std::string& domain,
+                                            size_t max_entries = 3) const;
+
+    // The retrieved worked examples, formatted as prompt context.
+    // This is what the NORMAL (non-escalated) attempt receives, so the
+    // model starts from prior knowledge instead of from nothing.
+    std::string AsRetrievedContext(const std::string& document_text,
+                                   const std::string& domain,
+                                   size_t max_entries = 3) const;
+
+    // The token-overlap similarity between two texts, in [0,1].
+    // Exposed so the ranking is testable on its own -- a similarity
+    // function that is only observable through a whole pipeline is a
+    // similarity function nobody can debug.
+    static double Similarity(const std::string& a, const std::string& b);
+
     size_t Size() const { return entries_.size(); }
     size_t FailureCount() const;
     size_t SuccessCount() const;
@@ -101,6 +167,10 @@ public:
     // Persist to / load from a text file. The format is one record per
     // line, tab-separated, with newlines in the fields escaped -- so the
     // log stays greppable and diffable.
+    //
+    // The record carries the document TEXT and DOMAIN as well as the reply
+    // (G13): the corpus must survive a restart, and a corpus that forgets
+    // its documents on restart is just a log again.
     bool Save(const std::string& path) const;
     bool Load(const std::string& path);
 
