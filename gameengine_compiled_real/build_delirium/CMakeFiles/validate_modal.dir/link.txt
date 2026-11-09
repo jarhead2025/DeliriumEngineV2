@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/validate_modal.dir/tests/validate_modal.cpp.o -o validate_modal  libdelirium_engine_lib.a /usr/lib/x86_64-linux-gnu/libOpenCL.so /usr/lib/x86_64-linux-gnu/libSDL2.so 

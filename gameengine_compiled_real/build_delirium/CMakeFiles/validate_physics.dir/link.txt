@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/validate_physics.dir/tests/validate_physics.cpp.o -o validate_physics  libdelirium_engine_lib.a /usr/lib/x86_64-linux-gnu/libOpenCL.so /usr/lib/x86_64-linux-gnu/libSDL2.so 

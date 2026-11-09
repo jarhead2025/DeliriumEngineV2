@@ -1,1 +1,0 @@
-/usr/bin/c++ -O3 -DNDEBUG CMakeFiles/validate_liveweld.dir/tests/validate_liveweld.cpp.o -o validate_liveweld  libdelirium_engine_lib.a /usr/lib/x86_64-linux-gnu/libOpenCL.so /usr/lib/x86_64-linux-gnu/libSDL2.so 
