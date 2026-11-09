@@ -87,10 +87,27 @@ struct Sheet {
     Vec3 scale{1,1,1};       // world scale of this sheet's local frame
     float weight = 1.f;      // the element's own contribution weight
     int depth = 0;           // nesting depth (for the depth weight)
+    // The index of this sheet's bone in the flat bone list, or -1 for a
+    // sheet whose element has no bone. This is what an anchor's
+    // bone_index will refer to.
+    int bone = -1;
 };
 
 // Collect every leaf sheet in the tree, with its resolved world frame.
-void CollectSheets(const Element& root, std::vector<Sheet>& out) {
+//
+// The BONE INDEX is assigned here, in the SAME traversal that collects the
+// sheets, so a bone's index is stable and matches the flat bone list the
+// baker emits.
+//
+// WHY THE ORDER MATTERS: the parser resolves Bone::parent into an index
+// into the flat bone list, using ITS traversal (a recursive pre-order
+// walk). If the baker used a different order, a bone's index would refer
+// to a different bone -- and the skeleton would be wrong in a way that
+// still validates. So the bone list is built with the SAME recursion the
+// parser used, and the sheet's bone index is looked up by POINTER, not by
+// position. A pointer lookup cannot drift.
+void CollectSheets(const Element& root, std::vector<Sheet>& out,
+                   std::vector<const Bone*>* bones = nullptr) {
     struct Frame { const Element* el; Vec3 origin; Vec3 scale; int depth; };
     std::vector<Frame> stack;
     stack.push_back({&root, Vec3{0,0,0}, Vec3{1,1,1}, 0});
@@ -103,6 +120,14 @@ void CollectSheets(const Element& root, std::vector<Sheet>& out) {
             s.scale = f.scale;
             s.weight = f.el->weight;
             s.depth = f.depth;
+            // The bone index: the position of this element's bone in the
+            // flat list, found by POINTER so the two traversals cannot
+            // disagree.
+            if (f.el->has_bone && bones) {
+                s.bone = -1;
+                for (size_t i = 0; i < bones->size(); ++i)
+                    if ((*bones)[i] == &f.el->bone) { s.bone = int(i); break; }
+            }
             out.push_back(s);
         }
         for (auto& c : f.el->children) {
@@ -117,6 +142,36 @@ void CollectSheets(const Element& root, std::vector<Sheet>& out) {
             stack.push_back(cf);
         }
     }
+}
+
+// The flat bone list, in the SAME recursive pre-order the parser used to
+// assign Bone::parent indices. The baker and the parser MUST agree on this
+// order, or a bone's parent index would point at the wrong bone.
+void CollectBones(const Element& e, std::vector<const Bone*>& out) {
+    if (e.has_bone) out.push_back(&e.bone);
+    for (const auto& c : e.children) CollectBones(*c, out);
+}
+
+// The world-space frame of a bone: its head and tail, transformed by the
+// owning element's frame. A bone is authored in the element's LOCAL frame
+// (like every other coordinate), and the element's origin/scale carry it
+// into the world -- exactly like a substance's surface points.
+struct BoneFrame { Vec3 head, tail, bend; float length; };
+
+BoneFrame BoneWorldFrame(const Bone& b, const Vec3& origin, const Vec3& scale) {
+    BoneFrame f;
+    f.head = { origin.x + b.head.x * scale.x,
+               origin.y + b.head.y * scale.y,
+               origin.z + b.head.z * scale.z };
+    f.tail = { origin.x + b.tail.x * scale.x,
+               origin.y + b.tail.y * scale.y,
+               origin.z + b.tail.z * scale.z };
+    f.bend = { origin.x + b.bend.x * scale.x,
+               origin.y + b.bend.y * scale.y,
+               origin.z + b.bend.z * scale.z };
+    const Vec3 d = f.tail - f.head;
+    f.length = std::sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+    return f;
 }
 
 // Evaluate ONE sheet (not the blended field) at a local (x, y), returning
@@ -304,9 +359,151 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     // The sheets to bake. A tree with ONE sheet keeps the exact historical
     // behaviour (blended field, one layer). A tree with SEVERAL sheets is
     // baked per sheet so closed bodies close.
+    //
+    // The BONES are collected in the same pass, in the SAME order the parser
+    // used to resolve Bone::parent into an index -- so the parent index in
+    // the emitted BoneRecords refers to the right bone.
+    std::vector<const Bone*> bones;
+    CollectBones(root, bones);
+
+    // --- the bone hierarchy, as frozen BoneRecords -------------------------
+    //
+    // The bone records carry the WORLD-space bind pose: the pivot (head),
+    // the segment's length, and the parent index. bind_rot is the identity
+    // quaternion (the bind pose is the authored pose -- there is no separate
+    // rest pose yet), and the reserved bytes carry the authored radius,
+    // mass and stiffness so the physics/field layers can read them without
+    // re-parsing the tree.
+    //
+    // WHY world space: a bone's bind pose is what the animation system
+    // transforms. It must be in the same frame as the anchors it drives,
+    // which are world-space.
+    //
+    // --- COARSENESS: the SKELETON's density comes from the same level ---
+    // The level's budget says what fraction of the bones to keep. A joint
+    // nobody can see is a joint nobody can afford to solve, so at a coarse
+    // level the DEEPEST bones are dropped first -- a leaf joint is the one
+    // whose removal changes the least.
+    //
+    // Dropping a bone must not orphan its children: a child whose parent
+    // was dropped is re-parented to the dropped bone's parent, so the
+    // hierarchy stays a tree.
+    //
+    // The tree's bones are NOT mutated. A bake must be side-effect free --
+    // baking the same tree twice must give the same skeleton, and mutating
+    // Bone::parent would make the SECOND bake different from the first. So
+    // the pruned hierarchy lives in a separate parent map.
+    std::vector<int> parent_of(bones.size(), -1);
+    for (size_t i = 0; i < bones.size(); ++i) parent_of[i] = bones[i]->parent;
+    {
+        const float keep = Element::BoneKeepForLod(root.lod < 0 ? 1 : root.lod);
+        const size_t want = size_t(std::ceil(float(bones.size()) * keep));
+        if (want < bones.size() && want >= 1) {
+            // Drop the deepest bones first: a bone's depth is how far it is
+            // from a root in the parent chain.
+            std::vector<int> depth(bones.size(), 0);
+            for (size_t i = 0; i < bones.size(); ++i) {
+                int d = 0;
+                for (int g = parent_of[i]; g >= 0 && d < 64; ) {
+                    if (g >= int(bones.size())) break;
+                    ++d;
+                    g = parent_of[g];
+                }
+                depth[i] = d;
+            }
+            // Mark the deepest bones for removal until the budget is met.
+            std::vector<char> drop(bones.size(), 0);
+            size_t left = bones.size();
+            while (left > want) {
+                int deepest = -1;
+                for (size_t i = 0; i < bones.size(); ++i)
+                    if (!drop[i] && (deepest < 0 || depth[i] > depth[deepest]))
+                        deepest = int(i);
+                if (deepest < 0) break;
+                drop[deepest] = 1;
+                --left;
+            }
+            // Rebuild the list, re-parenting the orphans.
+            std::vector<const Bone*> kept;
+            std::vector<int> remap(bones.size(), -1);
+            for (size_t i = 0; i < bones.size(); ++i)
+                if (!drop[i]) { remap[i] = int(kept.size()); kept.push_back(bones[i]); }
+            std::vector<int> kept_parent;
+            kept_parent.reserve(kept.size());
+            for (size_t i = 0; i < bones.size(); ++i) {
+                if (drop[i]) continue;
+                int p = parent_of[i];
+                // Walk up past any dropped ancestor.
+                while (p >= 0 && p < int(bones.size()) && drop[p]) p = parent_of[p];
+                kept_parent.push_back((p >= 0 && p < int(bones.size())) ? remap[p] : -1);
+            }
+            bones.swap(kept);
+            parent_of.swap(kept_parent);
+        }
+    }
     std::vector<Sheet> sheets;
-    CollectSheets(root, sheets);
+    CollectSheets(root, sheets, &bones);
     if (sheets.empty()) { why = "the tree has no substance to bake"; return false; }
+
+    out.bones.clear();
+    out.bones.reserve(bones.size());
+    for (const Bone* b : bones) {
+        // The bone's own world frame: its element's origin/scale, which the
+        // sheet traversal already resolved. A bone whose element has no
+        // substance is not in `sheets`, so its frame is resolved here by
+        // walking the tree for the owning element.
+        Vec3 origin{0.f,0.f,0.f}, scale{1.f,1.f,1.f};
+        {
+            // Find the owning element's world frame by re-walking with the
+            // same rules CollectSheets used.
+            struct F { const Element* el; Vec3 o, s; };
+            std::vector<F> st{{&root, Vec3{0,0,0}, Vec3{1,1,1}}};
+            while (!st.empty()) {
+                F f = st.back(); st.pop_back();
+                if (f.el->has_bone && &f.el->bone == b) {
+                    origin = f.o; scale = f.s;
+                    break;
+                }
+                for (auto& c : f.el->children)
+                    st.push_back({c.get(),
+                                  { f.o.x + c->origin.x*f.s.x, f.o.y + c->origin.y*f.s.y,
+                                    f.o.z + c->origin.z*f.s.z },
+                                  { c->scale.x*f.s.x, c->scale.y*f.s.y, c->scale.z*f.s.z }});
+            }
+        }
+        const BoneFrame bf = BoneWorldFrame(*b, origin, scale);
+        BoneRecord br{};
+        // The parent index comes from the PRUNED map, not from the tree's
+        // Bone::parent -- at a coarse level the two differ.
+        //
+        // The index of THIS bone in the flat list is found by SEARCH, not by
+        // pointer arithmetic. `b` is a pointer to a Bone OBJECT; `bones` is a
+        // vector of POINTERS TO Bone. Subtracting them (`&b - bones.data()`)
+        // is arithmetic between unrelated types -- undefined behaviour, and
+        // in practice it always yields 0, so every bone inherited bone 0's
+        // parent and the hierarchy silently flattened.
+        size_t bi = SIZE_MAX;
+        for (size_t i = 0; i < bones.size(); ++i)
+            if (bones[i] == b) { bi = i; break; }
+        const int par = (bi != SIZE_MAX && bi < parent_of.size()) ? parent_of[bi] : -1;
+        br.parent = (par >= 0 && size_t(par) < bones.size())
+                        ? uint32_t(par) : 0xFFFFFFFFu;
+        br.bind_pos[0] = bf.head.x; br.bind_pos[1] = bf.head.y; br.bind_pos[2] = bf.head.z;
+        // Identity quaternion: the bind pose IS the authored pose.
+        br.bind_rot[0] = 0.f; br.bind_rot[1] = 0.f; br.bind_rot[2] = 0.f; br.bind_rot[3] = 1.f;
+        br.length = bf.length;
+        // The reserved bytes carry the authored physical properties, so the
+        // inertia and field layers can read them straight from the frozen
+        // record -- no re-parse, no side table.
+        auto put = [&](int i, float v) {
+            const float c = std::max(0.f, std::min(1.f, v));
+            br.reserved[i] = uint8_t(c * 255.f);
+        };
+        put(0, b->radius);                       // radius, normalised
+        put(1, b->stiffness);                    // stiffness, already 0..1
+        put(2, std::min(1.f, b->mass));           // mass, normalised
+        out.bones.push_back(br);
+    }
 
     // The anchor index space is uint16 (SurfaceRecord::anchor_idx), so the
     // TOTAL across all layers must fit. Report it rather than silently
@@ -379,7 +576,17 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
         for (int i = 0; i < N; ++i) {
             const size_t id = si * per + (size_t)j * N + i;
             AnchorRecord a{};
-            a.bone_index = 0xFFFFFFFFu;
+            // BONE BINDING: an anchor belongs to the bone of the sheet it
+            // came from. A sheet with no bone keeps 0xFFFFFFFF ("no bone"),
+            // which is the same sentinel the rest of the engine uses.
+            //
+            // This is the whole point of the bone vocabulary: the surface
+            // records stay byte-identical, but every anchor now says which
+            // rigid segment it hangs from. That is what lets a pose change
+            // move the skin with the bone, and what makes mass and inertia
+            // computable over the skeleton.
+            a.bone_index = (sheets[si].bone >= 0)
+                             ? uint32_t(sheets[si].bone) : 0xFFFFFFFFu;
             a.connectivity[0] = a.connectivity[1] = a.connectivity[2] = a.connectivity[3] = 0xFFFF;
             if (!ok[id]) {
                 // out-of-support: safe default at the bbox center, +Z normal.
@@ -402,6 +609,39 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
             out.anchors.push_back(a);
         }
     }
+    }
+
+    // --- anchor CONNECTIVITY: the grid neighbours, within the same bone ---
+    //
+    // An anchor's connectivity names its neighbours in the surface. The
+    // natural neighbours are the grid cells around it -- but ONLY those that
+    // share its bone. Two adjacent anchors on DIFFERENT bones are not
+    // connected: they can move independently, so a connectivity edge
+    // between them would constrain a degree of freedom that is supposed to
+    // be free (that is the whole point of an articulation).
+    //
+    // The four slots are the +i, -i, +j and -j neighbours, matching the
+    // corner order the surface records use.
+    for (size_t si = 0; si < nsheets; ++si) {
+        const uint16_t base = (uint16_t)(si * per);
+        const uint32_t bi = (sheets[si].bone >= 0) ? uint32_t(sheets[si].bone) : 0xFFFFFFFFu;
+        for (int j = 0; j < N; ++j)
+            for (int i = 0; i < N; ++i) {
+                const size_t id = si * per + (size_t)j * N + i;
+                if (!ok[id]) continue;                 // out-of-support: no neighbours
+                AnchorRecord& a = out.anchors[id];
+                int slot = 0;
+                const int nb[4][2] = {{i+1,j}, {i-1,j}, {i,j+1}, {i,j-1}};
+                for (const auto& d : nb) {
+                    if (slot >= 4) break;
+                    if (d[0] < 0 || d[0] >= N || d[1] < 0 || d[1] >= N) continue;
+                    const size_t nid = si * per + (size_t)d[1] * N + d[0];
+                    if (!ok[nid]) continue;
+                    // Only connect within the same bone.
+                    if (out.anchors[nid].bone_index != bi) continue;
+                    a.connectivity[slot++] = (uint16_t)nid;
+                }
+            }
     }
 
     // --- surface records (one patch per grid cell, PER SHEET) --------------
@@ -511,6 +751,13 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
         }
     }
     return true;
+}
+
+std::unique_ptr<PSFBody> ElementSystem::BakeBodyLod(
+        const Element& root, int grid_n, float extent, std::string& why,
+        Vec3 world_offset) {
+    const int g = (grid_n < 0) ? Element::GridForLod(root.lod) : grid_n;
+    return BakeBody(root, g, extent, why, world_offset);
 }
 
 std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,

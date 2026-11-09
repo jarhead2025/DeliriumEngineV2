@@ -8,6 +8,7 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <unordered_map>
 
 namespace DeliRium {
 namespace AI {
@@ -517,6 +518,100 @@ bool BuildElement(const JsonValue& v, std::unique_ptr<Element>& out, std::string
         }
     }
 
+    // COARSENESS: the abstraction level this tree asks for.
+    //
+    // WHY: "make them complete in representation, denoting the coarseness
+    // for the sake of speedy computation". The model picks a LEVEL, and the
+    // level derives both budgets the engine spends (surface resolution and
+    // skeleton density). It is not a pixel count.
+    //
+    //   0 = fine    (grid 48)  near-final surface
+    //   1 = medium  (grid 32)  the default
+    //   2 = coarse  (grid 16)  silhouette + mass
+    //   3 = sketch  (grid 8)   proportions + skeleton only
+    if (const JsonValue* l = v.Find("lod")) {
+        if (!l->IsNumber()) { why = "\"lod\" must be a number (0..3)"; return false; }
+        const int lod = int(l->number);
+        if (lod < 0 || lod > 3) {
+            why = "\"lod\" must be in [0,3]: 0 fine, 1 medium, 2 coarse, 3 sketch";
+            return false;
+        }
+        el->lod = lod;
+    }
+
+    // Optional RIGID SEGMENT (bone).
+    //
+    // WHY: a surface-only tree cannot express a mechanism. Four overlapping
+    // ellipsoids say nothing about which part ROTATES relative to which.
+    // A bone says "this is the shaft, it runs from here to there, it pivots
+    // at its head, it carries this much mass" -- which is what makes
+    // reparametrization, inertia and field physics computable.
+    //
+    // Schema:
+    //   "bone": {
+    //     "name":     "shaft",          // optional
+    //     "head":     [x, y, z],         // the pivot (required)
+    //     "tail":     [x, y, z],         // the far end (required)
+    //     "bend":     [x, y, z],         // optional: the deviation
+    //     "radius":   0.1,               // optional: cross-section radius
+    //     "mass":     0.5,               // optional: mass contribution
+    //     "stiffness":1.0,               // optional: 0 free .. 1 rigid
+    //     "joints":   ["knee", "ankle"], // optional: named articulations
+    //     "parent":   "housing"          // optional: the parent bone's NAME
+    //   }
+    //
+    // The parent is given by NAME, not by index: a model writing JSON
+    // cannot know an index that has not been assigned yet. Names are
+    // resolved after the whole tree is built (ResolveBoneParents), and an
+    // unknown parent name is REJECTED rather than silently re-rooted.
+    if (const JsonValue* b = v.Find("bone")) {
+        if (!b->IsObject()) { why = "\"bone\" must be an object"; return false; }
+        Bone bone;
+        if (const JsonValue* n = b->Find("name"))
+            bone.name = n->GetString("");
+        if (const JsonValue* h = b->Find("head")) {
+            if (!ReadVec3(*h, bone.head, "bone.head", why)) return false;
+        } else {
+            why = "bone needs a \"head\" (the pivot point)";
+            return false;
+        }
+        if (const JsonValue* t = b->Find("tail")) {
+            if (!ReadVec3(*t, bone.tail, "bone.tail", why)) return false;
+        } else {
+            why = "bone needs a \"tail\" (the far end of the segment)";
+            return false;
+        }
+        if (const JsonValue* bnd = b->Find("bend")) {
+            if (!ReadVec3(*bnd, bone.bend, "bone.bend", why)) return false;
+        }
+        bone.radius    = float(Param(*b, "radius", 0.0));
+        bone.mass      = float(Param(*b, "mass", 0.0));
+        bone.stiffness = float(Param(*b, "stiffness", 1.0));
+        if (bone.radius < 0.f) { why = "bone radius must be >= 0"; return false; }
+        if (bone.mass < 0.f)   { why = "bone mass must be >= 0"; return false; }
+        if (bone.stiffness < 0.f || bone.stiffness > 1.f) {
+            why = "bone stiffness must be in [0,1]";
+            return false;
+        }
+        if (const JsonValue* j = b->Find("joints")) {
+            if (!j->IsArray()) { why = "bone.joints must be an array"; return false; }
+            for (const JsonValue& it : j->items) {
+                if (!it.IsString()) { why = "bone.joints entries must be strings"; return false; }
+                if (!it.text.empty()) bone.joints.push_back(it.text);
+            }
+        }
+        // The parent NAME is stashed in the bone's name field temporarily;
+        // ResolveBoneParents rewrites it into an index. A name that also
+        // names the bone would be ambiguous, so the parent goes in a
+        // dedicated slot instead -- see Bone::parent_name below.
+        if (const JsonValue* p = b->Find("parent")) {
+            if (!p->IsString()) { why = "bone.parent must be a bone NAME"; return false; }
+            if (p->text.empty()) { why = "bone.parent must not be empty"; return false; }
+            bone.parent_name = p->text;
+        }
+        el->SetBone(bone);
+    }
+
     if (!BuildChildren(v, *el, why, depth)) return false;
     out = std::move(el);
     return true;
@@ -527,6 +622,74 @@ void CountTree(const Element& e, int& nodes, int& leaves) {
     ++nodes;
     if (e.substance) ++leaves;
     for (const auto& c : e.children) CountTree(*c, nodes, leaves);
+}
+
+// -----------------------------------------------------------------------------
+// Bone collection and parent resolution.
+//
+// The tree stores each bone INSIDE the element that owns it. Two passes:
+//
+//   1. Collect every bone in tree order and give it an index. The index is
+//      the bone's position in that flat list -- which is exactly what the
+//      frozen BoneRecord's `parent` field and AnchorRecord's `bone_index`
+//      will refer to.
+//   2. Resolve each bone's parent NAME to an index.
+//
+// WHY two passes: a model writes JSON, and JSON has no way to express "the
+// bone defined two nodes earlier" except by NAME. A single pass would have
+// to resolve a parent that has not been seen yet.
+//
+// WHY a named parent must be REJECTED when unknown: silently re-rooting a
+// bone whose parent was misspelled produces a skeleton that LOOKS fine and
+// articulates wrongly -- the worst kind of bug, because the geometry is
+// still right.
+// -----------------------------------------------------------------------------
+void CollectBones(Element& e, std::vector<Bone*>& out) {
+    if (e.has_bone) out.push_back(&e.bone);
+    for (auto& c : e.children) CollectBones(*c, out);
+}
+
+bool ResolveBoneParents(Element& e, std::vector<Bone*>& bones,
+                        std::string& why) {
+    // Pass 1: index by name. A duplicate name is ambiguous, so it is
+    // rejected -- two bones called "shaft" cannot be told apart by a
+    // document, and a parent reference to one of them would be a coin flip.
+    std::unordered_map<std::string, int> by_name;
+    for (size_t i = 0; i < bones.size(); ++i) {
+        const std::string& n = bones[i]->name;
+        if (n.empty()) continue;         // an unnamed bone is a root by default
+        if (by_name.count(n)) {
+            why = "two bones are named \"" + n + "\" -- a parent reference "
+                  "to that name would be ambiguous";
+            return false;
+        }
+        by_name[n] = int(i);
+    }
+    // Pass 2: resolve.
+    for (size_t i = 0; i < bones.size(); ++i) {
+        Bone* b = bones[i];
+        if (b->parent_name.empty()) { b->parent = -1; continue; }
+        auto it = by_name.find(b->parent_name);
+        if (it == by_name.end()) {
+            why = "bone \"" + (b->name.empty() ? std::string("(unnamed)") : b->name) +
+                  "\" names a parent \"" + b->parent_name +
+                  "\" that does not exist";
+            return false;
+        }
+        b->parent = it->second;
+        // A bone cannot be its own ancestor: the hierarchy would be cyclic
+        // and every traversal (mass accumulation, pose solving, inertia)
+        // would recurse forever.
+        for (int g = b->parent; g >= 0; ) {
+            if (g == int(i)) {
+                why = "bone \"" + b->parent_name + "\" is its own ancestor";
+                return false;
+            }
+            if (g >= int(bones.size())) break;
+            g = bones[g]->parent;
+        }
+    }
+    return true;
 }
 
 } // namespace
@@ -568,6 +731,13 @@ bool ParseElementTree(const std::string& json, std::unique_ptr<Element>& out,
         why = "element tree has no substance (nothing to bake)";
         return false;
     }
+    // Resolve the bone hierarchy. This is where a named parent becomes an
+    // index, and where an unknown or cyclic parent is REJECTED.
+    {
+        std::vector<Bone*> bones;
+        CollectBones(*built, bones);
+        if (!ResolveBoneParents(*built, bones, why)) return false;
+    }
     out = std::move(built);
     return true;
 }
@@ -587,6 +757,8 @@ std::string ElementTreeSystemPrompt() {
 "  substance       string  the leaf material (REQUIRED on at least one node)\n"
 "  substance_params object parameters for that substance\n"
 "  presence        object  optional spatial mask: {\"radius\":r,\"center_x\":..}\n"
+"  bone            object  optional RIGID SEGMENT for this system (see below)\n"
+"  lod             number  optional COARSENESS level, 0..3 (see below)\n"
 "  children        array   sub-systems that OVERLAP this one\n"
 "\n"
 "Substances (only these five are valid):\n"
@@ -598,12 +770,52 @@ std::string ElementTreeSystemPrompt() {
 "  \"gaussian\"   localized bump on a flat plane. params: {amp,sigma}\n"
 "  \"heightfield\" sinusoidal wave field. params: {amp,freq_x,freq_y,phase}\n"
 "\n"
+"=== BONES: THE RIGID SKELETON ===\n"
+"A node may ALSO be a BONE -- a rigid segment with a pivot. That is what\n"
+"makes a MECHANISM rather than a lump: a bone says which part rotates\n"
+"relative to which, how long it is, and how much mass it carries.\n"
+"\n"
+"  \"bone\": {\n"
+"    \"name\":      \"shaft\",           // optional, but needed to be a parent\n"
+"    \"head\":      [x,y,z],            // REQUIRED: the pivot point\n"
+"    \"tail\":      [x,y,z],            // REQUIRED: the far end of the segment\n"
+"    \"bend\":      [x,y,z],            // optional: where the segment deviates\n"
+"    \"radius\":    0.1,                // optional: cross-section radius\n"
+"    \"mass\":      0.5,                // optional: mass contribution\n"
+"    \"stiffness\": 1.0,                // optional: 0 = free to swing, 1 = rigid\n"
+"    \"joints\":    [\"knee\"],          // optional: named articulation points\n"
+"    \"parent\":    \"housing\"          // optional: the PARENT BONE'S NAME\n"
+"  }\n"
+"\n"
+"Rules for bones:\n"
+"- A bone is given in the node's LOCAL frame, like every other coordinate.\n"
+"- \"parent\" is a NAME, not an index. It must name another bone in the tree;\n"
+"  an unknown name is REJECTED, and two bones may not share a name.\n"
+"- A bone with a substance is a rigid part WITH skin (a limb, a shaft).\n"
+"- A bone WITHOUT a substance is a bare axis or joint -- it contributes\n"
+"  structure but no surface.\n"
+"- Name the articulations where two bones meet, so a document can refer to\n"
+"  \"the knee\" instead of an index.\n"
+"\n"
 "Rules:\n"
 "- Use 1..12 nodes. Nest with \"children\".\n"
 "- Overlapping systems BLEND; they never replace each other.\n"
 "- Every node needs a substance OR children. At least one substance overall.\n"
 "- Coordinates are local to the parent; the canvas spans -0.5..0.5.\n"
+"- For a MECHANISM (a machine, a limb, anything with moving parts) give each\n"
+"  moving part a bone. For a simple object, omit bones entirely.\n"
 "- Reply with the JSON object only. No prose, no markdown fence.\n"
+"\n"
+"=== COARSENESS: PICK A LEVEL, NOT A PIXEL COUNT ===\n"
+"Set \"lod\" on the ROOT to say how detailed this object needs to be. The\n"
+"level decides both the surface resolution and how many bones are kept, so\n"
+"you never have to think in pixels:\n"
+"  0 = fine    near-final surface, every joint kept\n"
+"  1 = medium  the default: a clean surface, every joint kept\n"
+"  2 = coarse  a silhouette and its mass; small joints dropped\n"
+"  3 = sketch  proportions and the main skeleton only\n"
+"Choose 0 or 1 for a final asset, 2 for a background object, 3 for a\n"
+"placeholder. Omit \"lod\" to get the default (1).\n"
 "\n"
 "Example:\n"
 "{\"kind\":\"body\",\"color\":[0.6,0.7,0.8],\"children\":[\n"
@@ -614,7 +826,19 @@ std::string ElementTreeSystemPrompt() {
 "\n"
 "Example (a ring):\n"
 "{\"kind\":\"body\",\"substance\":\"torus\",\n"
-" \"substance_params\":{\"major\":0.32,\"minor\":0.12},\"color\":[0.7,0.6,0.5]}";
+" \"substance_params\":{\"major\":0.32,\"minor\":0.12},\"color\":[0.7,0.6,0.5]}\";\n"
+"}\n"
+"\n"
+"Example (a mechanism: a shaft inside a housing, with a rotor):\n"
+"{\"kind\":\"assembly\",\"children\":[\n"
+"  {\"kind\":\"housing\",\"substance\":\"ellipsoid\",\n"
+"   \"substance_params\":{\"sx\":0.4,\"sy\":0.4,\"sz\":0.4}},\n"
+"  {\"kind\":\"shaft\",\"bone\":{\"name\":\"shaft\",\"head\":[0,0,-0.3],\"tail\":[0,0,0.3],\n"
+"    \"radius\":0.05,\"mass\":0.4,\"joints\":[\"front\",\"rear\"]},\n"
+"   \"substance\":\"plane\",\"substance_params\":{}},\n"
+"  {\"kind\":\"rotor\",\"bone\":{\"name\":\"rotor\",\"parent\":\"shaft\",\n"
+"    \"head\":[0,0,0],\"tail\":[0.2,0,0],\"radius\":0.12,\"mass\":0.2},\n"
+"   \"substance\":\"ellipsoid\",\"substance_params\":{\"sx\":0.12,\"sy\":0.12,\"sz\":0.05}}]}\n";
 }
 
 std::string DescribeTree(const Element& root) {

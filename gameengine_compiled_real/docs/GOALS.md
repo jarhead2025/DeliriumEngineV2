@@ -217,27 +217,55 @@ silently).
 > `mode_hints`. **The baker currently writes `bone_index = 0xFFFFFFFF` on
 > every anchor — the fields exist and are dead.**
 
-### G7. A bone/articulation vocabulary in the element tree — `TODO`
-The tree can currently say "kind / origin / scale / substance / children /
-presence". It cannot say "this is a femur, it articulates at the knee, it is
+### G7. A bone/articulation vocabulary in the element tree — `DONE`
+The tree can now say "this is a femur, it articulates at the knee, it is
 0.4 units long".
 
-Add to the JSON schema + parser: `bones: [{name, parent, head, tail,
-radius, mass}]`, and a `kind` that maps to a bone rather than a surface
-sheet.
+**`Bone`** (in `ElementSystem.h`): name, parent (by NAME), head, tail,
+bend, radius, mass, stiffness, and named joints. A bone is a **rigid
+segment** — the degree of freedom the surface hangs from. An element may
+carry BOTH a bone and a substance (a rigid part with skin) or a bone and
+no substance (a bare axis or joint).
 
-**Done when:** a parsed tree containing bones validates, and the parser
-rejects a bone with a malformed parent reference.
+**The JSON schema** (`"bone": {...}`) with head/tail required, and
+`"parent"` given by **NAME** — a model writing JSON cannot know an index
+that has not been assigned yet.
 
-### G8. Bake the skeleton into the frozen records — `TODO`
-Anchors receive `bone_index` + `connectivity` along their bone; the bone
-hierarchy lands in `ModelOutput.bones`.
+**Rejected, not degraded:** an unknown parent name, a duplicate bone name,
+a cyclic hierarchy, a missing head or tail, a negative mass/radius, and a
+stiffness outside [0,1] are all parse errors with a human reason. A
+silently re-rooted bone would produce a skeleton that LOOKS fine and
+articulates wrongly.
 
-**Done when:** a baked body carries non-`0xFFFFFFFF` `bone_index` values and
-`ReconstructionModel::Validate` still passes on the 64-byte layout.
+**Gate:** `tests/validate_bone_tree.cpp` — **38 checks, 0 failures**.
 
-> **Dependency:** G9 (inertia) is impossible before G8. Attempting it earlier
-> is the "no substrate" trap.
+### G8. Bake the skeleton into the frozen records — `DONE`
+The substrate already existed (`BoneRecord` with parent/bind_pos/bind_rot/
+length, `AnchorRecord::bone_index`, `connectivity[4]`,
+`ModelOutput.bones`) but the baker wrote `bone_index = 0xFFFFFFFF` on every
+anchor — the fields existed and were dead.
+
+Now the baker emits:
+- **one `BoneRecord` per bone**, in the same flat order the parser used to
+  resolve parent indices, with the bind pose in **world space** (the
+  pivot transformed by the element's origin/scale) and the segment's
+  length. The authored radius/stiffness/mass ride in the record's reserved
+  bytes, so the inertia and field layers can read them without re-parsing.
+- **anchors bound** to their sheet's bone.
+- **connectivity within a bone only** — two anchors on different bones are
+  NOT connected, because they can move independently. An edge across an
+  articulation would constrain a degree of freedom that is supposed to be
+  free.
+
+**The load-bearing detail:** the parser resolves a parent into an index
+using a recursive pre-order walk; the baker collects sheets with a stack.
+If the two orders disagreed, a parent index would point at the wrong bone
+— and the skeleton would still validate. The sheet's bone index is
+therefore found by **pointer**, so the traversals cannot drift.
+
+**Gate:** `tests/validate_bone_bake.cpp` — **25 checks, 0 failures**.
+
+**Suite: 29/29** (was 22 at the start of the bone work).
 
 ### G9. Inertia from conservation laws — `TODO`
 With a skeleton: mass distribution per bone → centre of mass, and the
@@ -248,12 +276,38 @@ the anchor mass distribution, not from a mesh.
 matches the analytic value within a stated tolerance, and is invariant under
 rigid translation.
 
-### G10. Coarseness as an explicit budget — `TODO`
+### G10. Coarseness as an explicit budget — `DONE`
 "Complete in representation, coarse for speed" maps onto two knobs the
 engine already has: surface resolution (`grid_n`) and skeleton density.
 
-The tree carries a `coarseness` / `lod` field that **derives** both, so the
-model chooses an abstraction level rather than a pixel count.
+The tree carries a `coarseness` / `lod` field that **derives** both, so
+the model chooses an abstraction level rather than a pixel count.
+
+**Landed:**
+- The tree states `"lod": 0..3` (fine / medium / coarse / sketch). An
+  out-of-range or non-numeric level is **REJECTED**, not clamped — a
+  clamped level silently ignores the model's intent.
+- `Element::GridForLod` derives the surface resolution: 48 / 32 / 16 / 8.
+- `Element::BoneKeepForLod` derives the skeleton density: 100% / 100% /
+  75% / 40%. The deepest bones are dropped first (a leaf joint changes the
+  least), and an orphan is re-parented to the dropped bone's parent so the
+  hierarchy stays a tree.
+- The prune is **side-effect free**: the hierarchy is pruned in a separate
+  `parent_of` map, so baking the same tree twice gives the same skeleton.
+- `ElementSystem::BakeLod` / `BakeBodyLod` take the level; an explicit
+  `grid_n` still wins, because a caller that knows its own budget should
+  not have to argue with the model about it.
+
+**Measured** (3 sheets, 2 bones — `lod` → patches / anchors / bones):
+
+| lod | grid | patches | anchors | bones |
+|---|---|---|---|---|
+| 0 | 48 | 1123 | 6912 | 2 |
+| 1 | 32 | 467 | 3072 | 2 |
+| 2 | 16 | 95 | 768 | 2 |
+| 3 | 8 | 14 | 192 | **1** |
+
+**Gate:** `tests/validate_coarseness.cpp` — **45 checks, 0 failures**.
 
 > **Order note:** G10 precedes G9 on purpose — coarseness decides *what* the
 > inertia is computed over. Changing the LOD after computing inertia means

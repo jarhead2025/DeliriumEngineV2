@@ -1000,6 +1000,94 @@ the mechanism directly:
 
 ---
 
+## 37. The bone hierarchy flattened — pointer arithmetic between unrelated types
+
+**Symptom.** `validate_bone_bake` failed: "the rotor's parent index points at
+the SHAFT" — the rotor came out a root instead of the shaft's child. The
+skeleton still had the right *number* of bones, the right pivots and the
+right lengths; only the hierarchy was gone. A mechanism whose rotor has no
+parent cannot articulate, so this was not cosmetic.
+
+**Cause.** `ElementSystem.cpp`, in the BoneRecord emission loop:
+
+```cpp
+const size_t bi = size_t(&b - bones.data());
+```
+
+`b` is a `const Bone*` — a pointer to a Bone **object**. `bones` is a
+`std::vector<const Bone*>` — a vector of **pointers to** Bone. So
+`&b` is a `Bone**` and `bones.data()` is a `Bone**`: the subtraction is
+pointer arithmetic between two unrelated pointer types. That is undefined
+behaviour, and in practice it evaluated to **0 every time** — so every bone
+read `parent_of[0]`, the shaft's parent (-1), and the hierarchy silently
+flattened into a forest of roots.
+
+**Fix.** Find the bone's index by **searching** the vector for the pointer:
+
+```cpp
+size_t bi = SIZE_MAX;
+for (size_t i = 0; i < bones.size(); ++i)
+    if (bones[i] == b) { bi = i; break; }
+const int par = (bi != SIZE_MAX && bi < parent_of.size()) ? parent_of[bi] : -1;
+```
+
+**Why the search and not a stored index.** The bone list is pruned by the
+coarseness budget, so an index recorded at collect time goes stale the
+moment the budget drops a bone. Searching for the *pointer* is immune to
+re-ordering — and pointer identity is the one thing that survives a prune.
+
+**Evidence.** `validate_bone_bake` — 25 checks, 0 failures.
+
+**Lesson.** *A pointer into a container is not an index into that
+container.* `&b - vec.data()` is only meaningful when `b` is an **element**
+of the vector. When the container holds pointers, the element is
+`vec.data()[i]`, and the index must be found by comparison. The failure was
+silent because undefined arithmetic that happens to yield 0 is a perfectly
+valid-looking index.
+
+---
+
+## 38. The coarseness gate asserted the opposite of its own stated invariant
+
+**Symptom.** `validate_coarseness` failed 4 of 45 checks: "lod=1 has MORE
+patches than the coarser level" (and lod 2, lod 3), plus "the coarsest level
+keeps FEWER bones".
+
+**Cause — two separate things, one real and one not.**
+
+The *patch* failures were the **test** being wrong, not the engine. The
+gate's own header states the invariant it means to check:
+
+> B) The level DERIVES the surface resolution: **a finer level bakes more
+> patches.** The relationship is monotonic — that is the whole point.
+
+But the loop ran `for (int lod = 0; lod <= 3; ++lod)` — fine to coarse —
+and asserted `patches > prev_patches`. Since `GridForLod` maps 0→48 and
+3→8, the patch count **falls** as lod rises. The test asserted the
+opposite of its stated intent. Fixed by running the loop coarse-to-fine
+(`lod = 3 → 0`), which matches the invariant as written.
+
+The *bone* failure was a **stale library**, not a logic error: the probe
+was linked against a `libdelirium_engine_lib.a` built before the
+`parent_of` prune landed. Rebuilt, lod 3 correctly keeps 1 bone of 2.
+
+**Measured, coarse to fine** (3 sheets, 2 bones):
+
+| lod | grid | patches | anchors | bones |
+|---|---|---|---|---|
+| 0 (fine) | 48 | 1123 | 6912 | 2 |
+| 1 (medium) | 32 | 467 | 3072 | 2 |
+| 2 (coarse) | 16 | 95 | 768 | 2 |
+| 3 (sketch) | 8 | 14 | 192 | **1** |
+
+**Lesson.** *When a gate fails, first ask whether the gate or the code is
+wrong — and check that the binary you measured is the binary you built.*
+Both answers were hiding here: a reversed comparison in the assertion, and
+a library that predated the fix. Rebuilding before re-measuring is not
+optional; the stale-binary trap has now cost this project several rounds.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |
@@ -1015,6 +1103,15 @@ the classic path's per-pixel winner is order-sensitive by construction.
 
 # Still open
 
+- **G9 (inertia), G11 (material → field physics) and G12 (doc-learner at
+  bones)** are the next spine goals. The substrate now exists: the baker
+  emits `BoneRecord`s with a world-space bind pose, a parent index, a
+  segment length, and the authored radius / mass / stiffness in the
+  reserved bytes — so an inertia layer has something real to read.
+- The **`bone_index` on anchors** is bound (fix: the bone-bake gate checks
+  it), but nothing yet *poses* a bone and transforms the anchors it owns —
+  that is the "live physical reparametrization" step, and it is the honest
+  boundary of what is built.
 - The **closed-body composition rule is not taught to the model yet**. The
   baker now supports it (fix 26), but the document pipeline's prompt and
   validator still need to state the rule that a closed body is an upper

@@ -141,6 +141,46 @@ private:
 };
 
 // -----------------------------------------------------------------------------
+// Bone - a RIGID SEGMENT of the object: a line segment (head -> tail) with an
+// optional bend, a radius, and a mass.
+//
+// WHY THIS EXISTS (Josias, 2026-11-08): "object reconstruction is encoded
+// based on line segment (bones) or points in space (articulations)". A
+// SURFACE-only tree cannot express a mechanism: four overlapping ellipsoids
+// say nothing about which part ROTATES relative to which. A bone says
+// "this is the shaft, it runs from here to there, it pivots at its head,
+// and it carries this much mass" -- which is what makes reparametrization,
+// inertia, and field physics (magnetic/electric/radiative) computable.
+//
+// The bone is NOT the surface. It is the DEGREE OF FREEDOM the surface
+// hangs from. An element may carry BOTH: a bone (a rigid segment) and a
+// substance (the skin around it).
+//
+// The layout mirrors the frozen BoneRecord:
+//   head -> bind_pos, tail -> head + length * axis, bend -> the direction
+//   the segment deviates from straight (a joint).
+// -----------------------------------------------------------------------------
+struct Bone {
+    std::string name;                      // "femur", "shaft", "rotor"
+    int         parent = -1;               // index into Element::bones, -1 = root
+    // The parent bone's NAME, as written in JSON. A model cannot know an
+    // index that has not been assigned yet, so the parent is given by name
+    // and resolved to an index after the whole tree is built. An unknown
+    // name is REJECTED, not silently re-rooted.
+    std::string parent_name;
+    Vec3        head {0.f, 0.f, 0.f};       // pivot, in the element's LOCAL frame
+    Vec3        tail {0.f, 0.f, 0.f};       // the far end of the segment
+    Vec3        bend {0.f, 0.f, 0.f};       // the direction the segment deviates
+    float       radius = 0.f;              // cross-section radius (0 = unspecified)
+    float       mass = 0.f;                // mass contribution (0 = from volume)
+    float       stiffness = 1.f;           // 0 = free to swing, 1 = rigid
+    // The joints at this bone's ends, by name. An articulation is a POINT
+    // in space where two bones meet -- named so a document can refer to
+    // "the knee" rather than to an index.
+    std::vector<std::string> joints;
+};
+
+// -----------------------------------------------------------------------------
 // Element - one system in the tree. Either a pure grouping node (substance
 // null, has children) or a leaf (substance set). Children OVERLAP: at a shared
 // location all active children contribute (weighted).
@@ -157,6 +197,56 @@ struct Element {
     std::function<float(const Vec3&)> presence;
     std::vector<std::unique_ptr<Element>> children;  // overlapping sub-systems
 
+    // The rigid segment this element represents (optional). An element with
+    // a bone AND a substance is a rigid part with skin; an element with a
+    // bone and NO substance is a bare joint/axis.
+    bool has_bone = false;
+    Bone bone;
+
+    // COARSENESS: the abstraction level this tree asks for, 0..3.
+    //
+    // WHY (Josias, 2026-11-08): "make them complete in representation,
+    // denoting the coarseness for the sake of speedy computation". The
+    // model should choose an ABSTRACTION LEVEL, not a pixel count. The
+    // level then DERIVES the two budgets the engine actually spends:
+    //
+    //   lod 0 (fine)    grid_n 48   -- near-final surface
+    //   lod 1 (medium)  grid_n 32   -- the default
+    //   lod 2 (coarse)  grid_n 16   -- silhouette + mass only
+    //   lod 3 (sketch)  grid_n 8    -- proportions and skeleton only
+    //
+    // The skeleton's own density follows from the same level: a coarser
+    // tree keeps fewer bones, because a joint nobody can see is a joint
+    // nobody can afford to solve.
+    //
+    // A tree with no stated level uses the default (1). The level lives on
+    // the ROOT; a nested element may override it for its own subtree.
+    int lod = -1;                           // -1 = not stated
+
+    // The resolution this tree's coarseness implies, and the density of the
+    // skeleton it keeps. Both are derived from `lod`; they are NOT chosen
+    // independently, because the point is that ONE choice sets both.
+    static int GridForLod(int lod) {
+        switch (lod) {
+            case 0:  return 48;
+            case 1:  return 32;
+            case 2:  return 16;
+            case 3:  return 8;
+            default: return 32;
+        }
+    }
+    // The fraction of bones a tree at this level keeps: at lod 3 only the
+    // ROOT bones survive (the proportions), at lod 0 every bone survives.
+    static float BoneKeepForLod(int lod) {
+        switch (lod) {
+            case 0:  return 1.00f;
+            case 1:  return 1.00f;
+            case 2:  return 0.75f;
+            case 3:  return 0.40f;
+            default: return 1.00f;
+        }
+    }
+
     // Convenience builders (keep call sites readable).
     Element& AddChild(std::unique_ptr<Element> c) {
         children.push_back(std::move(c)); return *this;
@@ -164,6 +254,9 @@ struct Element {
     Element& SetPresence(std::function<float(const Vec3&)> p) {
         presence = std::move(p); return *this;
     }
+    // Attach a bone. The element must own it, so the segment's local frame
+    // travels with the element's origin/scale.
+    Element& SetBone(const Bone& b) { bone = b; has_bone = true; return *this; }
 
     // The name of this element's leaf substance ("plane", "ellipsoid",
     // "torus", "gaussian", "heightfield"), or "" when it is a grouping node.
@@ -215,6 +308,38 @@ public:
                                                    int grid_n, float extent,
                                                    std::string& why,
                                                    Vec3 world_offset = Vec3{0.f, 0.f, 0.f});
+
+    // --- the COARSENESS-aware bake ----------------------------------------
+    //
+    // The tree's `lod` (0..3) DERIVES the surface resolution, so the model
+    // chooses an abstraction level rather than a pixel count. `lod < 0`
+    // (the tree states none) uses the default, grid 32.
+    //
+    //   grid_n < 0  ->  grid_n = Element::GridForLod(tree.lod)
+    //   grid_n >= 0 ->  the caller's explicit resolution wins
+    //
+    // An explicit grid_n still overrides the tree, because a caller that
+    // knows the budget it is paying for should not have to argue with the
+    // model about it.
+    static bool BakeLod(const Element& root, int grid_n, float extent,
+                        ModelOutput& out, std::string& why,
+                        Vec3 world_offset = Vec3{0.f, 0.f, 0.f}) {
+        return Bake(root, grid_n < 0 ? Element::GridForLod(root.lod) : grid_n,
+                    extent, out, why, world_offset);
+    }
+    // NOTE: defined OUT OF LINE (ElementSystem.cpp) because PSFBody is an
+    // incomplete type here. An inline body would instantiate
+    // unique_ptr<PSFBody>'s deleter, which needs sizeof(PSFBody) -- and
+    // every translation unit including this header would fail to compile.
+    static std::unique_ptr<class PSFBody> BakeBodyLod(
+            const Element& root, int grid_n, float extent, std::string& why,
+            Vec3 world_offset = Vec3{0.f, 0.f, 0.f});
+
+    // The effective coarseness of a tree: the ROOT's stated level, or the
+    // default (1, medium) when it states none.
+    static int LodOf(const Element& root) {
+        return root.lod < 0 ? 1 : root.lod;
+    }
 };
 
 // -----------------------------------------------------------------------------
