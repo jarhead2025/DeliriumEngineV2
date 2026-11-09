@@ -346,7 +346,7 @@ the model chooses an abstraction level rather than a pixel count.
 > inertia is computed over. Changing the LOD after computing inertia means
 > recomputing it.
 
-### G11. Material properties → field physics — `TODO`
+### G11. Material properties → field physics — `DONE`
 `Material.h` and `ConstitutiveModel.h` exist. Attach per-bone material
 properties (density, permittivity, permeability) so magnetic / electric /
 radiative fields have something to read.
@@ -355,12 +355,66 @@ radiative fields have something to read.
 responses (e.g. a magnetic permeability) that come from its bones, not from
 a global constant.
 
+**LANDED** — `engine/include/delirium/physics/FieldProperties.h` +
+`engine/src/physics/FieldProperties.cpp`, with the gate
+`validate_field_properties` (**74 checks, 0 failures**).
+
+**What it is.** The *same pattern* as the inertia layer, one layer over:
+properties are authored per **BONE**, spread over that bone's anchors, and
+read out as field quantities. The mechanical `Material` already carried
+stress-strain curves and fluid models; what was missing was the
+electromagnetic and thermal constants, and a home for them.
+
+**The constants** (SI, all real published values): permeability `mu_r`,
+permittivity `eps_r`, conductivity `sigma` (S/m), emissivity, absorptivity,
+specific heat, thermal conductivity.
+
+**The relations** (the exact equations a solver would use, so the solver's
+equations can be checked against a reference):
+`B = mu·H` · `M = (mu_r−1)·H` · `u_B = ½·mu·|H|²` · `D = eps·E` ·
+`P = eps_0·(eps_r−1)·E` · `J = sigma·E` · `P/A = eps·sigma_SB·T⁴` ·
+`q_net = sigma_SB·(eps₁T₁⁴ − eps₂T₂⁴)` · `tau_charge = eps/sigma` ·
+`tau_magnetic = mu·sigma·L²`.
+
+**What it is NOT:** a field solver. There is no PDE here, and pretending
+otherwise would be the plausible-but-wrong output that makes the layer
+untrustworthy. It provides the data, the relations, and the lumped
+(mass-weighted) effective medium — which is what lets the document pipeline
+ask "does this reconstruction behave like the material the document
+described?".
+
+**The presets** are chosen so the independence is visible: copper (best
+conductor, **not** magnetic), mu-metal (most magnetic, **poor** conductor),
+mild steel, ABS (insulator), water (eps_r 80, weak conductor), neodymium
+(recoil permeability — a linear mu_r would be dishonest), muscle tissue,
+cortical bone.
+
+**Two design decisions worth keeping:**
+- **An unknown material is REJECTED, not defaulted.** Defaulting to
+  "generic plastic" would assert physics the document never stated — and
+  the document pipeline's whole value is that it does not invent.
+- **The lumped medium's absorptivity is NOT stored.** Kirchhoff's law makes
+  it equal the lumped emissivity, so the derived rule already produces the
+  right number; storing it separately would give the struct two sources of
+  truth for one quantity.
+
+**Still not done:** nothing yet *solves* a field with these, and nothing
+poses a bone so its anchors move (that is the "live physical
+reparametrization" step, and it is the honest boundary of what is built).
+
 ### G12. Re-point the doc-learner at bones — `TODO`
 The prompt currently teaches substances and sheets. Once bones exist, a
 technical document is interpreted as *mechanisms and their parts*: a gearbox
 document becomes a shaft + housing + rotor with articulations, not four
 overlapping ellipsoids. The closed-body section becomes "a bone needs its
 opposing surface".
+
+**Now that G11 has landed**, the doc-learner also has a MATERIAL
+vocabulary to teach: a document that says "steel housing" should be able to
+name the material, and the reconstruction should carry it into the bone's
+field properties. The tree schema needs a `material` field on a bone, and
+the parser needs to resolve it through `LookupFieldProperties`. **That is
+the concrete form this goal takes now.**
 
 ---
 

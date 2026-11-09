@@ -1392,6 +1392,80 @@ the value from the artifact.
 
 ---
 
+## 48. The field layer's first three failures were all in the TEST (2026-11-08)
+
+G11 (material properties → magnetic / electric / radiative field physics)
+landed with a new gate, `validate_field_properties` (74 checks). Its first
+run failed **5 of 67**. Every one of the five was a mistake in the TEST or
+in my stated expectation, not in the implementation — and each is a lesson
+worth keeping, because each would have "fixed" correct code.
+
+**1. The expected number was wrong by 10^6.** The gate asserted copper's
+magnetic diffusion time at 1 cm should be ~7e-9 s. The formula
+`tau_m = mu * sigma * L^2` with `mu_0 = 1.26e-6`, `sigma = 5.8e7`,
+`L = 1e-2` gives **7.3e-3 s** — the code was right and my expected value
+was not. A centimetre of copper excludes a changing field in about **7
+milliseconds**, not 7 nanoseconds.
+
+**2. The test was accidentally testing the DEFAULT.** The blackbody test
+wrote `const FieldProperties black;` — but the default `emissivity` is
+**0.9**, so it was measuring a 90% emitter and comparing it to a perfect
+one. The gate now constructs the blackbody explicitly. *(Lesson: a test that
+means "the extreme case" must SAY so. A default is never the extreme.)*
+
+**3. The JSON schema was wrong.** The fixture wrote `"bones": [...]`; the
+schema is `"bone": { ... }` — **singular**, one bone per element, with
+`head` and `tail` REQUIRED and the parent given by NAME. The parser
+silently ignored the unknown key, and the test reported "the tree did not
+produce two bones" — which reads exactly like a parser bug.
+
+**4. A material alias did not resolve.** `"A36 steel"` → `a36steel`, and
+the prefix rule required the character after the alias to be non-alphabetic
+— but `s` is a letter. The rule now accepts a **digit** after the alias (a
+grade continues the token: `a36`) and falls back to a longest-alias-first
+pass for compounds (`absplastic housing`).
+
+**5. `absorptivity` is a METHOD, not a field.** The implementation tried to
+assign `out.lumped.absorptivity = ...`, which does not compile. The
+resolution is not just to add the parentheses: **the lumped medium's
+absorptivity is not stored at all.** Kirchhoff's law makes the mixture's
+absorptivity equal the mixture's emissivity, so the derived rule already
+produces the right number — storing it separately would give the struct
+two sources of truth for one quantity.
+
+**Lesson.** *A gate that fails on its first run is telling you about the
+gate.* Four of the five failures here would have been "fixed" by editing
+correct code, and each would have baked a wrong number into the suite.
+
+---
+
+## 49. Permeability and conductivity are INDEPENDENT axes (2026-11-08)
+
+The field layer's material presets are chosen so that **no two are
+identical in every axis**, and so that the two "obvious" pairings are
+demonstrably WRONG:
+
+| material | permeability | conductivity | why it is there |
+|---|---|---|---|
+| copper | **1** (not magnetic) | **5.8e7** (best) | a great conductor that is NOT ferromagnetic |
+| mu-metal | **20000** (most magnetic) | 1.1e6 (poor) | a great magnetic shield that is a POOR conductor |
+| mild steel | 200 | 1.0e7 | ferromagnetic and conductive, but worse at both than copper/mu-metal |
+| ABS | 1 | **0** | an insulator and not magnetic |
+| water | 1 | 5e-4 | a HIGH permittivity (80) and a weak conductor |
+| neodymium | 1.5 (recoil) | 8e5 | a permanent magnet — a linear mu_r is a poor model, and the recoil value is the honest one |
+
+**Why this matters.** A layer that derived permeability from conductivity
+(or treated "material" as one number) would make mu-metal and copper
+interchangeable — and they are opposite in every field property. The gate
+asserts the independence explicitly, and also asserts that **every pair of
+presets differs in at least one axis** (otherwise one of them is
+pointless).
+
+**Lesson.** *Model the physical constants, not the material's name.* The
+name is for authoring; the solver reads the numbers.
+
+---
+
 ## How the area-weighted path is measured
 
 | path | lit px | holes | white | bbox aspect |
@@ -1407,15 +1481,20 @@ the classic path's per-pixel winner is order-sensitive by construction.
 
 # Still open
 
-- **G9 (inertia), G11 (material → field physics) and G12 (doc-learner at
-  bones)** are the next spine goals. The substrate now exists: the baker
-  emits `BoneRecord`s with a world-space bind pose, a parent index, a
-  segment length, and the authored radius / mass / stiffness in the
-  reserved bytes — so an inertia layer has something real to read.
-- The **`bone_index` on anchors** is bound (fix: the bone-bake gate checks
-  it), but nothing yet *poses* a bone and transforms the anchors it owns —
-  that is the "live physical reparametrization" step, and it is the honest
-  boundary of what is built.
+- **G12 (doc-learner at bones)** is the next spine goal. The bones and the
+  material vocabulary both exist; what does not is the pipeline that reads
+  a technical document as a *mechanism* — a shaft + housing + rotor with
+  articulations, each naming its material, rather than four overlapping
+  ellipsoids. The tree schema needs a `material` field on a bone, resolved
+  through `LookupFieldProperties`.
+- **Nothing yet POSES a bone.** The baker emits `BoneRecord`s and the
+  anchors carry `bone_index`, and the inertia layer reads them — but no
+  code transforms the anchors a bone owns when the bone moves. That is the
+  "live physical reparametrization" step, and it is the honest boundary of
+  what is built.
+- **Nothing yet SOLVES a field.** The field layer provides the material
+  data, the exact relations, and the lumped effective medium. There is no
+  PDE solver, and the layer does not pretend otherwise.
 - The **closed-body composition rule is not taught to the model yet**. The
   baker now supports it (fix 26), but the document pipeline's prompt and
   validator still need to state the rule that a closed body is an upper
