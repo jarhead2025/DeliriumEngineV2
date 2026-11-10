@@ -530,7 +530,7 @@ than the timeout it derived from**. Only the live run could see any of
 them; the unit gates were green throughout. See FIXES_REGISTER entries 54,
 58, 59, 60.
 
-### G14. Exercise escalation against a real larger model — `WIP`
+### G14. Exercise escalation against a real larger model — `DONE`
 The ladder is unit-tested against a stub and has never run against a second
 endpoint.
 
@@ -613,10 +613,31 @@ failure, and that a rescued success **becomes retrievable corpus**.
 pointed back at the local model (a classic wiring bug), it fails 10 of its
 21 checks.
 
-**Still to do: the LIVE two-model rescue.** The gate uses two
-deterministic responders, so it proves the *mechanic*. The live claim —
-"the 14B actually answers what the 7B could not" — needs both models
-running.
+**The LIVE two-model rescue — PROVEN (2026-11-09), two real models, one at a time:**
+
+```
+--- [1/1] doc_capsule.txt ---
+    attempt 1: FAILED at parse (488.0s)
+      reason: unknown substance 'cylinder' (use plane, ellipsoid/sphere,
+              torus/donut, gaussian/bump, or heightfield/wave)
+    attempt 2: escalating to qwen2.5:14b ...
+    attempt 2: OK (758.9s)
+    sheets=5  patches=8125  anchors=11520
+    GEOMETRY OK
+
+valid trees: 1 | baked bodies: 1 | failures: 1 | successes: 1 | escalations: 1
+```
+
+The **7B** invented a substance (`cylinder`) that is not in the vocabulary,
+and the parser rejected it with a **teaching** message. The **14B** was
+consulted with that failure attached and produced a **5-sheet, 8,125-patch,
+11,520-anchor** body that **baked and passed the geometry check**. That is
+the claim G14 was after: not just "the rung fired" but *"a bigger model
+fixes what the smaller one could not"*.
+
+And it ran **one model at a time**: the 7B finished and **unloaded**
+(`keep_alive: 0`), and only then did the 14B load. Verified by watching
+`/api/ps` — at every moment exactly one model was resident.
 
 **A CORRECTION to an earlier claim in this file.** An earlier revision of
 this entry said the live two-model rescue was blocked because "the 14B
@@ -632,13 +653,26 @@ MEASURED:
   still resident after the request.
 - `keep_alive: 0` on the **native** `/api/generate` **WORKS** — the model
   unloads immediately.
-- With one model at a time: the 7B answered in **15.2 s** and unloaded; the
-  14B then answered in **37.8 s**. Both, sequentially, with neither
-  resident alongside the other.
 
 So the client gained an Ollama-**native** path (`Config::use_native_endpoint`,
-with `Config::keep_alive`), and the probe uses it with `keep_alive = 0`. The
-ladder now loads the two models **one at a time**.
+with `Config::keep_alive`), and the probe uses it with `keep_alive = 0`.
+
+**Getting the test DOCUMENT right took two attempts.** The first document
+chosen to force a failure was a hemisphere shell — *"a curved dome ... and
+it has NO bottom and NO second surface"*. The 7B answered with ONE sheet
+(correctly obeying the document) and the validator rejected it; the **14B
+did exactly the same**. So the ladder ran, live, with two real models, and
+the rescue did **not** happen — because **both models were right and the
+test was wrong**. The document *asked* for a single sheet.
+
+> **A test document must make the DESIRED answer the CORRECT one.** If the
+> document tells the model to omit a surface, a single-sheet answer is
+> compliance, not failure — and no amount of model quality will rescue it.
+
+The replacement was a **closed** capsule with five parts (cylinder, two
+hemispherical caps, a band, a valve stem), where a multi-sheet tree is
+genuinely the right answer — so a single sheet (or an invented substance)
+is a real failure, and a model that answers correctly has *rescued* it.
 
 **A measurement that shaped the live test.** A dense wrist-watch document
 (28mm mainplate, 20mm cutout, hairspring, 15 club teeth) was too hard:
@@ -651,6 +685,14 @@ document path rejects), not one that produces a **slow** one.
 A simpler ball-valve document was the right difficulty — the 7B answered
 it correctly in **929.9 s** (2,878 bytes, valid JSON, 3 sheets). So the
 valve is too EASY: no escalation fires.
+
+**And the budgets are FLAGS now, because they must be sized for the
+DOCUMENT.** `--max-tokens` (default 3200): 1,400 was enough for a 3-part
+gearbox but NOT for a 14-part watch movement, whose answer was cut off
+mid-array at 3,279 chars (*"unterminated array at byte 3165"*) — the model
+had produced a GOOD answer and simply ran out of room. `--timeout`
+(default 1800): a 3-part gearbox answers in ~230 s, but the watch movement
+was still generating at 900 s.
 
 ### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner

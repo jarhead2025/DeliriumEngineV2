@@ -1916,6 +1916,111 @@ accelerate the per-item work, it is to rebuild the global state once.
 
 ---
 
+## 61. A sequential two-model ladder does NOT need both models resident (2026-11-09)
+
+G14's live two-model rescue had been recorded as blocked: *"the 14B needs
+~10 GB and it cannot coexist with the 7B in the free RAM"*. **That was
+wrong**, and the error is worth recording because the reasoning generalises.
+
+**The ladder is SEQUENTIAL.** The local attempt finishes *before* the
+larger one is asked. So the two models never need to be resident *at the
+same time*. What made them coexist was a **server-side retention policy**,
+not the ladder's design:
+
+| endpoint | `keep_alive: 0` | result |
+|---|---|---|
+| `/v1/chat/completions` (OpenAI-compatible) | **IGNORED** | the model was STILL resident |
+| `/api/generate` (Ollama-native) | **HONOURED** | the model unloaded immediately |
+
+> **Before blaming the hardware for a multi-model pipeline, check whether
+> the pipeline is actually concurrent.** If it is sequential, the fix is a
+> retention policy, not more RAM. And check WHICH endpoint honours the
+> policy you need — an OpenAI-compatible shim silently drops
+> Ollama-specific fields.
+
+### Two more real bugs, both in the new native path
+
+**The native endpoint's framing depends on the REPLY SIZE.** MEASURED
+against the same server, same request shape:
+
+| answer | framing |
+|---|---|
+| short (413 bytes) | `Content-Length: 413` |
+| long (2,339 bytes) | **`Transfer-Encoding: chunked`**, no Content-Length |
+
+A client handling only one fails on **half** the replies — and it fails as
+"the model returned nothing", because the chunk framing is still in the
+bytes and the JSON parse fails. The long answer came through as **0 bytes**
+before the fix and **371 bytes complete** after.
+
+**A `Content-Length` off-by-one, in BOTH read paths.**
+`find("Content-Length:") + 15` points **at the colon** (the header name is
+exactly 15 characters), and `strtoul(": 413")` returns **0** — so the
+client read only the first packet and failed to parse the truncated JSON.
+The GET path survived it only because it falls back to read-until-close
+when the length is 0. Now one shared helper, so the two call sites cannot
+drift again.
+
+### And the streaming path had no overall deadline at all
+
+`SO_RCVTIMEO` is a **PER-READ** timeout: it fires when a single recv goes
+quiet, not when the whole request has gone on too long. So a server that
+sends a byte every few seconds can stream **forever**. MEASURED: the 7B was
+still generating after **41 minutes** on a dense document, with the client
+dutifully waiting, because every single recv succeeded. Both paths now
+carry a deadline on the REQUEST, and an over-long request fails with a
+**named** reason ("the request exceeded its time budget") — measured at
+917 s instead of 41 minutes.
+
+---
+
+## 62. A test document that INSTRUCTS the failure is not a test (2026-11-09)
+
+The first document chosen to force the 7B to fail was a hemisphere shell:
+
+> *"a curved dome, 50mm across at its base, rising to 30mm high, and it
+> has NO bottom and NO second surface."*
+
+The 7B answered with **one sheet** — correctly obeying the document — and
+the validator rejected it. The **14B did exactly the same**: same stage,
+same reason.
+
+So the ladder ran, live, with two real models, and the rescue did **not**
+happen — because **both models were right and the test was wrong**. The
+document *asked* for a single sheet.
+
+> **A test document must make the DESIRED answer the CORRECT one.** If the
+> document tells the model to omit a surface, then a single-sheet answer is
+> compliance, not failure — and no amount of model quality will rescue it.
+
+The replacement was a **closed** capsule with five parts (cylinder, two
+hemispherical caps, a band, a valve stem), where a multi-sheet tree is
+genuinely the right answer:
+
+```
+attempt 1: FAILED at parse (488.0s)
+  reason: unknown substance 'cylinder' (use plane, ellipsoid/sphere, ...)
+attempt 2: escalating to qwen2.5:14b ...
+attempt 2: OK (758.9s)
+  sheets=5  patches=8125  anchors=11520
+  GEOMETRY OK
+```
+
+The 7B invented a substance that is not in the vocabulary; the 14B, told
+so, produced a 5-sheet body that baked and passed the geometry check. The
+ladder **rescued**.
+
+**Lesson.** *A test that cannot fail teaches you nothing — and a test that
+fails for the wrong reason teaches you the wrong thing.* The first version
+of this test failed for a reason the document had explicitly requested, and
+that is indistinguishable from "the escalation does not work" unless you
+check *why* it failed.
+
+→ Class-level version: `procedural-surface-engine` →
+`references/llm-retrieval-corpus.md`.
+
+---
+
 ## 62. The asset was the wrong FORMAT, and "MISSING" hid it (2026-11-09)
 
 **G18**: `assets/sphere.psf` was a UTF-8 **text** file — a human-readable
