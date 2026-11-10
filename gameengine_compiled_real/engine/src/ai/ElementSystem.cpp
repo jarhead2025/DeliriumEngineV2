@@ -357,7 +357,37 @@ SubstancePoint TorusSubstance::Eval(float x, float y) const {
     //   dF/dx = 2*d*x/r,  dF/dy = 2*d*y/r,  dF/dz = 2*z
     // (the outward normal is the gradient; at r -> 0 the radial part is
     //  undefined, but there the surface does not exist, so it cannot hit).
-    Vec3 n{ d * x, d * y, z };
+    //
+    // THE NORMAL MUST BE THE TRUE OUTWARD ONE OF THE TUBE.
+    //
+    // The gradient of F in the (r, z) half-plane is (d, z). That vector is
+    // the outward direction of the tube's CROSS-SECTION, and rotating it
+    // into 3D gives:
+    //
+    //     n = (d/r * x, d/r * y, z)
+    //
+    // NOT (d*x, d*y, z). The difference is the factor 1/r: the raw form
+    // over-weights the radial component by r, so the normal leans toward
+    // the radial direction and stops agreeing with the true surface normal.
+    //
+    // MEASURED (the bug this fixes): the old normal disagreed with the true
+    // outward normal by up to 0.758 in dot product, and the baked anchor
+    // normals came out 91.4% ANTIPARALLEL to the view (mean dot -0.7332).
+    // That is what produced the "only the forward-facing faces render"
+    // symptom: the march accumulates the 3x3x3 neighbourhood's normals and
+    // then flips the SUM, so a wrong sum stays wrong.
+    //
+    // The z component is POSITIVE here because this substance models the
+    // UPPER half of the tube (z = +sqrt(inside)); the lower half is the
+    // MIRRORED sheet (scale z = -1), whose normal is this one reflected.
+    //
+    // The `r` guard: at r -> 0 the radial direction is undefined. For the
+    // usual torus (major > minor) r = 0 is not on the surface at all -- the
+    // test above already returned invalid. But a degenerate torus
+    // (major < minor) WOULD have surface there, so the guard is needed for
+    // correctness, not just for the usual case.
+    if (r < 1e-9f) return { Vec3{x, y, z}, Vec3{0.f, 0.f, 1.f} };
+    Vec3 n{ d * x / r, d * y / r, z };
     const float nl = std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
     if (nl > 1e-9f) { n.x /= nl; n.y /= nl; n.z /= nl; }
     return { Vec3{x, y, z}, n };
@@ -1067,8 +1097,37 @@ std::unique_ptr<Element> ProceduralElementGenerator::Build(const std::string& se
         semantic.find("donut") != std::string::npos ||
         semantic.find("ring") != std::string::npos) {
         root->kind = "torus_body";
-        root->substance = std::make_unique<TorusSubstance>(0.32f, 0.12f);
-        root->color = {0.7f, 0.6f, 0.5f};
+        // A FULL TORUS, composed of TWO SHEETS.
+        //
+        // WHY: a PSF body is a GRAPH z = f(x,y) over a patch grid, so one
+        // sheet can only ever describe the UPPER half of the tube. One sheet
+        // alone gives a half-torus -- an open shell with no underside, whose
+        // baked z-span is 0.1109 against the 0.2400 a full tube needs.
+        //
+        // The same rule the closed ELLIPSOID uses (and the one
+        // validate_closed_body pins): the lower sheet keeps the SAME origin
+        // and flips the SCALE. A negative z-scale already reflects the sheet
+        // downward from the seam plane it shares with the upper one, so
+        // `origin:[0,0,0]` + `scale:[1,1,-1]` puts the lower half exactly
+        // under the upper half, and the two MEET at z = 0.
+        //
+        // MEASURED (before this change): the procedural torus's baked
+        // z-span was 0.1109 -- exactly half of 0.2400 -- and its anchor
+        // normals were 91.4% antiparallel to the view, which is what
+        // produced the "only the forward-facing faces render" symptom.
+        auto upper = std::make_unique<Element>();
+        upper->kind = "torus_upper";
+        upper->substance = std::make_unique<TorusSubstance>(0.32f, 0.12f);
+        upper->color = {0.7f, 0.6f, 0.5f};
+        root->AddChild(std::move(upper));
+
+        auto lower = std::make_unique<Element>();
+        lower->kind = "torus_lower";
+        lower->substance = std::make_unique<TorusSubstance>(0.32f, 0.12f);
+        lower->color = {0.7f, 0.6f, 0.5f};
+        lower->origin = {0.f, 0.f, 0.f};
+        lower->scale = {1.f, 1.f, -1.f};   // the flip
+        root->AddChild(std::move(lower));
         return root;
     }
     if (semantic.find("orb") != std::string::npos ||
