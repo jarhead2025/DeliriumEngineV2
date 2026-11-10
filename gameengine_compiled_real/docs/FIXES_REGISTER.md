@@ -2143,16 +2143,124 @@ the data, not metadata.* Carry it verbatim from the producer.
 
 ## How the area-weighted path is measured
 
-| path | lit px | holes | white | bbox aspect |
-|---|---|---|---|---|
-| classic splat | 16,044 | 173 | 0 | 0.942 |
-| layered splat | 20,773 | 150 | 0 | 0.948 |
-| **area-weighted** | 16,090 | **155** | **0** | 0.942 |
+**Measured by `tests/validate_layered_splat.py` (12 checks, 0 failures)** —
+the permanent gate that replaced the ad-hoc probe. It compares the gallery's
+own **paired scenes** over the same body and camera, so no environment
+variable is involved.
 
-The area path's lit count is close to classic's (it resolves into the
-shared framebuffer, so it occupies the same silhouette) with **fewer
-holes** and a **deterministic** result (identical md5 across runs), where
-the classic path's per-pixel winner is order-sensitive by construction.
+| path | lit px | holes | dither | white |
+|---|---|---|---|---|
+| classic splat | 16,108 | 145 | 3.40 | 0 |
+| **layered splat** | **20,808** | **138** | **2.51** | 0 |
+| area-weighted | 16,108 | 145 | 3.66 | 0 |
+
+The **layered** path (the user's distance-plane method) has **29% more
+coverage**, **fewer holes**, and **26% less dither** than the classic path.
+The **area-weighted** path resolves into the shared framebuffer, so it
+occupies the same silhouette as classic, with a **deterministic** result
+(identical md5 across runs) where the classic path's per-pixel winner is
+order-sensitive by construction.
+
+---
+
+## 64. The area path averaged ACROSS DEPTHS (2026-11-10)
+
+**Symptom.** The area-weighted splat's dither was **4.40** — *worse* than
+the classic path's 3.40 — while the layered path managed 2.51. The user's
+method was supposed to be the smooth one.
+
+**The diagnosis that found it.** Splitting the dither into **interior** pairs
+(both pixels deeply inside the lit region) and **boundary** pairs (a lit
+pixel on the silhouette edge):
+
+| path | interior dither | boundary dither |
+|---|---|---|
+| classic | 3.385 | 3.818 |
+| layered | 2.504 | 2.970 |
+| area (before) | **4.437** | 2.876 |
+
+The asymmetry was the clue: the area path was *better* at the boundary and
+*worse* in the interior, so the cause was **not** the footprint spread — it
+was **depth mixing**. The area accumulator averaged **every** sample that
+projected onto a pixel, including the torus's **far wall**, which lands on
+the same pixels as the near wall. Averaging two depths gives a colour that
+belongs to neither.
+
+**The first fix was WRONG, and the measurement said so.** An in-kernel depth
+gate — reject a sample whose depth differs from the pixel's stored winner —
+made the interior dither slightly **worse**: 4.437 → **4.522**.
+
+**Why, structurally:** the winner is only known after *every* sample has
+been offered. A far sample that arrives **first** sees no winner and
+passes, so the gate leaks exactly what it was meant to reject. The
+justification written next to it ("order-independent, because the comparison
+is against the winner already stored") was **false** — the stored winner is
+only the winner for the samples seen *so far*.
+
+**The fix — TWO PASSES.** `psf_splat_area` gained a `pass` argument, and the
+host runs it twice over the same buffers:
+- **pass 0** — every sample offers its depth to the pixels its footprint
+  covers; the nearest wins each pixel. No colour is accumulated.
+- **pass 1** — the same samples offer their colour, but only to pixels
+  whose winner is at the same depth (within **2e-5** of NDC depth — the
+  same window the depth-tie diagnostic uses, fix 33).
+
+The queue is in-order, so pass 1 reads the winners pass 0 wrote, with no
+fence needed.
+
+**Result: interior dither 4.437 → 3.656** — now *better* than the classic
+path's 3.385 — and the area path passes the gate's budget.
+
+**The lesson.**
+
+> **A gate that reads a value another stage computes must wait for that
+> stage.** Comparing against a value that is still being written is not a
+> conservative check; it is a check against a *moving target*, and it
+> admits exactly the cases you wanted to exclude.
+>
+> The general form: if the value you are testing against is produced by a
+> concurrent process, an in-loop check is not "possibly stale" — it is
+> **systematically biased toward the early arrivals**, because those are
+> the ones that arrive before the value is final.
+
+**The gate is proven to catch the bug**: with the depth gate disabled, the
+area dither returns to 4.40 and the gate fails on exactly that check.
+
+---
+
+## 65. The probe drove the render path through an env var the gallery IGNORES (2026-11-10)
+
+**Symptom.** The first version of the layered-splat gate reported the
+classic and layered images **byte-identical**, and failed on "the band count
+changes the image (the knob is wired)".
+
+**Cause.** The probe ran the gallery twice with `DELIRIUM_SPLAT_LAYERS=0`
+and `=1`. But the gallery calls `SetPath()` **per scene**, and `SetPath()`
+sets `path_explicit_` — and `SplatRenderer::Initialize` only seeds the path
+from the env vars **if the path was not already chosen**. So the env var was
+a **no-op**: the "layered" run was really the classic path, and the two
+images matched. The *knob* was innocent; the gallery's **precedence rule**
+was the cause.
+
+**Fix.** The gate compares the gallery's **own paired scenes** over the same
+body and camera — `C_splat_classic`, `C2_splat_layered`, `C3_splat_area` —
+which need no environment variable at all. It also asserts that the three
+images are **pairwise different**, so a silent fallback fails the gate
+instead of looking like "the method made no difference".
+
+**The lesson.**
+
+> **Before blaming a knob, check whether it reaches the thing.** The
+> symptom ("the knob does nothing") and the cause ("the knob is
+> overridden") look identical from the outside. The way to tell them apart
+> is to find the code that CONSUMES the knob and read its precedence — or
+> to find a second path to the same state and use that instead.
+>
+> The same failure shape as "a switch you cannot observe is
+> indistinguishable from one that did not happen" (fix 45) — except here
+> the switch *was* observable, just not where the probe was looking.
+
+---
 
 # Still open
 

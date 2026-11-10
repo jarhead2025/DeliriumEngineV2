@@ -933,12 +933,12 @@ the silhouette is left-right symmetric.
 > version of this probe demanded a circular silhouette and failed on a
 > perfectly good sphere.
 
-### G19. Move the ad-hoc probes into `tests/` — `WIP`
-The workspace-torus, layered-splat, path-switch and closed-body probes live
-in `/tmp` and will be lost. CTest renders nothing, so these are the *only*
-render evidence — they belong in-tree as permanent gates.
+### G19. Move the ad-hoc probes into `tests/` — `DONE`
+The workspace-torus, layered-splat, path-switch and closed-body probes lived
+in `/tmp` and would have been lost. CTest renders nothing, so these are the
+*only* render evidence — they belong in-tree as permanent gates.
 
-**Landed so far — the suite is now 33 gates (was 22):**
+**The suite is now 43 gates (was 22 at the session start):**
 - `tests/validate_closed_body.cpp` — **21 checks, 0 failures.** Pins the
   measured closure rule: the correct rule spans exactly `[-sz, +sz]` and is
   centred; an offset origin opens a gap; an unflipped lower sheet is
@@ -973,7 +973,80 @@ render evidence — they belong in-tree as permanent gates.
   path that can resolve it. Uses `--auto-frames N` (a **frame** count, not a
   wall clock) so the measurement is reproducible.
 
-**Still to land:** the layered-splat probe.
+**Still to land:** nothing — G19 is `DONE`.
+
+### The last probe landed — and it found a real bug on the way
+`tests/validate_layered_splat.py` — **12 checks, 0 failures.** It compares
+the gallery's **own paired scenes** over the same body and camera, so no
+environment variable is involved: `C_splat_classic` (one winner per pixel),
+`C2_splat_layered` (the user's distance-plane shells, averaged), and
+`C3_splat_area` (the pixel-footprint pyramid).
+
+> **The first version of this probe drove the path through
+> `DELIRIUM_SPLAT_LAYERS` — and that was WRONG.** The gallery calls
+> `SetPath()` per scene, which marks the path *explicit*, so the env var is
+> a no-op: the "layered" run was really the classic path, and the two images
+> came out byte-identical. The gate then failed on a knob that "did nothing",
+> and the knob was innocent — the *gallery's precedence rule* was the cause.
+> Comparing the gallery's own paired scenes removes the ambiguity entirely.
+> The lesson is the same one the render-path audit already taught: **a
+> switch you cannot observe is indistinguishable from one that did not
+> happen** — but here the switch WAS observable, just not where I was
+> looking.
+
+**The measured result (the user's method wins):**
+
+| path | lit | holes | dither | white |
+|---|---|---|---|---|
+| classic | 16,108 | 145 | 3.40 | 0 |
+| **layered** | **20,808** | **138** | **2.51** | 0 |
+| area | 16,108 | 145 | 3.66 | 0 |
+
+The layered path has **29% more coverage**, **fewer holes**, and **26% less
+dither** than the classic path — it is better on every metric, and the
+dither is the thing the method exists to fix.
+
+**And the gate found a real bug in the AREA path.** The area path's dither
+was 4.40 — *worse* than the classic path — and the diagnosis split the
+dither into interior and boundary pairs:
+
+| path | interior dither | boundary dither |
+|---|---|---|
+| classic | 3.385 | 3.818 |
+| layered | 2.504 | 2.970 |
+| area (before) | **4.437** | 2.876 |
+
+The asymmetry was the clue: the area path was *better* at the boundary and
+*worse* in the interior, so the problem was not the footprint spread but
+**depth mixing** — the area accumulator averaged every sample that
+projected onto a pixel, including the torus's **far wall**, which lands on
+the same pixels as the near wall. Averaging two depths gives a colour that
+belongs to neither.
+
+**The first fix was wrong, and the measurement said so.** An in-kernel depth
+gate (reject a sample whose depth differs from the pixel's stored winner)
+made the interior dither slightly **worse**: 4.437 → 4.522. The reason is
+structural: the winner is only known after *every* sample has been offered,
+so a far sample that arrives **first** sees no winner and passes. The gate
+leaked exactly what it was meant to reject — and my stated justification
+("order-independent, because the comparison is against the winner already
+stored") was false.
+
+**The right fix is TWO PASSES** (`psf_splat_area` gained a `pass` argument,
+and the host runs it twice):
+- **pass 0** — every sample offers its depth to the pixels its footprint
+  covers; the nearest wins each pixel. No colour.
+- **pass 1** — the same samples offer their colour, but only to pixels
+  whose winner is at the same depth (within 2e-5 of NDC depth, the same
+  window the depth-tie diagnostic uses).
+
+The queue is in-order, so pass 1 reads the winners pass 0 wrote, with no
+fence. **Result: interior dither 4.437 → 3.656** — now *better* than the
+classic path's 3.385 — and the area path passes the gate's budget.
+
+> **The gate is proven to catch the bug it was built for**: with the depth
+> gate disabled, the area dither returns to 4.40 and the gate fails on
+> exactly that check. A gate that has never failed is not evidence.
 
 ---
 

@@ -486,6 +486,40 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/tests/validate_workspace_render.py")
 endif()
 
 # ---------------------------------------------------------------------------
+# validate_layered_splat - the gate for the LAYERED DISTANCE-PLANE SPLAT.
+#
+# The user's method: surface samples are bucketed into distance shells, the
+# impacts in a shell are AVERAGED, and the shells are stacked back-to-front.
+# The property under test is about PIXELS -- does the averaging smooth the
+# dither without collapsing coverage or blowing out to white -- so the C++
+# suite structurally cannot see it (it renders nothing).
+#
+# It needs a DISPLAY (the gallery opens an OpenCL context), so it is
+# LABELLED and skipped by default like the workspace gate:
+#
+#   DELIRIUM_LAYERED_GATE=1 ctest -R validate_layered_splat -V
+#
+# The build directory is passed explicitly so the gate finds the binaries
+# wherever CMake put them.
+# ---------------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/tests/validate_layered_splat.py")
+  find_package(Python3 COMPONENTS Interpreter QUIET)
+  if(Python3_Interpreter_FOUND)
+    add_test(NAME validate_layered_splat
+             COMMAND ${Python3_EXECUTABLE}
+                     "${CMAKE_SOURCE_DIR}/tests/validate_layered_splat.py")
+    set_tests_properties(validate_layered_splat PROPERTIES
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      TIMEOUT 1200
+      ENVIRONMENT "DELIRIUM_BUILD_DIR=${CMAKE_BINARY_DIR}"
+      LABELS "display")
+    # Skipped by default: it needs a display.
+    set_property(TEST validate_layered_splat
+                 PROPERTY SKIP_RETURN_CODE 77)
+  endif()
+endif()
+
+# ---------------------------------------------------------------------------
 # perf_engine - performance report (NOT a pass/fail gate; always exits 0).
 # Times load/eval/queries/modal/AMR/refit/seams/GPU-flush. Build + run:
 #   cmake --build build_delirium --target perf_engine

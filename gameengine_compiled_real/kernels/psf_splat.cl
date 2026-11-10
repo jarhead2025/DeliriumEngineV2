@@ -491,6 +491,8 @@ __kernel void psf_splat_area(
     const uint  width, const uint height,
     const float depth_bias,
     const float tan_half,       /* tan(fov/2) -- the pixel footprint's scale */
+    const uint  pass,           /* 0 = depth winners only, 1 = accumulate
+                                   the colour gated by those winners */
     __global uint  *area_csum,  /* 3 uints per pixel: the colour sums */
     __global uint  *area_wsum,  /* 1 uint per pixel: the area weight */
     __global volatile ulong *area_key /* (depth_bits << 32) per pixel */
@@ -610,7 +612,7 @@ __kernel void psf_splat_area(
             if (qx < 0 || qx >= (int)width) continue;
             const float tx = (rx + 1 > 0) ? (1.0f - fabs((float)dx) / (float)(rx + 1)) : 1.0f;
             const float tent = tx * ty;
-            /* the area weight, quantised to a fixed-point integer. The
+            /* The area weight, quantised to a fixed-point integer. The
              * floor is deliberate: it never over-weights, so the sum of
              * the weights is <= the true area. */
             const uint aw = (uint)(tent * 4096.0f);
@@ -622,13 +624,41 @@ __kernel void psf_splat_area(
             const ulong key = ((ulong)as_uint(depth) << 32) | 0xFFFFFFFFu;
             atom_min(&area_key[slot], key);
 
+            /* THE DEPTH GATE (pass 2 only): a sample contributes its colour
+             * to a pixel only if it is at (nearly) the same depth as that
+             * pixel's winner.
+             *
+             * WHY: without it, the accumulator averages EVERY sample that
+             * projects onto the pixel -- including the far side of a torus,
+             * which lands on the same pixels as the near side. Averaging two
+             * different depths gives a colour that belongs to NEITHER.
+             *
+             * WHY IT MUST BE A SEPARATE PASS: the winner is only known after
+             * EVERY sample has been offered. An in-kernel gate cannot work:
+             * a far sample that arrives FIRST sees no winner and passes, so
+             * the gate is order-dependent and leaks the far samples it is
+             * meant to reject. (Measured: an in-kernel gate made the interior
+             * dither slightly WORSE, 4.437 -> 4.522.)
+             *
+             * `pass` 0 = compute the depth winners only (no colour accumulation).
+             * `pass` 1 = accumulate the colour, gated by the winners from pass 0.
+             */
+            if (pass == 1u) {
+                const uint win_bits = (uint)(area_key[slot] >> 32);
+                if (win_bits != 0xFFFFFFFFu &&
+                    fabs(as_float(win_bits) - depth) > 2e-5f)
+                    continue;
+            }
+
             /* THE AREA-WEIGHTED COLOUR. The colour sums are accumulated
              * with the area weight, so the resolve divides by the total
              * area weight and gets the AREA-WEIGHTED MEAN. */
-            atomic_add(&area_csum[slot*3u + 0u], cr * aw);
-            atomic_add(&area_csum[slot*3u + 1u], cg * aw);
-            atomic_add(&area_csum[slot*3u + 2u], cb * aw);
-            atomic_add(&area_wsum[slot], aw);
+            if (pass == 1u) {
+                atomic_add(&area_csum[slot*3u + 0u], cr * aw);
+                atomic_add(&area_csum[slot*3u + 1u], cg * aw);
+                atomic_add(&area_csum[slot*3u + 2u], cb * aw);
+                atomic_add(&area_wsum[slot], aw);
+            }
         }
     }
 }

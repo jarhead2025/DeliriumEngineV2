@@ -309,11 +309,12 @@ bool SplatRenderer::BuildProgram(const std::string& dir) {
     // 4 sample_off, 5 sample_ss, 6 n_surfaces, 7 bbmin, 8 bbspan,
     // 9 s_scale, 10 mvp, 11 light_dir, 12 eye, 13 view_fwd,
     // 14-17 model_r*, 18 width, 19 height, 20 depth_bias, 21 tan_half,
-    // 22 area_csum, 23 area_wsum, 24 area_key
+    // 22 pass (0 = depth winners, 1 = colour), 23 area_csum, 24 area_wsum,
+    // 25 area_key
     // area_resolve: 0 area_csum, 1 area_wsum, 2 area_key, 3 W, 4 H, 5 image
     {
         struct { const char* name; cl_kernel k; cl_uint expect; } checks[] = {
-            {"psf_splat_area", (cl_kernel)k_splat_area, 25},
+            {"psf_splat_area", (cl_kernel)k_splat_area, 26},
             {"area_resolve",    (cl_kernel)k_area_resolve, 6},
         };
         bool ok = true;
@@ -2219,6 +2220,24 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
     // needs it to turn a depth into a footprint in pixels.
     float tan_half = std::tan(cam.fov_deg * 3.14159265358979f / 360.0f);
 
+    // THE AREA PATH RUNS IN TWO PASSES.
+    //
+    // Pass 0: every sample offers its depth to the pixels its footprint
+    //         covers, and the NEAREST wins each pixel. No colour.
+    // Pass 1: the same samples offer their colour, but only to pixels
+    //         whose winner is at the same depth -- so the area-weighted
+    //         mean never mixes the near wall of a torus with its far wall.
+    //
+    // WHY TWO PASSES AND NOT ONE: the winner is only known after EVERY
+    // sample has been offered. An in-kernel gate cannot work -- a far
+    // sample that arrives FIRST sees no winner and passes, so the gate
+    // leaks exactly the samples it is meant to reject. (MEASURED: an
+    // in-kernel gate made the interior dither slightly WORSE, 4.437 ->
+    // 4.522, because the far samples that arrived first still counted.)
+    //
+    // The two passes share the same buffer, so pass 1 reads the winners
+    // pass 0 wrote. The queue is in-order, so no fence is needed.
+    for (uint32_t area_pass = 0; area_pass < 2; ++area_pass) {
     cl_kernel ka = (cl_kernel)k_splat_area;
     cl_uint a2 = 0;
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_mem), &buf_anchors));
@@ -2243,10 +2262,12 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_uint), &H));
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_float), &depth_bias));
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_float), &tan_half));
+    CLC(clSetKernelArg(ka, a2++, sizeof(cl_uint), &area_pass));
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_mem), &buf_area_csum));
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_mem), &buf_area_wsum));
     CLC(clSetKernelArg(ka, a2++, sizeof(cl_mem), &buf_area_key));
     CLC(clEnqueueNDRangeKernel(q, ka, 1, nullptr, &g, nullptr, 0, nullptr, nullptr));
+    } // end of the two-pass loop (area_pass 0 = depths, 1 = colour)
 
     // RESOLVE this body's area-weighted mean into the SHARED
     // framebuffer, exactly as the classic path does. The shared
