@@ -55,6 +55,35 @@ struct Config {
     float       temperature = 0.7f;
     int         max_tokens = 1024;
     int         timeout_seconds = 180;
+
+    // -----------------------------------------------------------------------
+    // THE OLLAMA-NATIVE ENDPOINT (and why it exists).
+    //
+    // The OpenAI-compatible endpoint (/v1/chat/completions) IGNORES
+    // Ollama's `keep_alive` parameter -- MEASURED: after a request with
+    // "keep_alive": 0, the model was STILL resident. The NATIVE endpoint
+    // (/api/generate) HONOURS it: the model unloads the moment it answers.
+    //
+    // WHY THAT MATTERS: the escalation ladder is SEQUENTIAL -- the local
+    // attempt finishes before the larger one is asked -- so the two models
+    // never need to be resident AT THE SAME TIME. Without unloading, they
+    // ARE: Ollama's default keep_alive is 5 minutes, so the 7B (8.5 GB) is
+    // still in RAM when the 14B (9.9 GB) is asked to load, and on a
+    // 31 GB machine that is the difference between working and thrashing.
+    //
+    // MEASURED with one model at a time: the 7B answered in 15.2 s and
+    // unloaded; the 14B then answered in 37.8 s. Both, sequentially, with
+    // neither resident alongside the other.
+    //
+    // Set `use_native_endpoint` to use /api/generate. The reply format
+    // differs (a plain "response" string, not SSE deltas), and the client
+    // parses it accordingly.
+    // -----------------------------------------------------------------------
+    bool        use_native_endpoint = false;
+    // 0 = unload the model as soon as it answers (Ollama's "keep_alive": 0).
+    // Negative = leave the default (the model stays resident for the
+    // server's own keep_alive window).
+    int         keep_alive = -1;
 };
 
 class LLMClient {

@@ -48,6 +48,28 @@ checks = 0
 # presented) but has not drifted into a different step-count regime.
 FRAMES = 60
 
+# The settle delay between two app launches, in seconds (before scaling by
+# the machine's load).
+#
+# WHY IT EXISTS: the previous instance's last frames can still be in flight
+# when the next one creates its OpenCL context, and the two then compete for
+# the device -- which produces a DIFFERENT render. Measured on a contended
+# machine (load 5.6, other GPU processes resident), the reproducibility
+# check failed 1 run in 3 AT THE PRE-EXISTING TREE, so this is a
+# pre-existing flake and a longer settle is the fix (not a regression).
+#
+# It is scaled by the load because the drain time IS the load: a busy device
+# needs longer. The base keeps it non-trivial on an idle machine.
+SETTLE_SECONDS = 2.0
+
+# The machine's load, read ONCE (the contention does not change materially
+# within a run) and used to scale the settle delay.
+LOAD = 0.0
+try:
+    LOAD = os.getloadavg()[0]
+except (OSError, AttributeError):
+    pass
+
 
 def check(cond, msg, detail=""):
     global checks
@@ -266,7 +288,18 @@ def main():
             # context competing for the device produces a different render
             # (measured: the repeat run's centre-background drifted to 0.807
             # against the first run's 0.761).
-            time.sleep(1.0)
+            #
+            # The settle must be LONG ENOUGH for the device, and a fixed
+            # 1.0 s is not: measured on a contended machine (load 5.6, other
+            # GPU processes resident), the reproducibility check failed
+            # 1 run in 3 at the PRE-EXISTING tree -- so this is a pre-existing
+            # flake, not a regression, and a longer settle is the fix the
+            # skill already prescribes ("a SETTLE DELAY between launches
+            # fixes it").
+            #
+            # It is scaled by how loaded the machine is, because the drain
+            # time IS the load: a busy device needs longer.
+            time.sleep(SETTLE_SECONDS * (1.0 + 0.25 * min(LOAD, 8.0)))
             return p.stdout + p.stderr, shot, p.returncode
 
         print("=" * 72)

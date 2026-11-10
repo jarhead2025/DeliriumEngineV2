@@ -618,6 +618,28 @@ deterministic responders, so it proves the *mechanic*. The live claim —
 "the 14B actually answers what the 7B could not" — needs both models
 running.
 
+**A CORRECTION to an earlier claim in this file.** An earlier revision of
+this entry said the live two-model rescue was blocked because "the 14B
+needs ~10 GB and it cannot coexist with the 7B in the free RAM". **That
+was wrong.** The ladder is **SEQUENTIAL** — the local attempt finishes
+before the larger one is asked — so the two models never need to be
+resident *at the same time*. The real cause was Ollama's default
+`keep_alive` (5 minutes), which holds the local model in RAM **after** it
+answers, so the larger model arrives to find it still there.
+
+MEASURED:
+- `keep_alive: 0` on `/v1/chat/completions` is **IGNORED** — the model was
+  still resident after the request.
+- `keep_alive: 0` on the **native** `/api/generate` **WORKS** — the model
+  unloads immediately.
+- With one model at a time: the 7B answered in **15.2 s** and unloaded; the
+  14B then answered in **37.8 s**. Both, sequentially, with neither
+  resident alongside the other.
+
+So the client gained an Ollama-**native** path (`Config::use_native_endpoint`,
+with `Config::keep_alive`), and the probe uses it with `keep_alive = 0`. The
+ladder now loads the two models **one at a time**.
+
 **A measurement that shaped the live test.** A dense wrist-watch document
 (28mm mainplate, 20mm cutout, hairspring, 15 club teeth) was too hard:
 the 7B was still generating at **1000 s**, having streamed 3,221 bytes.
@@ -629,30 +651,6 @@ document path rejects), not one that produces a **slow** one.
 A simpler ball-valve document was the right difficulty — the 7B answered
 it correctly in **929.9 s** (2,878 bytes, valid JSON, 3 sheets). So the
 valve is too EASY: no escalation fires.
-
-### Why the live two-model rescue is environment-limited here
-Measured on this machine:
-
-| fact | measurement |
-|---|---|
-| generation rate | ~3 bytes/s for JSON (~1 token/s) |
-| a 1,400-token answer | ~4,500 bytes → **~1,500 s** |
-| the watch document | still generating at 1,000 s (3,221 bytes) |
-| the valve document | completed in 929.9 s (2,878 bytes) |
-| the 14B | ~10 GB resident — it cannot coexist with the 7B in the free RAM |
-| the machine | 12 cores, load average 5.9, with a game pinned at 99.9% CPU |
-
-So a live rescue run needs **two sequential model loads** (unload the 7B,
-load the 14B) and **~25 minutes per document** — and the ladder's design
-holds *both* models' worth of memory during an escalation, which is exactly
-what does not fit.
-
-**The honest status:** the rescue MECHANIC is proven deterministically
-(21 checks, and proven to fail when the ladder is broken). The live
-two-model BEHAVIOUR is **not yet demonstrated on this machine**, and the
-blocker is the machine's memory and CPU contention, not the code.
-
-→ `procedural-surface-engine` → `references/llm-retrieval-corpus.md`.
 
 ### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner

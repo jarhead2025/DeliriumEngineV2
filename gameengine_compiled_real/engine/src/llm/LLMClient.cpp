@@ -11,9 +11,12 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <sstream>
+#include <thread>
+#include <utility>   // std::pair (the payload builders' history type)
 
 // WHY NO nlohmann: CMake declares nlohmann_json OPTIONAL, but this file
 // sits in the engine/src/*.cpp GLOB -- so an unconditional include would
@@ -120,6 +123,30 @@ bool WriteAll(int fd, const char* data, size_t len) {
     return true;
 }
 
+// The Content-Length VALUE from a header block, or 0 if there is none.
+//
+// WHY A HELPER: the offset must skip the whole header name AND its colon
+// AND any spaces. "Content-Length:" is exactly 15 characters, so
+// `find(...) + 15` points AT the colon -- and `strtoul(": 412")` returns 0.
+//
+// MEASURED: that off-by-one made the client's native-endpoint path read
+// only the first packet of the body, fail to parse the truncated JSON, and
+// report "the model returned nothing" -- a TRANSPORT failure for a server
+// that had answered perfectly, after the model had spent MINUTES
+// generating. The GET path survived it only because it falls back to
+// "read until close" when the length is 0.
+//
+// One definition, so the two call sites cannot drift again.
+size_t ContentLengthOf(const std::string& headers) {
+    const size_t at = headers.find("Content-Length:");
+    if (at == std::string::npos) return 0;
+    // "Content-Length:" is 15 characters, so `at + 15` points AT the
+    // colon; `at + 16` is the first character AFTER it.
+    const char* p = headers.c_str() + at + 16;
+    while (*p == ' ' || *p == '\t') ++p;
+    return size_t(std::strtoul(p, nullptr, 10));
+}
+
 // Read the whole response body. Handles chunked transfer-encoding (which
 // Ollama's SSE endpoint uses) and Content-Length.
 std::string ReadResponse(int fd, bool* ok, std::string* error) {
@@ -156,7 +183,7 @@ std::string ReadResponse(int fd, bool* ok, std::string* error) {
         bool have_clen = false;
         const size_t cl = headers.find("Content-Length:");
         if (cl != std::string::npos) {
-            clen = size_t(std::strtoul(headers.c_str() + cl + 15, nullptr, 10));
+            clen = ContentLengthOf(headers);
             have_clen = true;
         }
         while (true) {
@@ -209,6 +236,35 @@ std::string ReadResponse(int fd, bool* ok, std::string* error) {
         decoded.append(body, pos, csize);
         pos += csize + 2;   // skip the trailing CRLF
     }
+}
+
+// Decode a CHUNKED body that has already been read into memory.
+//
+// Format: <hex-size>\r\n<data>\r\n ... 0\r\n\r\n
+//
+// WHY A SEPARATE BUFFER-BASED HELPER: the socket-based decoder below needs
+// to READ more bytes when a chunk is incomplete, but the native path has
+// already read the whole reply. And the native endpoint's framing DEPENDS
+// ON THE REPLY SIZE -- MEASURED: a short answer (413 bytes) comes back
+// with "Content-Length", while a long answer (2,339 bytes) comes back
+// with "Transfer-Encoding: chunked". A client that handles only one of
+// them fails on exactly half the replies, and it fails as "the model
+// returned nothing" -- because the chunk framing is still in the bytes
+// and the JSON parse fails.
+std::string DecodeChunkedBuffer(const std::string& body) {
+    std::string decoded;
+    size_t pos = 0;
+    while (true) {
+        const size_t eol = body.find("\r\n", pos);
+        if (eol == std::string::npos) break;     // incomplete -> stop
+        const unsigned long csize = std::strtoul(body.c_str() + pos, nullptr, 16);
+        pos = eol + 2;
+        if (csize == 0) return decoded;          // end of the body
+        if (body.size() < pos + csize) break;     // incomplete -> stop
+        decoded.append(body, pos, csize);
+        pos += csize + 2;                        // skip the trailing CRLF
+    }
+    return decoded;
 }
 
 // A simple HTTP GET. Returns the body.
@@ -273,6 +329,66 @@ std::string ExtractDeltaText(const std::string& chunk_json) {
     return ChatTextFrom(chunk_json);
 }
 
+// The OLLAMA-NATIVE payload for /api/generate.
+//
+// It is NOT the OpenAI shape: a flat "prompt" (plus an optional "system"),
+// and "options" for the sampling parameters.
+//
+// WHY IT EXISTS: the native endpoint HONOURS "keep_alive", so the model
+// unloads when it answers. The OpenAI-compatible endpoint ignores it --
+// MEASURED: after a request with "keep_alive": 0 the model was still
+// resident. That is what makes the escalation ladder possible on a machine
+// that cannot hold both models at once (see Config::use_native_endpoint).
+std::string BuildNativePayload(const Config& cfg,
+                               const std::string& user_message,
+                               const std::vector<std::pair<std::string, std::string>>& history) {
+    std::string body = "{\"model\":\"";
+    body += JsonEscape(cfg.model);
+    body += "\"";
+    if (!cfg.system.empty()) {
+        body += ",\"system\":\"";
+        body += JsonEscape(cfg.system);
+        body += "\"";
+    }
+    // The native endpoint has no multi-turn "messages" array; the history
+    // is folded into the prompt as labelled turns. (The learner never sends
+    // history -- the escalation prompt is SELF-CONTAINED -- so this path is
+    // for completeness.)
+    if (!history.empty()) {
+        body += ",\"prompt\":\"";
+        for (const auto& kv : history) {
+            body += JsonEscape(kv.first);
+            body += ": ";
+            body += JsonEscape(kv.second);
+            body += "\\n\\n";
+        }
+        body += JsonEscape(user_message);
+        body += "\"";
+    } else {
+        body += ",\"prompt\":\"";
+        body += JsonEscape(user_message);
+        body += "\"";
+    }
+    body += ",\"stream\":false,\"keep_alive\":";
+    body += std::to_string(cfg.keep_alive);
+    body += ",\"options\":{\"temperature\":";
+    body += std::to_string(cfg.temperature);
+    body += ",\"num_predict\":";
+    body += std::to_string(cfg.max_tokens);
+    body += "}}";
+    return body;
+}
+
+// The "response" field of a native /api/generate reply.
+std::string ExtractNativeText(const std::string& body) {
+    DeliRium::AI::JsonValue j;
+    std::string why;
+    if (!DeliRium::AI::ParseJson(body, j, why)) return {};
+    const DeliRium::AI::JsonValue* r = j.Find("response");
+    if (r && r->IsString()) return r->text;
+    return {};
+}
+
 // --- client ----------------------------------------------------------------
 LLMClient::LLMClient(const Config& cfg) : cfg_(cfg) {}
 
@@ -294,7 +410,12 @@ bool LLMClient::Send(const std::string& user_message,
     }
     cancel_ = false;
     state_.store(State::Connecting, std::memory_order_release);
-    const std::string payload = BuildChatPayload(cfg_, user_message, history);
+    // The payload shape depends on the endpoint: the OpenAI-compatible one
+    // takes "messages", the native one takes a flat "prompt" (and honours
+    // keep_alive).
+    const std::string payload = cfg_.use_native_endpoint
+        ? BuildNativePayload(cfg_, user_message, history)
+        : BuildChatPayload(cfg_, user_message, history);
     worker_ = std::thread([this, payload]() { Run(payload); });
     return true;
 }
@@ -334,6 +455,116 @@ void LLMClient::Run(const std::string& payload) {
         return;
     }
     state_.store(State::Streaming, std::memory_order_release);
+
+    // -----------------------------------------------------------------------
+    // THE OLLAMA-NATIVE PATH (/api/generate).
+    //
+    // It is a SEPARATE branch because the wire protocol differs: the native
+    // endpoint answers with ONE JSON body (no SSE, no chunking), and it
+    // honours "keep_alive" so the model can UNLOAD when it answers -- which
+    // is what lets the escalation ladder run two models SEQUENTIALLY on a
+    // machine that cannot hold both at once.
+    //
+    // (MEASURED: /v1/chat/completions ignores keep_alive -- the model was
+    // still resident after a "keep_alive": 0 request. /api/generate honours
+    // it -- the model unloaded immediately.)
+    // -----------------------------------------------------------------------
+    if (cfg_.use_native_endpoint) {
+        std::string req = "POST /api/generate HTTP/1.1\r\n";
+        req += "Host: " + cfg_.host + ":" + std::to_string(cfg_.port) + "\r\n";
+        req += "User-Agent: Delirium/1.0\r\n";
+        req += "Content-Type: application/json\r\n";
+        req += "Content-Length: " + std::to_string(payload.size()) + "\r\n";
+        req += "Connection: close\r\n\r\n";
+        req += payload;
+        if (!WriteAll(fd, req.data(), req.size())) {
+            ::close(fd);
+            std::lock_guard<std::mutex> lk(mu_);
+            error_ = "failed to send the request";
+            state_.store(State::Failed, std::memory_order_release);
+            return;
+        }
+
+        // Read the WHOLE body. The native endpoint answers in one go, so
+        // there is nothing to stream -- but the read must still tolerate a
+        // long silence (the server is THINKING), with the same
+        // retry-on-timeout rule as the SSE path.
+        std::string raw;
+        char nbuf[8192];
+        size_t hdr_end = std::string::npos;
+        {
+            const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
+            for (int waits = 0; waits < max_waits && hdr_end == std::string::npos; ++waits) {
+                const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
+                if (n > 0) {
+                    raw.append(nbuf, size_t(n));
+                    hdr_end = raw.find("\r\n\r\n");
+                    if (hdr_end != std::string::npos) break;
+                    continue;
+                }
+                if (n == 0) break;                 // the peer closed
+                if (errno == EINTR) continue;
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }
+        }
+        if (hdr_end == std::string::npos) {
+            ::close(fd);
+            std::lock_guard<std::mutex> lk(mu_);
+            error_ = "no response headers";
+            state_.store(State::Failed, std::memory_order_release);
+            return;
+        }
+        // The body. The framing DEPENDS ON THE REPLY SIZE (MEASURED):
+        //   - a short answer (413 bytes) -> "Content-Length: 413"
+        //   - a long answer (2,339 bytes) -> "Transfer-Encoding: chunked"
+        // So BOTH must be handled, and a reply with neither must be read
+        // until the connection closes.
+        const std::string headers = raw.substr(0, hdr_end);
+        std::string body = raw.substr(hdr_end + 4);
+        const bool chunked = headers.find("Transfer-Encoding: chunked") != std::string::npos ||
+                             headers.find("transfer-encoding: chunked") != std::string::npos;
+        const size_t cl = ContentLengthOf(headers);
+        if (chunked) {
+            // Read the REST of the body first (the chunks may not have all
+            // arrived with the headers), then decode.
+            while (true) {
+                const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
+                if (n <= 0) break;
+                body.append(nbuf, size_t(n));
+            }
+            body = DecodeChunkedBuffer(body);
+        } else if (cl > body.size()) {
+            // Content-Length body: read exactly that many bytes.
+            std::string rest;
+            rest.reserve(cl - body.size());
+            while (body.size() + rest.size() < cl) {
+                const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
+                if (n <= 0) break;
+                rest.append(nbuf, size_t(n));
+            }
+            body += rest;
+        } else if (cl == 0) {
+            // NO length and NOT chunked: read until the connection closes.
+            // (Ollama sends "Connection: close", so this terminates.)
+            while (true) {
+                const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
+                if (n <= 0) break;
+                body.append(nbuf, size_t(n));
+            }
+        }
+        ::close(fd);
+        const std::string text = ExtractNativeText(body);
+        {
+            std::lock_guard<std::mutex> lk(mu_);
+            partial_ = text;
+            final_ = text;
+            has_response_ = true;
+            if (text.empty()) error_ = "the model returned nothing";
+        }
+        state_.store(text.empty() ? State::Failed : State::Done,
+                     std::memory_order_release);
+        return;
+    }
 
     std::string req = "POST /v1/chat/completions HTTP/1.1\r\n";
     req += "Host: " + cfg_.host + ":" + std::to_string(cfg_.port) + "\r\n";

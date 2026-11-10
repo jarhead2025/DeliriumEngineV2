@@ -242,6 +242,21 @@ int main(int argc, char** argv) {
 
     LLM::Config cfg;
     cfg.host = host; cfg.port = port; cfg.model = model;
+    // The NATIVE endpoint + keep_alive 0.
+    //
+    // WHY: the escalation ladder is SEQUENTIAL -- the local attempt
+    // finishes before the larger one is asked -- so the two models never
+    // need to be resident AT ONCE. But Ollama's default keep_alive (5
+    // minutes) holds the local model in RAM after it answers, so the
+    // larger one arrives to find it there: 8.5 GB + 9.9 GB on a 31 GB
+    // machine, which thrashes.
+    //
+    // MEASURED: /v1/chat/completions IGNORES keep_alive (the model stayed
+    // resident); /api/generate HONOURS it (the model unloaded). So the
+    // ladder uses the native endpoint with keep_alive 0, and the two
+    // models are loaded one at a time.
+    cfg.use_native_endpoint = true;
+    cfg.keep_alive = 0;
 
     // The CORPUS is LOADED before the documents are interpreted, so the
     // FIRST document in this run already benefits from every document

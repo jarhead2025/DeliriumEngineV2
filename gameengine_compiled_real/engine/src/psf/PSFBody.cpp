@@ -749,12 +749,14 @@ void PSFBody::FlushToGPU(void* q) {
     // body grew past the device capacity (live splits): full re-upload
     const bool grew = ab > fs->anchors_bytes || sb > fs->surfaces_bytes;
     if (grew) {
-        clEnqueueWriteBuffer(cq, fs->anchors_buf, CL_FALSE, 0, ab,
+        // BLOCKING (CL_TRUE): the source is the body's own vector, which a
+        // live split can reallocate (see the partial-upload path below).
+        clEnqueueWriteBuffer(cq, fs->anchors_buf, CL_TRUE, 0, ab,
                              A.data(), 0, nullptr, nullptr);
-        clEnqueueWriteBuffer(cq, fs->surfaces_buf, CL_FALSE, 0, sb,
+        clEnqueueWriteBuffer(cq, fs->surfaces_buf, CL_TRUE, 0, sb,
                              S.data(), 0, nullptr, nullptr);
         if (fs->stitch_buf && !stitch_blob.empty())
-            clEnqueueWriteBuffer(cq, fs->stitch_buf, CL_FALSE, 0,
+            clEnqueueWriteBuffer(cq, fs->stitch_buf, CL_TRUE, 0,
                                  stitch_blob.size(), stitch_blob.data(),
                                  0, nullptr, nullptr);
         fs->anchors_bytes = ab;
@@ -772,10 +774,12 @@ void PSFBody::FlushToGPU(void* q) {
         // every neighbor, so the anchor blob goes up whole (same policy
         // as the renderer's full-upload path). Stitch rides along: seam
         // restitching happens in the same pass as anchor edits.
-        clEnqueueWriteBuffer(cq, fs->anchors_buf, CL_FALSE, 0, ab,
+        // BLOCKING (CL_TRUE): the source is the body's own vector, which a
+        // live split can reallocate (see the partial-upload path below).
+        clEnqueueWriteBuffer(cq, fs->anchors_buf, CL_TRUE, 0, ab,
                              A.data(), 0, nullptr, nullptr);
         if (fs->stitch_buf && !stitch_blob.empty())
-            clEnqueueWriteBuffer(cq, fs->stitch_buf, CL_FALSE, 0,
+            clEnqueueWriteBuffer(cq, fs->stitch_buf, CL_TRUE, 0,
                                  stitch_blob.size(), stitch_blob.data(),
                                  0, nullptr, nullptr);
         fs->flush_gen = anchor_gen;
@@ -788,7 +792,15 @@ void PSFBody::FlushToGPU(void* q) {
     if (AnyDirty()) {
         for (uint32_t s = 0; s < S.size(); ++s) {
             if (!patches[s].Dirty()) continue;
-            clEnqueueWriteBuffer(cq, fs->surfaces_buf, CL_FALSE,
+            // BLOCKING (CL_TRUE): the source is `&S[s]`, a pointer INTO the
+            // body's surface vector -- and a live AMR split does
+            // `surface_blob.push_back(...)`, which REALLOCATES that vector.
+            // A non-blocking copy returns while the DMA still reads the old
+            // allocation, so the GPU can receive a half-updated record.
+            //
+            // The cost is one queue sync per DIRTY patch, and only when the
+            // body actually changed.
+            clEnqueueWriteBuffer(cq, fs->surfaces_buf, CL_TRUE,
                                  (size_t)s * 64, 64, &S[s],
                                  0, nullptr, nullptr);
         }

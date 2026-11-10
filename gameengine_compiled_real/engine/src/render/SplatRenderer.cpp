@@ -919,7 +919,29 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
             }
             const bool full_upload = grew || body_changed || body.AnchorsDirty();
             if (full_upload) {
-                CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_anchors, CL_FALSE, 0, A.size()*64, A.data(), 0, nullptr, nullptr));
+                // BLOCKING writes (CL_TRUE), not CL_FALSE.
+                //
+                // WHY: a non-blocking write returns to the host while the
+                // DMA still reads the HOST VECTOR. Those vectors are the
+                // body's own blobs, and a live AMR split does
+                // `surface_blob.push_back(...)` -- which REALLOCATES. The
+                // DMA would then read freed memory, and the GPU would bake
+                // surfels from a half-updated record set.
+                //
+                // The symptom is exactly what the render gate reports: two
+                // runs of the SAME binary on the SAME input produce
+                // DIFFERENT images -- measured 14.9% to 19.0% of the
+                // viewport differing, with whole regions of the torus
+                // missing in one run (max channel delta 186).
+                //
+                // The sibling `buf_snorm` write below already uses CL_TRUE
+                // for this exact reason ("Local staging must survive a
+                // nonblocking copy"). These three are the same hazard: the
+                // source is a vector that the next frame can reallocate.
+                //
+                // The cost is one queue sync per upload -- and an upload
+                // happens only when the body CHANGED, not per frame.
+                CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_anchors, CL_TRUE, 0, A.size()*64, A.data(), 0, nullptr, nullptr));
                 {
                     const size_t stitch_bytes = St.empty() ? size_t(ns) * 8u : St.size();
                     if (St.empty()) {
@@ -927,7 +949,7 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
                         CLC(clEnqueueFillBuffer(q, (cl_mem)buf_stitch, &zero,
                                                 sizeof(zero), 0, stitch_bytes, 0, nullptr, nullptr));
                     } else {
-                        CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_stitch, CL_FALSE, 0, St.size(), St.data(), 0, nullptr, nullptr));
+                        CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_stitch, CL_TRUE, 0, St.size(), St.data(), 0, nullptr, nullptr));
                     }
                 }
                 // smooth per-anchor shading normals (parallel buffer, not the
@@ -955,7 +977,10 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
             if (grew || body_changed) {
                 // body_changed: the shared buffer still holds the PREVIOUS
                 // body's surface records -> full re-upload, not a partial flush.
-                CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_surfaces, CL_FALSE, 0, S.size()*64, S.data(), 0, nullptr, nullptr));
+                // BLOCKING (CL_TRUE): the source is the body's own vector,
+                // which a live split can reallocate (see the anchor upload
+                // above for the full argument).
+                CLC(clEnqueueWriteBuffer(q, (cl_mem)buf_surfaces, CL_TRUE, 0, S.size()*64, S.data(), 0, nullptr, nullptr));
                 body.ClearDirty();
             } else if (body.AnyDirty()) {
                 // partial upload: only dirty 64-byte records
