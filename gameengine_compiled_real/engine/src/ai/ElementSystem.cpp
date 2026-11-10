@@ -759,14 +759,59 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
         // SAME domain the patch-fit target uses (see SheetDomain).
         float hx = 0.f, hy = 0.f;
         SheetDomain(*sh.el, extent, hx, hy);
+        // THE POLAR SAMPLING (G21).
+        //
+        // A substance whose support is an ANNULUS (a torus) is sampled in
+        // POLAR coordinates: the grid's i runs AROUND the axis and the j
+        // runs ACROSS the tube. The grid is still N x N -- the cells are
+        // just placed on the annulus instead of on the square, so every
+        // cell lands on the support.
+        //
+        // MEASURED before: the fat torus wasted 38% of its samples and the
+        // thin one 65%. The waste was not free -- each wasted sample was
+        // written as a well-formed anchor at the bbox centre, which
+        // corrupted the mass distribution (G9) and inflated every upload.
+        //
+        // THE MAPPING: with the grid's (i, j) in [0,1]^2,
+        //     angle = 2*pi*i,  radius = r_min + (r_max - r_min)*j
+        // so the ANGULAR index wraps around (and its last cell joins its
+        // first) and the RADIAL index crosses the tube.
+        //
+        // WHY i IS THE ANGLE: the grid's i axis is the one that WRAPS, so
+        // its connectivity must be periodic -- handled below, where the
+        // +i neighbour of the last column is the first column.
+        const bool polar = sh.el->substance && sh.el->substance->IsPolar();
+        float r_min = 0.f, r_max = 1.f;
+        if (polar) sh.el->substance->PolarRadius(r_min, r_max);
         for (int j = 0; j < N; ++j)
             for (int i = 0; i < N; ++i) {
                 const float u = i / float(N - 1), v = j / float(N - 1);
                 // The sheet's local (x, y): the grid is the sheet's OWN
                 // domain, so a sheet with its own origin and scale samples
                 // its own region.
-                const float lx = (u - 0.5f) * (hx * 2.0f);
-                const float ly = (v - 0.5f) * (hy * 2.0f);
+                float lx = (u - 0.5f) * (hx * 2.0f);
+                float ly = (v - 0.5f) * (hy * 2.0f);
+                if (polar) {
+                    // THE ANGULAR AXIS MUST NOT DUPLICATE ITS ENDPOINT.
+                    //
+                    // The grid's i runs 0..N-1 around the FULL circle, so
+                    // i = N-1 would land at angle 2*pi -- the SAME point as
+                    // i = 0. That duplicated column put an anchor exactly
+                    // on the tube's inner rim (r = major - minor), which
+                    // the hole test correctly flags as "an anchor inside
+                    // the hole".
+                    //
+                    // The fix: the angular parameter runs over N-1
+                    // intervals, so the cells are CENTRES of equal arcs
+                    // and the last one stops just short of 2*pi. The
+                    // connectivity WRAPS (handled below), so the tube is
+                    // still closed around the axis.
+                    const float ang = 6.283185307179586f *
+                        ((float(i) + 0.5f) / float(N));
+                    const float rad = r_min + (r_max - r_min) * v;
+                    lx = rad * std::cos(ang);
+                    ly = rad * std::sin(ang);
+                }
                 const Field f = SheetAt(sh, lx, ly);
                 const size_t id = si * per + (size_t)j * N + i;
                 // weight==0: no surface here (e.g. outside a bounded
@@ -859,17 +904,27 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     for (size_t si = 0; si < nsheets; ++si) {
         const uint16_t base = (uint16_t)(si * per);
         const uint32_t bi = (sheets[si].bone >= 0) ? uint32_t(sheets[si].bone) : 0xFFFFFFFFu;
+        // THE POLAR SHEET'S ANGULAR AXIS WRAPS (G21): the grid's i runs
+        // AROUND the axis, so the last column's +i neighbour is the FIRST
+        // column -- otherwise the seam at angle 0 would have no
+        // connectivity across it, and the tube would split there.
+        const bool polar = sheets[si].el->substance &&
+                           sheets[si].el->substance->IsPolar();
         for (int j = 0; j < N; ++j)
             for (int i = 0; i < N; ++i) {
                 const size_t id = si * per + (size_t)j * N + i;
                 if (!ok[id]) continue;                 // out-of-support: no neighbours
                 AnchorRecord& a = out.anchors[id];
                 int slot = 0;
-                const int nb[4][2] = {{i+1,j}, {i-1,j}, {i,j+1}, {i,j-1}};
+                int nb[4][2] = {{i+1,j}, {i-1,j}, {i,j+1}, {i,j-1}};
                 for (const auto& d : nb) {
                     if (slot >= 4) break;
-                    if (d[0] < 0 || d[0] >= N || d[1] < 0 || d[1] >= N) continue;
-                    const size_t nid = si * per + (size_t)d[1] * N + d[0];
+                    int ni = d[0], nj = d[1];
+                    // the angular wrap
+                    if (polar && ni >= N) ni = 0;
+                    if (polar && ni < 0)  ni = N - 1;
+                    if (ni < 0 || ni >= N || nj < 0 || nj >= N) continue;
+                    const size_t nid = si * per + (size_t)nj * N + ni;
                     if (!ok[nid]) continue;
                     // Only connect within the same bone.
                     if (out.anchors[nid].bone_index != bi) continue;
@@ -944,7 +999,28 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                     // the difference between the two domains.
                     const float lx = (wu - 0.5f) * (phx * 2.0f);
                     const float ly = (wv - 0.5f) * (phy * 2.0f);
-                    const Field f = SheetAt(sheets[si], lx, ly);
+                    // THE POLAR SAMPLING MUST BE REPEATED HERE (G21).
+                    //
+                    // The patch-fit target is evaluated at the patch's own
+                    // (u, v), and it MUST land on the same surface the
+                    // patch's corners occupy. If the anchors were sampled
+                    // in polar coordinates and the target is not, the fit
+                    // targets a different part of the sheet -- and that is
+                    // EXACTLY the "dandelion spokes" bug (the patch's
+                    // displaced position comes from the anchor positions
+                    // but its SHAPE is fitted to a target elsewhere).
+                    float tx = lx, ty = ly;
+                    if (sheets[si].el->substance &&
+                        sheets[si].el->substance->IsPolar()) {
+                        float pr_min = 0.f, pr_max = 1.f;
+                        sheets[si].el->substance->PolarRadius(pr_min, pr_max);
+                        const float ang = 6.283185307179586f *
+                            ((wu * float(N - 1)) + 0.5f) / float(N);
+                        const float rad = pr_min + (pr_max - pr_min) * wv;
+                        tx = rad * std::cos(ang);
+                        ty = rad * std::sin(ang);
+                    }
+                    const Field f = SheetAt(sheets[si], tx, ty);
                     // target in the SAME frame as bil (dequant = world,
                     // i.e. field point + placement offset)
                     const double h = (f.point.x + world_offset.x - bil.x) * nf.x
@@ -1041,11 +1117,25 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
     for (const Sheet& sh : sheets) {
         float hx = 0.f, hy = 0.f;
         SheetDomain(*sh.el, extent, hx, hy);
+        // THE POLAR SAMPLING MUST BE REPEATED HERE TOO (G21): the bbox must
+        // span exactly the points the baker sampled, or the dequantization
+        // uses a different box than the quantization did.
+        const bool polar = sh.el->substance && sh.el->substance->IsPolar();
+        float pr_min = 0.f, pr_max = 1.f;
+        if (polar) sh.el->substance->PolarRadius(pr_min, pr_max);
     for (int j = 0; j < N; ++j)
         for (int i = 0; i < N; ++i) {
             const float u = i / float(N - 1), v = j / float(N - 1);
-            const Field f = SheetAt(sh, (u - 0.5f) * (hx * 2.0f),
-                                       (v - 0.5f) * (hy * 2.0f));
+            float lx = (u - 0.5f) * (hx * 2.0f);
+            float ly = (v - 0.5f) * (hy * 2.0f);
+            if (polar) {
+                const float ang = 6.283185307179586f *
+                    ((float(i) + 0.5f) / float(N));
+                const float rad = pr_min + (pr_max - pr_min) * v;
+                lx = rad * std::cos(ang);
+                ly = rad * std::sin(ang);
+            }
+            const Field f = SheetAt(sh, lx, ly);
             // MUST match Bake's bbox: out-of-support samples (weight==0) are
             // collapsed to the origin by the sheet evaluation and are excluded
             // there, so they must be excluded here too or dequant uses a

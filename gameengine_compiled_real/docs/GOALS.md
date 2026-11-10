@@ -1050,31 +1050,122 @@ classic path's 3.385 — and the area path passes the gate's budget.
 
 ---
 
-## G20. The closed body's representation — `TODO`
+## G20. The closed body's representation — `DONE`
 
-The closed body is currently **two sheets that overlap at a rim** (the rim
-margin, fixes 26/43). That closes the gap and kills the knife-edge, but it
-costs a **thin double-surface band** at the seam, and the body is not a
-single watertight surface.
+**The decision (the user's, 2026-11-10):** *"we can save compute power by
+having overlapping surfaces where their seams never cross, when computing both
+they average out."* So G20 is **not** "eliminate the overlap" — it is
+**PROVE the overlap is safe**. That is the second of the two "done when"
+options, and it is now done and measured.
 
-**Done when:** the seam band is either eliminated (the sheets share an edge
-rather than overlapping) or is explicitly accepted as the "average out at the
-edges" rule and documented as the cost. The second is a legitimate answer;
-the first is not yet attempted.
+**Landed** — `tests/validate_rim_overlap.cpp` (10 checks, 0 failures, at
+grid 32 and 48):
+
+| property | measured |
+|---|---|
+| the two rims are **coincident** | nearest-neighbour distance **0.000000** |
+| their **normals agree** | worst dot **1.0000** |
+| their **colours match** | **0** mismatches |
+| the cost is bounded | **13.9%** / **12.8%** of the anchors |
+
+**WHY IT WORKS, mechanistically.** The rim is a flat annulus at `z = 0` on
+**both** sheets. The flip is in **Z**; the rim is in the **XY plane** — so
+the flip does **not** mirror the rim. Both sheets' rims carry the **same**
+normal (the footprint's outward gradient), so the overlap is shaded as **one
+continuous surface**, and the averaging averages two surfaces that mean the
+same thing.
+
+**THE DEPTH TIE, AND WHY IT IS BENIGN.** Two coplanar surfaces at the same
+depth are exactly the case the depth-tie diagnostic (fix 33) exists for: if
+they carried different colours, the `atom_min` winner would be arbitrary.
+They carry the **same** colour, so the tie is between two surfaces that
+would render **identically** — the winner is irrelevant.
+
+**The measurement that proved it.** The first version of this gate reported
+*"the rims do not overlap"*. They did — the **classification** was wrong: it
+bucketed the seam anchors by the **sign of z** (upper if `z >= 0`, lower if
+`z < 0`), but **both** sheets' rims are at *exactly* `z = 0`, so every rim
+anchor landed in the "upper" bucket and the lower bucket was empty.
+
+> **A measurement can be wrong without the thing being wrong.** The
+> difference is whether you checked the *classification* or only the
+> *number*.
+
+**The cost, stated plainly.** The body is not a single watertight surface:
+there is a thin double-surface band at the seam, 12.8% of the anchors. That
+is the accepted cost of the overlapping approach.
 
 ---
 
-## G21. The support-aware grid, generalised — `WIP`
+## G21. The support-aware grid, generalised — `DONE`
 
 `ISubstance::SamplingRefinement()` (fix 46) lets a substance ask for a finer
-grid. It is currently a **factor applied to a square grid**, so an annular
+grid, but it is a **factor applied to a square grid** — so an annular
 support still spends most of its cells on the hole.
 
-**Done when:** either the grid can be shaped to the support (an annulus of
-cells rather than a square with a hole in it), or the factor is measured
-sufficient for every substance in the vocabulary. The current state: the
-factor is sufficient for the torus (8.2 cells across the tube) and the
-workspace's fat torus needs none.
+**MEASURED first (the waste, at grid 48 on a 1.0 canvas):**
+
+| substance | in-support | **wasted** |
+|---|---|---|
+| plane / gaussian | 100.0% | 0.0% |
+| ellipsoid 0.5 | 85.4% | 14.6% |
+| rod 0.5 × 0.02 | 75.3% | 24.7% |
+| **torus 0.32/0.12** | **62.0%** | **38.0%** |
+| **torus 0.40/0.06** | **34.7%** | **65.3%** |
+
+The waste was **not free**: every wasted sample was written as a
+well-formed anchor at the bbox centre (the out-of-support placeholder), so
+it cost memory, upload bandwidth, and — because the mass calculation
+counted those placeholders — a **wrong inertia tensor** (that was G9: 970 of
+1024 anchors for a rod sat at one point).
+
+**The fix — a POLAR support.** A substance whose support is an annulus
+declares it (`IsPolar()` / `PolarRadius()`), and the baker samples it in
+**polar coordinates**: the grid's `i` runs *around* the axis and its `j`
+runs *across* the tube. Every cell then lands on the support. The grid is
+still N×N — the cells are just *placed* on the annulus instead of on the
+square.
+
+**Result (the baked body's placeholders):**
+
+| substance | before | **after** |
+|---|---|---|
+| torus 0.32/0.12 | 38.0% | **3.5%** |
+| torus 0.40/0.06 | 65.3% | **2.9%** |
+| ellipsoid (did not opt in) | 16.3% | **16.3%** (unchanged) |
+
+**Landed** — `tests/validate_support_grid.cpp` (11 checks, 0 failures):
+the waste is under 8%; the geometry is still a torus (r spans
+[0.2000, 0.4400] = the tube's true extent, z = the tube's half-height, **0**
+anchors inside the hole); the angular axis does not duplicate its endpoint;
+a rectangular substance is untouched; and the connectivity **wraps** around
+the axis (46 wrap links — one per radial row).
+
+**Three bugs found while building it:**
+1. **The angular axis duplicated its endpoint.** `i = N-1` landed at angle
+   2π — the *same point* as `i = 0` — which put an anchor exactly on the
+   tube's inner rim, which the hole test correctly flags as "an anchor inside
+   the hole". The fix: the cells are the **centres** of equal arcs
+   (`(i + 0.5) / N`), so none lands on angle 0 or 2π.
+2. **The patch-fit target had to be re-mapped too.** The anchors were
+   sampled in polar coordinates but the fit target was not — which is
+   **exactly** the "dandelion spokes" bug (the patch's displaced position
+   comes from the anchor positions but its shape is fitted to a target
+   elsewhere). The polar mapping is now repeated at all three sites:
+   the anchor sampling, the patch-fit target, and the bbox derivation.
+3. **The connectivity had to wrap.** The polar grid's `i` axis is periodic,
+   so the last column's `+i` neighbour is the first column — otherwise the
+   tube is split at angle 0 by a crack running its whole length.
+
+**And the gate's own check E was wrong twice.** "Are the neighbours
+collinear?" counts every ordinary neighbour, and "is the angle one step
+apart?" counts the ordinary step in the other direction too — **both passed
+with the wrap disabled**. The discriminator has to be the **index**: a wrap
+link is exactly one whose two indices differ by N−1 in the `i` direction.
+
+> **A gate that has never failed is not evidence.** Break the thing and
+> watch the gate catch it — and if it does *not*, the *gate* is what is
+> broken, not the thing.
 
 ---
 

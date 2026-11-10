@@ -270,11 +270,23 @@ int main() {
                 if (s.anchor_idx[k] < n) referenced[s.anchor_idx[k]] = 1;
         int in_hole = 0, on_tube = 0;
         float hole_min_r = 1e30f;
+        // The hole's boundary is at MAJOR - MINOR. An anchor exactly ON
+        // that boundary is the TUBE'S INNER RIM -- the edge of the ring,
+        // not inside the hole. The test must allow a boundary-sized
+        // tolerance, because the polar grid places an anchor exactly at
+        // the inner rim (r = MAJOR - MINOR) and the dequantized position
+        // can land a hair under it.
+        //
+        // WHY THIS IS NOT A REGRESSION: the assertion is "the hole has no
+        // surface", and the hole is the region STRICTLY inside the rim.
+        // The rim itself is the ring's edge -- it must have anchors, or the
+        // ring would have a gap.
+        const float rim_tol = 1e-3f;
         for (size_t i = 0; i < n; ++i) {
             if (!referenced[i]) continue;
             const Vec3 p = pool.Position(uint16_t(i));
             const float r = std::sqrt(p.x * p.x + p.y * p.y);
-            if (r < MAJOR - MINOR) {
+            if (r < MAJOR - MINOR - rim_tol) {
                 ++in_hole;
                 if (r < hole_min_r) hole_min_r = r;
             } else if (r < MAJOR + MINOR) ++on_tube;

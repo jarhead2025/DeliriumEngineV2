@@ -145,6 +145,52 @@ public:
     // plane, the heightfield -- has no rim, because it has no edge to
     // extend.
     virtual float RimMargin() const { return 0.f; }
+
+    // -------------------------------------------------------------------------
+    // THE SUPPORT'S SHAPE.
+    //
+    // WHY THIS EXISTS (G21): the sampling grid is a SQUARE, so a substance
+    // whose support is not square-shaped spends most of its cells on
+    // nothing. MEASURED at grid 48 on a 1.0 canvas:
+    //
+    //   plane / gaussian    in-support 100.0%   wasted  0.0%
+    //   ellipsoid 0.5                85.4%          14.6%
+    //   rod 0.5 x 0.02               75.3%          24.7%
+    //   torus 0.32/0.12              62.0%          38.0%
+    //   torus 0.40/0.06              34.7%          65.3%
+    //
+    // Every wasted sample is not free: the baker writes it as a
+    // WELL-FORMED anchor at the bbox centre (the out-of-support
+    // placeholder), so it costs memory, upload bandwidth, and -- because
+    // the mass calculation counted those placeholders -- a WRONG inertia
+    // tensor (that was G9: 970 of 1024 anchors for a rod sat at one
+    // point, and its inertia tensor was 25x too small).
+    //
+    // A substance whose support is an ANNULUS (a torus) can say so here,
+    // and the baker then samples in POLAR coordinates: the angular
+    // direction around the axis, and the radial direction across the
+    // tube. Every cell then lands on the support.
+    //
+    // THE CONTRACT: `IsPolar()` says "sample me in polar coordinates", and
+    // then `PolarRadius(r_min, r_max)` gives the radial extent of the
+    // support. The baker maps the grid's (i, j) to (angle, radius) so
+    // that the ANGULAR index runs around the axis and the RADIAL index
+    // runs across the tube.
+    //
+    // A substance that does not override this keeps the rectangular
+    // sampling, unchanged.
+    virtual bool IsPolar() const { return false; }
+    // The radial extent of the support, for a polar substance: the inner
+    // and outer radius of the annulus.
+    virtual void PolarRadius(float& r_min, float& r_max) const {
+        r_min = 0.f; r_max = 1.f;
+    }
+    // The angular step: how many cells the baker should place around the
+    // full circle. A polar grid's resolution has TWO aspects (around and
+    // across), and the angular one must be fine enough that the tube's
+    // cross-section is not faceted. The default returns 0, meaning "use
+    // the grid's own N".
+    virtual int PolarAngularCells(int n_radial) const { return 0; }
 };
 
 // A flat plane z = 0 (infinite domain), facing +Z.
@@ -242,6 +288,50 @@ public:
     float SamplingRefinement() const override {
         const float need = 8.5f * (major_ + minor_) / std::max(1e-6f, minor_);
         return std::max(1.f, need / 48.f);
+    }
+
+    // -------------------------------------------------------------------------
+    // THE POLAR SUPPORT (G21).
+    //
+    // A torus's support is an ANNULUS, so a square grid spends most of its
+    // cells on the hole: measured at grid 48, the fat torus wastes 38% of
+    // its samples and the thin one 65%. The baker can sample the torus in
+    // POLAR coordinates instead -- around the axis and across the tube --
+    // and every cell then lands on the support.
+    //
+    // WHY THIS MATTERS BEYOND WASTE: every wasted sample is written as a
+    // well-formed anchor at the bbox centre, so the waste also corrupts the
+    // mass distribution (G9) and inflates every upload.
+    bool IsPolar() const override { return true; }
+    void PolarRadius(float& r_min, float& r_max) const override {
+        // The tube spans [major - minor, major + minor] in radius. The
+        // INNER radius is where the hole's edge is, so the tube's inner rim
+        // is resolved exactly.
+        r_min = std::max(0.f, major_ - minor_);
+        r_max = major_ + minor_;
+    }
+    // The angular step. The tube's cross-section must not be faceted, so
+    // there must be enough cells around the circle for the polygonal
+    // approximation of the circle to stay within a fraction of the tube's
+    // radius. The chord error of an N-gon of radius R is R*(1 - cos(pi/N)),
+    // and the requirement is that it stays under 2% of the tube's radius:
+    //
+    //     R*(1 - cos(pi/N)) < 0.02 * minor
+    //
+    // With R = major + minor, solving for N gives a usable bound; the
+    // factor of 2 below is the margin that keeps it true after the
+    // integer rounding of the cell count.
+    int PolarAngularCells(int n_radial) const override {
+        const float R = major_ + minor_;
+        // 1 - cos(pi/N) < 0.01 * minor / R  =>  cos(pi/N) > 1 - 0.01*minor/R
+        // Using the small-angle form 1 - cos(x) ~ x^2/2:
+        //     (pi/N)^2 / 2 < 0.01 * minor / R   =>   N > pi / sqrt(2*0.01*minor/R)
+        const float need = 3.14159265f /
+            std::sqrt(2.f * 0.01f * minor_ / std::max(1e-6f, R));
+        const int want = int(std::ceil(need * 2.f));
+        // At least as many angular cells as radial ones, so the tube is
+        // not under-resolved around the circle.
+        return std::max(n_radial * 2, want);
     }
 private:
     float major_, minor_;
