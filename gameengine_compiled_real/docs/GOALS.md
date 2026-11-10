@@ -657,6 +657,13 @@ MEASURED:
 So the client gained an Ollama-**native** path (`Config::use_native_endpoint`,
 with `Config::keep_alive`), and the probe uses it with `keep_alive = 0`.
 
+**And a timeout must NAME ITSELF.** An over-long request was correctly cut
+off by the deadline (MEASURED: a stub server that streams forever was
+stopped at **6.01 s**) but reported **"the model returned nothing"** — a
+generic message pointing at the MODEL when the fault was the CLOCK. Both
+paths now distinguish "the body was cut short" from "the body arrived whole
+and was empty".
+
 **Getting the test DOCUMENT right took two attempts.** The first document
 chosen to force a failure was a hemisphere shell — *"a curved dome ... and
 it has NO bottom and NO second surface"*. The 7B answered with ONE sheet
