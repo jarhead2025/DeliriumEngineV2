@@ -626,6 +626,34 @@ two are indistinguishable from the outside. A live rescue test needs a
 document that produces a **wrong answer** (the single-sheet failure the
 document path rejects), not one that produces a **slow** one.
 
+A simpler ball-valve document was the right difficulty — the 7B answered
+it correctly in **929.9 s** (2,878 bytes, valid JSON, 3 sheets). So the
+valve is too EASY: no escalation fires.
+
+### Why the live two-model rescue is environment-limited here
+Measured on this machine:
+
+| fact | measurement |
+|---|---|
+| generation rate | ~3 bytes/s for JSON (~1 token/s) |
+| a 1,400-token answer | ~4,500 bytes → **~1,500 s** |
+| the watch document | still generating at 1,000 s (3,221 bytes) |
+| the valve document | completed in 929.9 s (2,878 bytes) |
+| the 14B | ~10 GB resident — it cannot coexist with the 7B in the free RAM |
+| the machine | 12 cores, load average 5.9, with a game pinned at 99.9% CPU |
+
+So a live rescue run needs **two sequential model loads** (unload the 7B,
+load the 14B) and **~25 minutes per document** — and the ladder's design
+holds *both* models' worth of memory during an escalation, which is exactly
+what does not fit.
+
+**The honest status:** the rescue MECHANIC is proven deterministically
+(21 checks, and proven to fail when the ladder is broken). The live
+two-model BEHAVIOUR is **not yet demonstrated on this machine**, and the
+blocker is the machine's memory and CPU contention, not the code.
+
+→ `procedural-surface-engine` → `references/llm-retrieval-corpus.md`.
+
 ### G15. Wire the document loop into the workspace UI — `DONE`
 A "load document" affordance and a live error-log panel. Today the learner
 is a library with a CLI probe, not something usable.
