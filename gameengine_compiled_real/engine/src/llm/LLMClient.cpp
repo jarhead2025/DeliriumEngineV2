@@ -545,36 +545,47 @@ void LLMClient::Run(const std::string& payload) {
         const bool chunked = headers.find("Transfer-Encoding: chunked") != std::string::npos ||
                              headers.find("transfer-encoding: chunked") != std::string::npos;
         const size_t cl = ContentLengthOf(headers);
+        // Whether the body was CUT SHORT. Without this the over-long
+        // request falls through to "the model returned nothing" -- a
+        // GENERIC message that points at the model instead of at the clock.
+        // MEASURED: a server that streams forever produced exactly that
+        // message, even though the deadline had correctly stopped it.
+        auto deadline_passed = [&] {
+            return std::chrono::steady_clock::now() > deadline;
+        };
+        bool body_truncated = false;
         if (chunked) {
             // Read the REST of the body first (the chunks may not have all
             // arrived with the headers), then decode. The deadline applies
             // here too -- the body is where a long generation actually
             // spends its time.
-            while (std::chrono::steady_clock::now() <= deadline) {
+            while (!deadline_passed()) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 body.append(nbuf, size_t(n));
             }
+            body_truncated = deadline_passed();
             body = DecodeChunkedBuffer(body);
         } else if (cl > body.size()) {
             // Content-Length body: read exactly that many bytes.
             std::string rest;
             rest.reserve(cl - body.size());
-            while (body.size() + rest.size() < cl &&
-                   std::chrono::steady_clock::now() <= deadline) {
+            while (body.size() + rest.size() < cl && !deadline_passed()) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 rest.append(nbuf, size_t(n));
             }
             body += rest;
+            body_truncated = (body.size() < cl);
         } else if (cl == 0) {
             // NO length and NOT chunked: read until the connection closes
             // (or the deadline passes). (Ollama sends "Connection: close".)
-            while (std::chrono::steady_clock::now() <= deadline) {
+            while (!deadline_passed()) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 body.append(nbuf, size_t(n));
             }
+            body_truncated = deadline_passed();
         }
         ::close(fd);
         const std::string text = ExtractNativeText(body);
@@ -583,7 +594,13 @@ void LLMClient::Run(const std::string& payload) {
             partial_ = text;
             final_ = text;
             has_response_ = true;
-            if (text.empty()) error_ = "the model returned nothing";
+            if (text.empty()) {
+                // Name the ACTUAL cause. "the model returned nothing" points
+                // at the model; a deadline points at the CLOCK.
+                error_ = body_truncated
+                    ? "the request exceeded its time budget"
+                    : "the model returned nothing";
+            }
         }
         state_.store(text.empty() ? State::Failed : State::Done,
                      std::memory_order_release);
@@ -857,7 +874,13 @@ void LLMClient::Run(const std::string& payload) {
         std::lock_guard<std::mutex> lk(mu_);
         final_ = partial_;
         has_response_ = true;
-        if (final_.empty()) error_ = "the model returned nothing";
+        if (final_.empty()) {
+            // Name the ACTUAL cause: a deadline points at the CLOCK, not at
+            // the model.
+            error_ = (std::chrono::steady_clock::now() > deadline)
+                ? "the request exceeded its time budget"
+                : "the model returned nothing";
+        }
     }
     state_.store(final_.empty() ? State::Failed : State::Done, std::memory_order_release);
 }
