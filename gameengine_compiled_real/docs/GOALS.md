@@ -804,9 +804,62 @@ guessed.
 
 → `procedural-surface-engine` → `references/amr-cost-structure.md`.
 
-### G17. Add the CPU/GPU bit-compat validator — `TODO`
+### G17. Add the CPU/GPU bit-compat validator — `DONE`
 `psf_validate.py` exists in the proven tree but not here. ARCHITECTURE.md
 invariant #2 currently has **no gate**.
+
+**Landed** — `tests/validate_bit_compat.cpp` (18 checks, 0 failures), a C++
+gate rather than a Python one, because the two sides do **not** do the same
+arithmetic:
+
+- the kernel's `deform_h` is a chain of **`fma`** (one rounding);
+- the CPU mirror uses plain `*` and `+` (each rounds separately).
+
+So the two differ in the last bits **by construction**, and the invariant
+is *not* "they are bit-identical" — it is *"they agree within a bound
+derived from the representation's resolution"*. Measured on the 544-surface
+torus:
+
+```
+dequantisation:   worst deviation 0.000e+00   (exact)
+deform_h:         worst absolute 3.725e-09     (derived bound 1.994e-07)
+corner-vanishing: worst deviation 0.000e+00   (exact)
+surface position: worst deviation 1.192e-07
+```
+
+The bound is `16 * 2^-24 * (coef_scale + s_scale)` — the accumulated
+rounding of the 8-term sum. The measured deviation is **19× under** it.
+
+**Proven to catch a real divergence**: with one term (`c[7]`) dropped from
+the CPU mirror, the gate fails with a deviation of **2.582e-05** — **129×
+over** the bound. The two are cleanly separated, so the gate is neither
+flaky nor blind.
+
+**The gate also greps the kernel source** for what its transcription
+assumes (`fma`, `c[0]`..`c[7]`, the byte offsets **32** and **44**, the
+**64**-byte stride), so a kernel that loses a term is caught even though
+the gate runs the CPU side.
+
+**Two bugs the gate found in ITSELF** — both the exact class of drift it
+exists to catch:
+1. **float32 association.** The kernel writes `bbspan * q * (1/65535)` =
+   `(bbspan * q) * k`; a transcription grouping it `bbspan * (q * k)` is a
+   *different expression* (measured: 3.385e-07 of deviation).
+2. **The u/v corner convention.** `u` runs A0→A3 and `v` A0→A1, so the
+   corners are A0, A3, A2, A1 — *not* A0, A1, A2, A3. Reading them in
+   order is the swap the skill warns about, and it produced a plausible
+   **0.54** "failure" that was really a wrong index. A validator that
+   hard-codes a wrong convention does not fail loudly — it fails
+   *confidently*.
+
+**Why this is the Vulkan prerequisite**: a SPIR-V reimplementation of 13
+kernels without a bit-compatibility oracle is **unverifiable**. The Vulkan
+path reuses this structure — a CPU transcription with the kernel's exact
+FMA chain and association, compared against the real device output, with
+a bound derived from the representation.
+
+→ `procedural-surface-engine` →
+`references/bit-compatibility-invariant.md`.
 
 ### G18. Fix `assets/sphere.psf` — `DONE`
 It is the legacy **text** format, so the binary loader rejects it and the

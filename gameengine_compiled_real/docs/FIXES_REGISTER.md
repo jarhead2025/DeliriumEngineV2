@@ -2021,6 +2021,75 @@ check *why* it failed.
 
 ---
 
+## 63. "They must agree EXACTLY" is the wrong invariant (2026-11-09)
+
+**G17**: `ARCHITECTURE.md` invariant #2 says the CPU evaluation and the
+OpenCL kernel must agree. It had **no gate** — it was a comment, not a
+check.
+
+The obvious gate ("compare the CPU and the GPU bit-for-bit") **cannot
+pass**, and the reason is in the two sources:
+
+- the kernel's `deform_h` is a chain of **`fma`** — each term multiplied
+  and added with ONE rounding;
+- the CPU mirror uses plain `*` and `+` — each multiply and each add
+  rounds separately.
+
+FMA has different rounding, so the two differ in the last bits **by
+construction**.
+
+> **When two implementations of one specification must agree, the gate is
+> not "compare them exactly" — it is "compare them within a bound you
+> derived from the representation, and STATE the bound".** An exact
+> comparison fails forever when the two sides are allowed to round
+> differently; a loose one passes even when a term is dropped.
+
+The derived bound is the accumulated rounding of the 8-term sum:
+`16 * 2^-24 * (coef_scale + s_scale)`. Measured on the 544-surface torus:
+
+```
+dequantisation:   0.000e+00   (exact)
+deform_h:         3.725e-09   (19x UNDER the bound)
+corner-vanishing: 0.000e+00   (exact)
+surface position: 1.192e-07
+```
+
+**Proven to catch a real divergence**: with one term (`c[7]`) dropped from
+the CPU mirror, the deviation is **2.582e-05** — **129x OVER** the bound.
+The rounding difference and the real error are cleanly separated, so the
+gate is neither flaky nor blind.
+
+### Two bugs the gate found in ITSELF
+
+Both are the exact class of drift it exists to catch, and both produced
+*plausible-looking* failures.
+
+**float32 ASSOCIATION.** The kernel writes `bbspan * q * (1/65535)` =
+`(bbspan * q) * k`. A transcription that groups it `bbspan * (q * k)` is a
+**different expression** — float32 multiplication is not associative.
+Measured: **3.385e-07** of deviation.
+
+**The u/v CORNER CONVENTION.** From `Patch::EvaluateDerivs`:
+`pl = lerp(P0,P3,u); pr = lerp(P1,P2,u); Pb = lerp(pl,pr,v)` — so **u
+runs A0→A3** and **v runs A0→A1**, and the corners are **A0, A3, A2,
+A1**. Reading them as A0,A1,A2,A3 is the swap the skill already warns
+about; it produced a **0.54** "failure" that was really a wrong index.
+
+> **A validator that hard-codes a wrong convention does not fail loudly —
+> it fails CONFIDENTLY.** The 0.54 number looked like a real bug in the
+> engine. It was a bug in the test.
+
+**Why this gates the Vulkan port**: a SPIR-V reimplementation of 13 kernels
+without a bit-compatibility oracle is **unverifiable**. The Vulkan path
+reuses this structure — a CPU transcription with the kernel's exact FMA chain
+and association, compared against the real device output, with a bound
+derived from the representation.
+
+→ Class-level version: `procedural-surface-engine` →
+`references/bit-compatibility-invariant.md`.
+
+---
+
 ## 62. The asset was the wrong FORMAT, and "MISSING" hid it (2026-11-09)
 
 **G18**: `assets/sphere.psf` was a UTF-8 **text** file — a human-readable
