@@ -147,12 +147,35 @@ static void check_kernel_source(const std::string& path) {
     // the gate derives would be wrong.
     const bool has_fma = src.find("fma(") != std::string::npos;
     CHECK(has_fma, "the kernel must use fma (the gate transcribes its chain)");
+
+    // Isolate the kernel's deform_h body, so the term check applies to the
+    // FUNCTION and not to the whole file (where "c[7]" may appear in a
+    // comment, or in another function).
+    //
+    // MEASURED: a whole-file grep was NOT enough. With the kernel's c[7]
+    // term REPLACED BY ZERO (so the file still mentions c[7] nowhere, but a
+    // later function does), the gate did not notice. Checking the function
+    // body catches it.
+    const size_t dh = src.find("deform_h(");
+    CHECK(dh != std::string::npos, "the kernel must define deform_h");
+    std::string body;
+    if (dh != std::string::npos) {
+        const size_t open = src.find('{', dh);
+        const size_t close = src.find('\n}', open);
+        body = (open != std::string::npos && close != std::string::npos)
+                   ? src.substr(open, close - open) : std::string();
+    }
+    CHECK(!body.empty(), "the kernel's deform_h body must be readable");
+
+    // Every term must be USED inside deform_h, as a multiplicand. A term
+    // that is mentioned but replaced by a constant is a dropped term.
     for (int i = 0; i < 8; ++i) {
         char needle[32];
         std::snprintf(needle, sizeof(needle), "c[%d]", i);
-        CHECK(src.find(needle) != std::string::npos,
-              "the kernel's deform_h must use c[%d]", i);
+        CHECK(body.find(needle) != std::string::npos,
+              "the kernel's deform_h must USE c[%d] (not merely mention it)", i);
     }
+
     // The byte offsets the dequantisation depends on.
     CHECK(src.find("+ 32u") != std::string::npos ||
           src.find("+32u") != std::string::npos,

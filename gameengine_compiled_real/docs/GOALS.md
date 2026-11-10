@@ -840,6 +840,27 @@ assumes (`fma`, `c[0]`..`c[7]`, the byte offsets **32** and **44**, the
 **64**-byte stride), so a kernel that loses a term is caught even though
 the gate runs the CPU side.
 
+**And the grep was STRENGTHENED after the ad-hoc verification found it
+too weak.** A whole-file search for `c[7]` only proves the name is
+*mentioned* somewhere — a kernel that replaced the term with a constant
+still "mentioned" it elsewhere and slipped through. The check now isolates
+the `deform_h` **function body** and requires each term to be **used
+there**.
+
+**Verified by injecting four real divergences** (each reverted immediately)
+and requiring the gate to fail on each, on the right check:
+
+| injected divergence | caught by |
+|---|---|
+| the CPU mirror drops `c[7]` | "the FMA chain and the CPU's chain must agree" |
+| the CPU mirror re-associates the dequant | "must dequantise an anchor IDENTICALLY" |
+| the CPU mirror flips the u/v corner convention | "must INTERPOLATE its anchors at the corners" |
+| the **kernel** loses `c[7]` | "the kernel's deform_h must USE c[7]" |
+
+> **A gate that has never failed is not evidence.** Break the thing and
+> watch the gate catch it — in every direction, including the one the gate
+> does not execute.
+
 **Two bugs the gate found in ITSELF** — both the exact class of drift it
 exists to catch:
 1. **float32 association.** The kernel writes `bbspan * q * (1/65535)` =
