@@ -72,14 +72,25 @@ const std::vector<Document> kCorpus = {
 // Ask a model, synchronously, through the socket client.
 std::string ask_model(const LLM::Config& cfg, const std::string& system,
                        const std::string& user, double* secs_out,
-                       std::string* err_out) {
+                       std::string* err_out, int max_tokens,
+                       int timeout_seconds) {
     LLM::Config c = cfg;
     c.system = system;
     // The document prompt is LARGE: the system prompt alone is ~2,900
     // tokens (11.6 KB), and the document and the worked examples add more.
-    // 1,400 completion tokens is the measured requirement for a
-    // schema-shaped JSON answer.
-    c.max_tokens = 1400;
+    //
+    // The COMPLETION budget must fit the ANSWER, and the answer grows with
+    // the document's part count. 1,400 was measured as enough for a
+    // 3-part gearbox -- but MEASURED on a 14-part wrist-watch movement it
+    // was NOT: the 7B's answer was cut off mid-array at 3,279 characters
+    // ("...\"color\": [0.9, 0"), and the parse failed with "unterminated
+    // array at byte 3165". The model had produced a GOOD answer (mainplate,
+    // cutout, barrel, rotor, ...) and simply ran out of room.
+    //
+    // So the budget is a CLI flag, and the default is generous: a
+    // truncated answer is indistinguishable from a bad one to the parser,
+    // and the cost of a wrong tree is a failed interpretation.
+    c.max_tokens = max_tokens;
     // The timeout must exceed the MEASURED worst case by a wide margin.
     //
     // A measured successful run took 276.4 s on a loaded machine -- and
@@ -88,9 +99,14 @@ std::string ask_model(const LLM::Config& cfg, const std::string& system,
     // a TRANSPORT failure, which looks exactly like "the model is
     // unreachable" and sends you looking at the wrong code entirely.
     //
-    // 900 s is ~3x the measured worst case. The request that would be
-    // killed by it has already failed for other reasons.
-    c.timeout_seconds = 900;
+    // The budget is a CLI flag (--timeout), because it must be sized for
+    // the DOCUMENT. MEASURED: a 3-part gearbox answers in ~230 s, while a
+    // 14-part wrist-watch movement was still generating at 900 s. The
+    // client now has an OVERALL deadline (not just a per-read one), so an
+    // over-long request FAILS WITH A NAMED REASON instead of streaming
+    // forever -- MEASURED: before the deadline it ran 41 minutes and was
+    // still going.
+    c.timeout_seconds = timeout_seconds;
     LLM::LLMClient client(c);
     const auto t0 = std::chrono::steady_clock::now();
     if (!client.Send(user)) {
@@ -170,6 +186,18 @@ int main(int argc, char** argv) {
     std::string escalate_model;
     std::string log_path = "/tmp/doc_learner_log.txt";
     int ndocs = (int)kCorpus.size();
+    // The COMPLETION budget. See ask_model's comment for why it is a flag
+    // and why the default is generous.
+    int max_tokens = 3200;
+    // The REQUEST time budget, in seconds.
+    //
+    // It must be sized for the DOCUMENT, not for a typical one. MEASURED:
+    // a 3-part gearbox answers in ~230 s, but a 14-part wrist-watch
+    // movement was still generating at 900 s -- and the client correctly
+    // reported "the request exceeded its time budget" rather than waiting
+    // forever (which is what it did before the deadline existed: 41
+    // minutes, and still going).
+    int timeout_seconds = 1800;
     bool escalate = false;
     // --file PATH: interpret a DOCUMENT FROM DISK instead of the built-in
     // corpus.
@@ -197,6 +225,16 @@ int main(int argc, char** argv) {
         else if (!std::strcmp(argv[i], "--save-log") && i + 1 < argc) log_path = argv[++i];
         else if (!std::strcmp(argv[i], "--escalate")) escalate = true;
         else if (!std::strcmp(argv[i], "--file") && i + 1 < argc) files.push_back(argv[++i]);
+        // --max-tokens N: the completion budget. It must fit the ANSWER,
+        // and the answer grows with the document's part count -- a
+        // truncated answer is indistinguishable from a bad one to the
+        // parser.
+        else if (!std::strcmp(argv[i], "--max-tokens") && i + 1 < argc)
+            max_tokens = std::atoi(argv[++i]);
+        // --timeout N: the request time budget in seconds. It must be sized
+        // for the DOCUMENT -- a complex one takes many minutes.
+        else if (!std::strcmp(argv[i], "--timeout") && i + 1 < argc)
+            timeout_seconds = std::atoi(argv[++i]);
         else if (!std::strcmp(argv[i], "--domain") && i + 1 < argc) domain = argv[++i];
     }
     if (ndocs < 1) ndocs = 1;
@@ -296,7 +334,7 @@ int main(int argc, char** argv) {
         double secs = 0.0;
         std::string err;
         const auto ask = [&](const std::string& system, const std::string& user) {
-            return ask_model(cfg, system, user, &secs, &err);
+            return ask_model(cfg, system, user, &secs, &err, max_tokens, timeout_seconds);
         };
 
         DocResult r = InterpretDocument(doc, ask, log);
@@ -320,7 +358,7 @@ int main(int argc, char** argv) {
             LLM::Config cfg2 = cfg;
             if (use_larger) cfg2.model = escalate_model;
             const auto ask2 = [&](const std::string& system, const std::string& user) {
-                return ask_model(cfg2, system, user, &secs, &err);
+                return ask_model(cfg2, system, user, &secs, &err, max_tokens, timeout_seconds);
             };
             std::function<std::string(const std::string&, const std::string&)> larger;
             if (use_larger) larger = ask2;

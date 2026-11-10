@@ -489,12 +489,33 @@ void LLMClient::Run(const std::string& payload) {
         // there is nothing to stream -- but the read must still tolerate a
         // long silence (the server is THINKING), with the same
         // retry-on-timeout rule as the SSE path.
+        //
+        // THE OVERALL DEADLINE.
+        //
+        // `SO_RCVTIMEO` is a PER-READ timeout: it fires when a single
+        // recv goes quiet, not when the whole request has gone on too
+        // long. So a server that keeps sending a byte every few seconds
+        // can stream FOREVER -- MEASURED: the 7B was still generating
+        // after 41 minutes on a dense document, with the client dutifully
+        // waiting, because every single recv succeeded.
+        //
+        // So the path needs a deadline on the REQUEST, not on the read.
+        // `timeout_seconds` is that budget, counted from the first byte.
+        const auto deadline = std::chrono::steady_clock::now() +
+                              std::chrono::seconds(cfg_.timeout_seconds);
         std::string raw;
         char nbuf[8192];
         size_t hdr_end = std::string::npos;
         {
             const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
             for (int waits = 0; waits < max_waits && hdr_end == std::string::npos; ++waits) {
+                if (std::chrono::steady_clock::now() > deadline) {
+                    ::close(fd);
+                    std::lock_guard<std::mutex> lk(mu_);
+                    error_ = "the request exceeded its time budget";
+                    state_.store(State::Failed, std::memory_order_release);
+                    return;
+                }
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n > 0) {
                     raw.append(nbuf, size_t(n));
@@ -526,8 +547,10 @@ void LLMClient::Run(const std::string& payload) {
         const size_t cl = ContentLengthOf(headers);
         if (chunked) {
             // Read the REST of the body first (the chunks may not have all
-            // arrived with the headers), then decode.
-            while (true) {
+            // arrived with the headers), then decode. The deadline applies
+            // here too -- the body is where a long generation actually
+            // spends its time.
+            while (std::chrono::steady_clock::now() <= deadline) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 body.append(nbuf, size_t(n));
@@ -537,16 +560,17 @@ void LLMClient::Run(const std::string& payload) {
             // Content-Length body: read exactly that many bytes.
             std::string rest;
             rest.reserve(cl - body.size());
-            while (body.size() + rest.size() < cl) {
+            while (body.size() + rest.size() < cl &&
+                   std::chrono::steady_clock::now() <= deadline) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 rest.append(nbuf, size_t(n));
             }
             body += rest;
         } else if (cl == 0) {
-            // NO length and NOT chunked: read until the connection closes.
-            // (Ollama sends "Connection: close", so this terminates.)
-            while (true) {
+            // NO length and NOT chunked: read until the connection closes
+            // (or the deadline passes). (Ollama sends "Connection: close".)
+            while (std::chrono::steady_clock::now() <= deadline) {
                 const ssize_t n = ::recv(fd, nbuf, sizeof(nbuf), 0);
                 if (n <= 0) break;
                 body.append(nbuf, size_t(n));
@@ -603,9 +627,27 @@ void LLMClient::Run(const std::string& payload) {
     // EINTR, and then reported "no response headers" -- a TRANSPORT
     // failure for a server that was working perfectly.
     bool headers_ok = false;
+    // THE OVERALL DEADLINE for the SSE path.
+    //
+    // `SO_RCVTIMEO` is a PER-READ timeout, so a server that keeps sending
+    // a byte every few seconds can stream FOREVER. MEASURED: the 7B was
+    // still generating after 41 minutes on a dense document, with the
+    // client dutifully waiting, because every single recv succeeded.
+    //
+    // The SSE path is the WORST case for this (it is explicitly a
+    // streaming protocol), so it needs the deadline most.
+    const auto deadline = std::chrono::steady_clock::now() +
+                          std::chrono::seconds(cfg_.timeout_seconds);
     {
         const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
         for (int waits = 0; waits < max_waits && header_end == std::string::npos; ++waits) {
+            if (std::chrono::steady_clock::now() > deadline) {
+                ::close(fd);
+                std::lock_guard<std::mutex> lk(mu_);
+                error_ = "the request exceeded its time budget";
+                state_.store(State::Failed, std::memory_order_release);
+                return;
+            }
             const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
             if (n > 0) {
                 raw.append(buf, size_t(n));
@@ -702,9 +744,14 @@ void LLMClient::Run(const std::string& payload) {
         // response is a FAILURE (an empty reply is not an answer).
         size_t eol = body.find("\r\n", pos);
         bool peer_closed = false;
+        bool timed_out = false;
         {
             const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
             for (int waits = 0; waits < max_waits && eol == std::string::npos; ++waits) {
+                if (std::chrono::steady_clock::now() > deadline) {
+                    timed_out = true;
+                    break;
+                }
                 const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
                 if (n > 0) {
                     body.append(buf, size_t(n));
@@ -731,6 +778,8 @@ void LLMClient::Run(const std::string& payload) {
                     // a partial answer is more useful than an error.
                     final_ = partial_;
                     has_response_ = true;
+                } else if (timed_out) {
+                    error_ = "the request exceeded its time budget";
                 } else {
                     error_ = "the response timed out before the first chunk";
                 }
@@ -762,10 +811,16 @@ void LLMClient::Run(const std::string& payload) {
         bool chunk_complete = false;
         bool recv_failed = false;
         {
-            // The deadline is the socket timeout, counted from now.
+            // The deadline is the WHOLE REQUEST's, not this chunk's: a
+            // long generation streams many chunks, and each chunk's wait
+            // must not restart the budget.
             const int max_waits = cfg_.timeout_seconds * 2;   // 500 ms each
             for (int waits = 0; waits < max_waits; ++waits) {
                 while (body.size() < pos + csize + 2) {
+                    if (std::chrono::steady_clock::now() > deadline) {
+                        recv_failed = false;
+                        break;   // the deadline is the reason
+                    }
                     const ssize_t n = ::recv(fd, buf, sizeof(buf), 0);
                     if (n > 0) { body.append(buf, size_t(n)); continue; }
                     if (n == 0) { recv_failed = true; break; }   // peer closed
@@ -775,6 +830,7 @@ void LLMClient::Run(const std::string& payload) {
                     break;
                 }
                 if (body.size() >= pos + csize + 2 || recv_failed) break;
+                if (std::chrono::steady_clock::now() > deadline) break;
                 std::this_thread::sleep_for(std::chrono::milliseconds(500));
             }
             chunk_complete = (body.size() >= pos + csize + 2);
