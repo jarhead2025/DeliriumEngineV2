@@ -168,6 +168,75 @@ static void test_tree() {
     CHECK(why.find("dragon_scale") != std::string::npos,
           "reason names the bad substance: %s", why.c_str());
 
+    // --- the GROUPING NODE: a node with children but no surface -----------
+    //
+    // A model writing a COMPLEX assembly naturally spells "this is a
+    // container, not a part" as `"substance": ""`. The schema already had
+    // `"substance": null` for it; the EMPTY STRING was rejected as
+    // "unknown substance ''", which reads like the model misunderstood the
+    // schema when it had used a reasonable spelling of a construct the
+    // schema already has.
+    //
+    // The 14B did exactly this on the gearbox assembly document:
+    //   {"kind":"input shaft","substance":"",
+    //    "children":[{"kind":"shaft",...},{"kind":"pinion gear",...}]}
+    //
+    // THE INVARIANT: a grouping node is ACCEPTED, and its CHILDREN are
+    // still parsed (a grouping node that swallows its children would
+    // silently lose parts).
+    {
+        std::unique_ptr<Element> t;
+        const char* grouped =
+            R"({"kind":"assembly","substance":"","children":[
+                 {"kind":"shaft","substance":"ellipsoid",
+                  "substance_params":{"sx":0.06,"sy":0.06,"sz":0.5}},
+                 {"kind":"gear","substance":"ellipsoid",
+                  "substance_params":{"sx":0.15,"sy":0.15,"sz":0.2}}]})";
+        CHECK(ParseElementTree(grouped, t, why),
+              "accept a grouping node (an empty substance): %s", why.c_str());
+        if (t) {
+            CHECK(t->children.size() == 2,
+                  "the grouping node kept its children (%zu)", t->children.size());
+            CHECK(t->substance == nullptr,
+                  "the grouping node has NO surface of its own");
+            CHECK(t->children[0]->substance != nullptr &&
+                  t->children[1]->substance != nullptr,
+                  "the grouping node's CHILDREN have surfaces");
+        }
+    }
+    // The null spelling must keep working (it is the documented one).
+    {
+        std::unique_ptr<Element> t;
+        CHECK(ParseElementTree(
+                  R"({"kind":"assembly","substance":null,"children":[
+                       {"kind":"shaft","substance":"ellipsoid",
+                        "substance_params":{"sx":0.06,"sy":0.06,"sz":0.5}}]})",
+                  t, why),
+              "accept a grouping node (a null substance): %s", why.c_str());
+        if (t) CHECK(t->children.size() == 1,
+                     "the null-spelled grouping node kept its child");
+    }
+    // AND THE ONE THAT MUST STILL BE REJECTED: a grouping node with NO
+    // children anywhere bakes into nothing, so it is still a leafless tree.
+    {
+        std::unique_ptr<Element> t;
+        CHECK(!ParseElementTree(R"({"kind":"group","substance":""})", t, why),
+              "reject a grouping node with no children (nothing to bake)");
+        CHECK(!why.empty(), "the leafless grouping node has a reason");
+    }
+    // An empty substance must NOT become a PLATE: it is the absence of a
+    // surface, not a fallback one.
+    {
+        std::unique_ptr<Element> t;
+        const char* grouped =
+            R"({"kind":"assembly","substance":"","children":[
+                 {"kind":"shaft","substance":"ellipsoid",
+                  "substance_params":{"sx":0.06,"sy":0.06,"sz":0.5}}]})";
+        if (ParseElementTree(grouped, t, why) && t)
+            CHECK(t->substance == nullptr,
+                  "an empty substance did NOT become a plate");
+    }
+
     // Structural errors.
     const char* bad_trees[] = {
         R"({"origin":[1,2]})",              // origin needs 1 or 3 components

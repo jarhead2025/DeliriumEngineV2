@@ -491,6 +491,33 @@ bool BuildElement(const JsonValue& v, std::unique_ptr<Element>& out, std::string
         } else if (!s->IsString()) {
             why = "\"substance\" must be a string";
             return false;
+        } else if (s->text.empty()) {
+            // AN EMPTY STRING IS ALSO A GROUPING NODE.
+            //
+            // WHY: the schema already expresses "a node with children but no
+            // surface of its own" as `"substance": null`. But a model
+            // writing a COMPLEX assembly naturally writes `"substance": ""`
+            // for the grouping nodes -- it is the obvious way to say "this
+            // is a container, not a part". And that is EXACTLY what the
+            // 14B did with the gearbox document:
+            //
+            //   {"kind": "input shaft", "substance": "",
+            //    "children": [{"kind": "shaft", ...}, {"kind": "pinion gear", ...}]}
+            //
+            // The parser rejected it as "unknown substance ''" -- a failure
+            // that reads like the MODEL misunderstood the schema, when in
+            // fact the model used a REASONABLE spelling of a construct the
+            // schema already has.
+            //
+            // The baker handles it already: CollectSheets only collects the
+            // elements that HAVE a substance, so a grouping node simply
+            // contributes its children.
+            //
+            // NOTE: this is NOT the same as accepting an unknown substance
+            // name. "torusx" is still rejected -- the parser refuses to
+            // degrade a substance it does not know into a flat card. An
+            // EMPTY name is not an unknown substance; it is the absence of
+            // one.
         } else {
             el->substance = MakeSubstance(s->text, *params, why);
             if (!el->substance) return false;
