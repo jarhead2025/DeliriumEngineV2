@@ -1169,6 +1169,72 @@ link is exactly one whose two indices differ by N−1 in the `i` direction.
 
 ---
 
+## G22. Derive the mesh from the POINT SET — `WIP`
+
+The idea (Josias, 2026-11-10): *"think of a bunch of dots, if you had to
+connect them by grabbing them into two sets, you can use the ones in the
+first set to determine the surround triangle in the second, and vice versa,
+not that we are necessarily using triangular shaped patches, it just is a
+convenient way to stack them on top of another to accurately mesh them,
+overlap them and average them."*
+
+**HALF OF IT ALREADY EXISTED.** `SeamGraph::Build` matches anchor *pairs* to
+find, for every patch, the patches that surround it — that is Rule 1. And
+`SeamGraph::HarmonizeEdgeCoefs` averages the two sides' deformation
+coefficients so a shared edge becomes **one curve** — that is Rule 2, per
+edge. What was missing was the **baker** deriving its cells instead of
+placing them.
+
+**Landed** — the derivation as a library (`ai/MutualMesh.{h,cpp}`), wired
+into the baker (`ai/DerivedMeshBake.cpp`, `ElementSystem::BakeDerived` /
+`BakeDerivedBody`), and a `--scene derived` counterpart in
+`complex_scene` that renders the derived sphere with the SAME cameras as the
+grid one.
+
+**The measured result so far** — the derived body's surface residual is
+**BETTER** than the grid's (0.2499 vs 0.2981), it has **no wasted anchors**
+(3200 vs the grid's 4608), and its silhouette balance is **1.0000×** (the
+grid's is 1.0002×) — a closed body.
+
+**And the measurement found four real bugs, all of them the SAME kind — the
+derived mesh was not TILING.**
+
+| bug | symptom | fix |
+|---|---|---|
+| the quantisation box was never copied out of the per-sheet derivation | the body rendered as a huge flat sheet (the box stayed ZERO, so every position dequantised to a point) | the box is the UNION over the sheets |
+| the rim points were IN the cloud | a **truncated cone** instead of a dome — the Delaunay connected the rim's outermost points (r=0.477, z=0) to the apex (z=0.45) | the rim is the OVERLAP mechanism, not the surface: it is excluded from the cloud |
+| the cloud was sampled at the GRID's resolution | the cells were **2.5× too big** (a Delaunay's cell spans ~2.5× the point spacing), so the sagitta was ~6× and the render was faceted | the cloud is sampled **3× finer**, and the deformation fell from 15.28% to **8.77%** (the grid's is 8.30%) |
+| the quads were paired ARBITRARILY | **14,424 edges shared by three or more cells** and 70,464 boundary edges — the mesh did not tile | **NOT YET FIXED** — see below |
+
+**THE OPEN ONE — and it is the crux.** A Delaunay's triangles must be paired
+into quads by a MATCHING that **tiles**. The current pairing takes the first
+pair it finds, and an arbitrary pairing does not tile: the cells overlap and
+leave gaps, and a mesh with gaps and overlaps renders **lumpy** even when its
+geometry, its shape profile and its normals are all correct (all three were
+measured good).
+
+The fix is the incremental-Delaunay's standard trick: **pair each triangle
+across the edge OPPOSITE ITS OLDEST VERTEX**, which is what makes the
+pairing consistent and the mesh tile.
+
+**Also settled along the way:** the "two sets" cannot be two SPATIAL
+SUBSETS of the cloud — a Delaunay of a subset covers only that subset's
+convex hull, so two subsets cannot both cover the domain and so they cannot
+overlap the way the idea requires. The two sets must be **two triangulations
+of the SAME cloud** differing in the co-circular tie-break (which diagonal
+each interior quad takes). That gives two full-domain, full-resolution,
+genuinely-overlapping meshes.
+
+**And the "overlap and average" belongs in the SURFACE, not the topology.**
+The two triangulations are the same mesh with different diagonals, so their
+cells are different quadrilaterals over the same region — merging them
+cell-wise broke the tiling. The cell keeps ONE triangulation's connectivity
+(so the mesh tiles) and its surface is fitted against the **average** of the
+two cells' evaluations. That is the user's rule applied where averaging is
+meaningful.
+
+---
+
 ## The Vulkan deferral — triggers, not a date
 
 `docs/VULKAN_ASSESSMENT.md` has the full reasoning. The short version: the
