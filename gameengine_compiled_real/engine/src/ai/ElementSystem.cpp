@@ -510,6 +510,136 @@ ElementSystem::Field ElementSystem::FieldAt(const Element& root, const Vec3& wor
 // The single-layer path is unchanged for a tree with exactly one sheet, so
 // the existing behaviour (and its tests) are preserved.
 // =============================================================================
+// =============================================================================
+// THE DERIVED-MESH BAKE (G22).
+//
+// The grid bake PLACES its cells on a lattice and hopes the surface lands
+// on them. The derived bake DERIVES the cells from the point set.
+//
+// The layers are baked PER SHEET, exactly as the grid bake does, so a
+// closed body (an upper sheet and a mirrored lower one) still MEETS at the
+// seam instead of averaging into one dome.
+//
+// WHY A SEPARATE FUNCTION AND NOT A FLAG IN Bake: the grid path's patch
+// loop is built around the lattice -- the patch's corners are at grid
+// positions (j*N+i), and the LSQ target is sampled at the patch's (u,v) ON
+// THE GRID. A DERIVED patch has no grid position: its corners are four
+// arbitrary points and its (u,v) is its own bilinear. The two paths differ
+// in three places (the corners, the target sampling, the connectivity), and
+// keeping them apart makes the difference auditable.
+// =============================================================================
+bool ElementSystem::BakeDerived(const Element& root, int sample_n, float extent,
+                                ModelOutput& out, std::string& why,
+                                MeshDerivation& stats,
+                                Vec3 world_offset) {
+    out = ModelOutput{};
+    stats = MeshDerivation{};
+    if (sample_n < 4) { why = "sample_n must be >= 4"; return false; }
+    if (sample_n > 64) sample_n = 64;
+    if (extent <= 1e-6f) { why = "extent must be > 0"; return false; }
+
+    // The sheets, with their resolved world frames -- the SAME collection
+    // the grid bake uses, so the two paths see the same tree.
+    std::vector<Sheet> sheets;
+    CollectSheets(root, sheets);
+    if (sheets.empty()) { why = "the tree has no sheets"; return false; }
+
+    // The BONES are collected in the same pass and in the SAME order the
+    // parser used, so the parent index in the emitted BoneRecords refers to
+    // the right bone.
+    std::vector<const Bone*> bones;
+    CollectBones(root, bones);
+
+    // Each sheet's derived mesh is baked into the SAME anchor/surface lists,
+    // concatenated -- so the layers compose exactly as the grid path's do.
+    std::vector<AnchorRecord> anchors;
+    std::vector<SurfaceRecord> surfaces;
+    // The anchor count after each sheet's bake -- the LAYER BOUNDARIES, so
+    // the bone binding can be applied per layer.
+    std::vector<size_t> layer_ends;
+    for (const Sheet& sh : sheets) {
+        MeshDerivation s;
+        if (!BakeDerivedSheet(*sh.el, sh.origin, sh.scale, sample_n, extent,
+                              anchors, surfaces, s, why))
+            return false;
+        layer_ends.push_back(anchors.size());
+        // The counts ACCUMULATE across the sheets.
+        stats.quads.insert(stats.quads.end(), s.quads.begin(), s.quads.end());
+        stats.quads_from_a += s.quads_from_a;
+        stats.quads_from_b += s.quads_from_b;
+        stats.quads_averaged += s.quads_averaged;
+        stats.triangles_unpaired += s.triangles_unpaired;
+        stats.triangles_a += s.triangles_a;
+        stats.triangles_b += s.triangles_b;
+        stats.pairable_edges_a += s.pairable_edges_a;
+        stats.pairable_edges_b += s.pairable_edges_b;
+    }
+    stats.points.clear();
+
+    // The BONE BINDING: an anchor belongs to the bone of the sheet it came
+    // from. The derived baker does not know the bone index (it is a
+    // per-sheet leaf baker), so it is applied HERE -- and it MUST be
+    // applied per LAYER, because each sheet contributes its own block of
+    // anchors and the sheets have different bones.
+    //
+    // The layer boundaries are the anchor counts before and after each
+    // sheet's bake, which is exactly what the bake loop observed.
+    {
+        size_t at = 0;
+        for (const Sheet& sh : sheets) {
+            // this sheet's anchors are [at, layer_end)
+            const size_t layer_end = layer_ends[&sh - &sheets[0]];
+            const uint32_t bi = (sh.bone >= 0) ? (uint32_t)sh.bone : 0xFFFFFFFFu;
+            for (size_t i = at; i < layer_end && i < anchors.size(); ++i)
+                anchors[i].bone_index = bi;
+            at = layer_end;
+        }
+    }
+
+    // The bone hierarchy, as frozen BoneRecords -- the same block the grid
+    // bake emits (see Bake). The bone records carry the WORLD-space bind
+    // pose.
+    {
+        std::vector<int> parent_of(bones.size(), -1);
+        for (size_t i = 0; i < bones.size(); ++i) {
+            const std::string& pn = bones[i]->parent_name;
+            if (pn.empty()) continue;
+            for (size_t j = 0; j < bones.size(); ++j)
+                if (bones[j]->name == pn) { parent_of[i] = (int)j; break; }
+        }
+        for (size_t i = 0; i < bones.size(); ++i) {
+            BoneRecord br{};
+            const Bone& b = *bones[i];
+            const BoneFrame bf = BoneWorldFrame(b, Vec3{0,0,0}, Vec3{1,1,1});
+            const uint32_t bi = (uint32_t)i;
+            const int par = (parent_of[i] >= 0) ? parent_of[i] : -1;
+            br.parent = (par >= 0) ? (uint32_t)par : 0xFFFFFFFFu;
+            br.bind_pos[0] = bf.head.x; br.bind_pos[1] = bf.head.y; br.bind_pos[2] = bf.head.z;
+            br.bind_rot[0] = 0.f; br.bind_rot[1] = 0.f; br.bind_rot[2] = 0.f; br.bind_rot[3] = 1.f;
+            br.length = bf.length;
+            // the reserved bytes carry the authored physical properties
+            float* res = (float*)br.reserved;
+            res[0] = b.mass;
+            br.reserved[4] = (uint8_t)(std::max(0.f, std::min(1.f, b.radius)) * 255.f);
+            br.reserved[5] = (uint8_t)(std::max(0.f, std::min(1.f, b.stiffness)) * 255.f);
+            std::string mat = b.material;
+            size_t k = 0;
+            for (; k < mat.size() && k < 22; ++k) br.reserved[6 + k] = (uint8_t)mat[k];
+            br.reserved[6 + k] = 0;
+            (void)bi;
+            out.bones.push_back(br);
+        }
+    }
+
+    out.anchors = std::move(anchors);
+    out.surfaces = std::move(surfaces);
+    if (out.anchors.empty() || out.surfaces.empty()) {
+        why = "the derived mesh produced no records";
+        return false;
+    }
+    return true;
+}
+
 bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                          ModelOutput& out, std::string& why,
                          Vec3 world_offset) {

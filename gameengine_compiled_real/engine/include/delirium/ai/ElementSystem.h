@@ -43,6 +43,7 @@
 #include <cstdint>
 #include "../core/Types.h"
 #include "../ai/ReconstructionModel.h"   // ModelOutput
+#include "MutualMesh.h"                 // MeshDerivation (the G22 derivation)
 
 namespace DeliRium {
 
@@ -51,6 +52,8 @@ namespace DeliRium {
 // is false when the substance has no surface at this local location (bounded
 // domains, e.g. outside an ellipsoid) -- the field composer then skips it.
 struct SubstancePoint { Vec3 p; Vec3 n; bool valid = true; };
+
+
 
 // -----------------------------------------------------------------------------
 // ISubstance - the leaf "physical substance". Maps LOCAL frame coordinates
@@ -523,6 +526,22 @@ struct Element {
 // Category-agnostic: it never inspects `kind`; it only composes the field and
 // fits patches. This is the seam the categorization method drives.
 // -----------------------------------------------------------------------------
+// Bake ONE sheet's DERIVED mesh (the G22 path): the substance is sampled
+// into a point cloud, the cloud's cells are derived (see MutualMesh.h), and
+// the cells become patches with the SAME 64-byte records the grid path
+// emits.
+//
+// `anchors`/`surfaces` are APPENDED to -- the caller concatenates the
+// layers, exactly as the grid bake does. `stats` receives the derivation's
+// counts.
+bool BakeDerivedSheet(const Element& sheet_el,
+                      const Vec3& origin, const Vec3& scale,
+                      int sample_n, float extent,
+                      std::vector<AnchorRecord>& anchors,
+                      std::vector<SurfaceRecord>& surfaces,
+                      MeshDerivation& stats,
+                      std::string& why);
+
 class ElementSystem {
 public:
     // The aggregate field at a world location: the weighted blend of every
@@ -541,6 +560,32 @@ public:
     static bool Bake(const Element& root, int grid_n, float extent,
                      ModelOutput& out, std::string& why,
                      Vec3 world_offset = Vec3{0.f, 0.f, 0.f});
+
+    // -------------------------------------------------------------------------
+    // THE DERIVED-MESH BAKE (G22).
+    //
+    // The grid bake PLACES its cells on a lattice and hopes the surface
+    // lands on them. The derived bake DERIVES the cells from the point set:
+    // the substance is sampled into a cloud, the cloud is split into two
+    // spatially interleaved sets, each set is triangulated (Delaunay), the
+    // triangles are paired into the engine's native QUAD cell, and where
+    // the two meshes overlap their cells are AVERAGED.
+    //
+    // WHY IT MATTERS: a grid can lie three ways -- it can duplicate an
+    // endpoint, be used inconsistently across the sites that sample it, and
+    // have a topology the data does not. A derivation has no
+    // parameterisation to get wrong.
+    //
+    // See engine/include/delirium/ai/MutualMesh.h for the derivation and
+    // its design, and engine/src/ai/DerivedMeshBake.cpp for the baker half.
+    //
+    // `stats` receives the derivation's counts (the cells, how many came
+    // from each set, how many were overlapped and averaged) so a caller
+    // and a gate can see what happened.
+    static bool BakeDerived(const Element& root, int sample_n, float extent,
+                            ModelOutput& out, std::string& why,
+                            MeshDerivation& stats,
+                            Vec3 world_offset = Vec3{0.f, 0.f, 0.f});
 
     // Bake + materialize into a live PSFBody (calls PSFBody::FromRecords).
     // Returns nullptr (with `why`) on failure.

@@ -1,0 +1,398 @@
+// =============================================================================
+// DerivedMeshBake.cpp - bake a body whose mesh cells are DERIVED from the
+// point set, instead of placed on a grid.
+//
+// See engine/include/delirium/ai/MutualMesh.h for the derivation itself.
+// This file is the BAKER half: it takes the derived connectivity and emits
+// the same 64-byte records the grid path emits.
+//
+// WHY A SEPARATE FILE: the grid path's patch loop is built around a regular
+// lattice -- the patch's corners are at grid positions (j*N+i), and the LSQ
+// target is sampled at the patch's (u,v) ON THE GRID. A DERIVED patch has
+// no grid position: its corners are four arbitrary points, and its (u,v) is
+// its own bilinear parameterisation. So the two paths differ in exactly
+// three places (the corner indices, the target sampling, and the
+// connectivity), and keeping them apart makes the difference auditable.
+//
+// THE THREE PLACES THEY DIFFER:
+//
+//  1. THE CORNERS. The grid path's patch spans one grid cell: (i,j),
+//     (i+1,j), (i+1,j+1), (i,j+1). The derived path's patch spans the quad's
+//     four vertices, in the order the derivation fixed (so the winding
+//     agrees with the surface normal).
+//
+//  2. THE LSQ TARGET. The grid path evaluates the substance at the patch's
+//     (u,v) on the sheet's DOMAIN -- because the patch's corners sit at
+//     that domain's grid positions. The derived path has no such
+//     correspondence, so it evaluates the target in the PATCH'S OWN FRAME:
+//     the target at the patch's (u,v) is the substance's surface at the
+//     BILINEAR INTERPOLATION of the quad's four corner points, projected
+//     back onto the substance.
+//
+//  3. THE CONNECTIVITY. The grid path derives it from the lattice (+i, -i,
+//     +j, -j). The derived path derives it from the DERIVED adjacency:
+//     two cells that share two vertices are neighbours.
+//
+// WHAT IS SHARED: the anchor records (positions, normals, colours, bone
+// binding), the quantisation, the corner-vanishing basis, the LSQ solve,
+// and the seam graph. So a derived body is a FIRST-CLASS body -- it loads,
+// renders, simulates and AMR-refines exactly like a grid body.
+// =============================================================================
+#include "delirium/ai/ElementSystem.h"
+#include "delirium/ai/MutualMesh.h"
+#include "delirium/psf/PSFBody.h"
+#include "delirium/ai/ReconstructionModel.h"
+#include <algorithm>
+#include <cmath>
+#include <map>
+#include <vector>
+
+namespace DeliRium {
+
+namespace {
+
+// The 8-term corner-vanishing basis (the SAME one the kernel and the grid
+// path use -- see kernels/psf_splat.cl's deform_h and Patch.cpp's copy).
+void cv_basis(float u, float v, double B[8]) {
+    const double bu = u * (1.0 - u), bv = v * (1.0 - v);
+    const double au = 2.0 * u - 1.0, av = 2.0 * v - 1.0;
+    const double w = 1.0 - v, x = 1.0 - u;
+    B[0] = bu * w;      B[1] = bu * v;
+    B[2] = bv * x;      B[3] = bv * u;
+    B[4] = bu * au * w; B[5] = bu * au * v;
+    B[6] = bv * av * x; B[7] = bv * av * u;
+}
+
+// Solve the 8x8 normal equations. (The same routine the grid path uses;
+// duplicated here rather than shared, so this file stands alone.)
+bool solve8(double M[8][8], double r[8], float out[8]) {
+    // Gaussian elimination with partial pivoting.
+    double a[8][9];
+    for (int i = 0; i < 8; ++i) {
+        for (int j = 0; j < 8; ++j) a[i][j] = M[i][j];
+        a[i][8] = r[i];
+    }
+    for (int col = 0; col < 8; ++col) {
+        int piv = col;
+        for (int i = col + 1; i < 8; ++i)
+            if (std::fabs(a[i][col]) > std::fabs(a[piv][col])) piv = i;
+        if (std::fabs(a[piv][col]) < 1e-12) return false;
+        if (piv != col) for (int j = 0; j < 9; ++j) std::swap(a[col][j], a[piv][j]);
+        const double d = a[col][col];
+        for (int j = col; j < 9; ++j) a[col][j] /= d;
+        for (int i = 0; i < 8; ++i) {
+            if (i == col) continue;
+            const float f = (float)a[i][col];
+            if (f == 0.f) continue;
+            for (int j = col; j < 9; ++j) a[i][j] -= (double)f * a[col][j];
+        }
+    }
+    for (int i = 0; i < 8; ++i) out[i] = (float)a[i][8];
+    return true;
+}
+
+inline uint8_t q8(float v) {
+    const float c = v < 0.f ? 0.f : (v > 1.f ? 1.f : v);
+    return (uint8_t)(int)(c * 255.f + 0.5f);
+}
+
+} // namespace
+
+// The public entry: bake ONE sheet's derived mesh.
+//
+// `sheet` is the leaf substance to sample; `origin`/`scale` place it in
+// the world. `out` receives the anchors and surfaces of that sheet only --
+// the caller concatenates the layers.
+bool BakeDerivedSheet(const Element& sheet_el,
+                      const Vec3& origin, const Vec3& scale,
+                      int sample_n, float extent,
+                      std::vector<AnchorRecord>& anchors,
+                      std::vector<SurfaceRecord>& surfaces,
+                      MeshDerivation& stats,
+                      std::string& why) {
+    if (!sheet_el.substance) { why = "the sheet has no substance"; return false; }
+
+    // ---- 1. sample the substance into a point cloud ------------------------
+    //
+    // The cloud is the "bunch of dots". The sample count is the user's
+    // coarseness budget: the grid path's N x N becomes the cloud's N x N.
+    const int N = std::max(4, std::min(64, sample_n));
+    float hx = extent * 0.5f, hy = extent * 0.5f;
+    sheet_el.substance->Domain(hx, hy);
+    if (hx < 1e-6f) hx = extent * 0.5f;
+    if (hy < 1e-6f) hy = extent * 0.5f;
+    if (hx > extent * 0.5f) hx = extent * 0.5f;
+    if (hy > extent * 0.5f) hy = extent * 0.5f;
+
+    std::vector<MeshPoint> cloud;
+    cloud.reserve(size_t(N) * N);
+    for (int j = 0; j < N; ++j)
+        for (int i = 0; i < N; ++i) {
+            const float x = ((i + 0.5f) / N - 0.5f) * (hx * 2.f);
+            const float y = ((j + 0.5f) / N - 0.5f) * (hy * 2.f);
+            const SubstancePoint sp = sheet_el.substance->Eval(x, y);
+            if (!sp.valid) continue;
+            // The point is placed in the SHEET'S LOCAL frame; the origin and
+            // scale are applied when the anchors are written, exactly as
+            // the grid path does (the field composer applies them).
+            cloud.push_back({ sp.p, sp.n, 1.f });
+        }
+    if (cloud.size() < 4) { why = "not enough in-support samples"; return false; }
+
+    // ---- 2. derive the mesh ------------------------------------------------
+    if (!DeriveMutualMesh(cloud, stats, why)) return false;
+
+    // ---- 3. the anchors ----------------------------------------------------
+    //
+    // One anchor per cloud POINT (not per cell): the cells reference the
+    // points. The anchor's position is the point's, placed in the world.
+    //
+    // WHY NOT DEDUPE: the two sets' meshes overlap, and an overlapped cell
+    // is AVERAGED rather than duplicated -- so one anchor per point is
+    // correct, and deduping would break the correspondence between a cell's
+    // corner index and the point it names.
+    const size_t base = anchors.size();
+    anchors.reserve(base + cloud.size());
+    Vec3 mn{ 1e30f, 1e30f, 1e30f }, mx{ -1e30f, -1e30f, -1e30f };
+    for (const MeshPoint& mp : cloud) {
+        AnchorRecord a{};
+        a.bone_index = 0xFFFFFFFFu;
+        a.connectivity[0] = a.connectivity[1] = a.connectivity[2] = a.connectivity[3] = 0xFFFF;
+        // The position is QUANTIZED against the bbox -- but the bbox is not
+        // known until every point is placed. So the positions are collected
+        // first, and the records are written after the bbox is computed.
+        (void)mp;
+    }
+    // The world-space points, and the bbox they span.
+    std::vector<Vec3> wpos(cloud.size()), wnrm(cloud.size());
+    for (size_t i = 0; i < cloud.size(); ++i) {
+        const MeshPoint& mp = cloud[i];
+        wpos[i] = Vec3{ origin.x + mp.p.x * scale.x,
+                        origin.y + mp.p.y * scale.y,
+                        origin.z + mp.p.z * scale.z };
+        // The normal is the inverse-transpose of the scale (the same rule
+        // the grid path uses in SheetAt).
+        wnrm[i] = Vec3{ mp.n.x / scale.x, mp.n.y / scale.y, mp.n.z / scale.z };
+        const float l = std::sqrt(wnrm[i].x*wnrm[i].x + wnrm[i].y*wnrm[i].y
+                                 + wnrm[i].z*wnrm[i].z);
+        if (l > 1e-12f) { wnrm[i].x /= l; wnrm[i].y /= l; wnrm[i].z /= l; }
+        mn.x = std::min(mn.x, wpos[i].x); mn.y = std::min(mn.y, wpos[i].y);
+        mn.z = std::min(mn.z, wpos[i].z);
+        mx.x = std::max(mx.x, wpos[i].x); mx.y = std::max(mx.y, wpos[i].y);
+        mx.z = std::max(mx.z, wpos[i].z);
+    }
+    if (mn.x > 1e29f) { why = "no in-support points"; return false; }
+
+    // The quantisation box: the span plus a margin, exactly as the grid
+    // path's Bake computes it (so the dequantisation agrees).
+    const Vec3 span0{ mx.x-mn.x, mx.y-mn.y, mx.z-mn.z };
+    const float diag0 = std::sqrt(span0.x*span0.x + span0.y*span0.y
+                                 + span0.z*span0.z) + 1e-9f;
+    const float m = 0.05f * diag0;
+    const Vec3 bbmin{ mn.x - m, mn.y - m, mn.z - m };
+    const Vec3 bbspan{ span0.x + 2*m, span0.y + 2*m, span0.z + 2*m };
+    auto safe = [](float s) { return s < 1e-6f ? 1e-6f : s; };
+    const float bsx = safe(bbspan.x), bsy = safe(bbspan.y), bsz = safe(bbspan.z);
+
+    for (size_t i = 0; i < cloud.size(); ++i) {
+        AnchorRecord a{};
+        a.bone_index = 0xFFFFFFFFu;
+        a.connectivity[0] = a.connectivity[1] = a.connectivity[2] = a.connectivity[3] = 0xFFFF;
+        const Vec3& p = wpos[i];
+        auto q = [&](float v, float lo, float sp2) -> uint16_t {
+            const float t = (v - lo) / sp2;
+            const int qv = (int)(std::max(0.f, std::min(1.f, t)) * 65535.f + 0.5f);
+            return (uint16_t)qv;
+        };
+        a.pos[0] = q(p.x, bbmin.x, bsx);
+        a.pos[1] = q(p.y, bbmin.y, bsy);
+        a.pos[2] = q(p.z, bbmin.z, bsz);
+        const Vec3& n = wnrm[i];
+        a.normal[0] = q8(n.x * 0.5f + 0.5f);
+        a.normal[1] = q8(n.y * 0.5f + 0.5f);
+        a.normal[2] = q8(n.z * 0.5f + 0.5f);
+        a.color[0] = q8(sheet_el.color.x);
+        a.color[1] = q8(sheet_el.color.y);
+        a.color[2] = q8(sheet_el.color.z);
+        a.roughness = 128; a.metallic = 0; a.anim_weight = 0;
+        anchors.push_back(a);
+    }
+
+    // ---- 4. the patches ----------------------------------------------------
+    //
+    // Each derived cell becomes a patch. Its four corners are its four
+    // points (in the order the derivation fixed, so the winding agrees with
+    // the surface normal).
+    //
+    // THE LSQ TARGET, in the patch's OWN frame: the target at the patch's
+    // (u,v) is the BILINEAR INTERPOLATION of the quad's four corner
+    // points, projected onto the surface along the interpolated normal.
+    // That is the same "the surface passes through the corners, and the
+    // deformation carries the detail" contract the grid path implements.
+    const int G = 8;   // the LSQ sample grid per patch
+    for (const MeshQuad& q : stats.quads) {
+        // the four corner positions and normals, DEQUANTIZED (the renderer
+        // will see the quantised values, so the fit must use them)
+        Vec3 CA[4], CN[4];
+        for (int k = 0; k < 4; ++k) {
+            const AnchorRecord& a = anchors[base + q.v[k]];
+            CA[k] = Vec3{ bbmin.x + a.pos[0] / 65535.f * bsx,
+                          bbmin.y + a.pos[1] / 65535.f * bsy,
+                          bbmin.z + a.pos[2] / 65535.f * bsz };
+            CN[k] = Vec3{ a.normal[0] * (2.f/255.f) - 1.f,
+                          a.normal[1] * (2.f/255.f) - 1.f,
+                          a.normal[2] * (2.f/255.f) - 1.f };
+            const float l = std::sqrt(CN[k].x*CN[k].x + CN[k].y*CN[k].y + CN[k].z*CN[k].z);
+            if (l > 1e-12f) { CN[k].x /= l; CN[k].y /= l; CN[k].z /= l; }
+        }
+        // the patch's bilinear base and normal field
+        double M[8][8] = {{0}}, r[8] = {0};
+        for (int i = 0; i < G; ++i)
+            for (int j = 0; j < G; ++j) {
+                const float cu = i / float(G-1), cv = j / float(G-1);
+                const double uu = cu, vv = cv;
+                // the bilinear base (the same convention as the kernel:
+                // pl = mix(A0,A3,u), pr = mix(A1,A2,u), P = mix(pl,pr,v))
+                const Vec3 pl{ CA[0].x + (CA[3].x-CA[0].x)*uu,
+                               CA[0].y + (CA[3].y-CA[0].y)*uu,
+                               CA[0].z + (CA[3].z-CA[0].z)*uu };
+                const Vec3 pr{ CA[1].x + (CA[2].x-CA[1].x)*uu,
+                               CA[1].y + (CA[2].y-CA[1].y)*uu,
+                               CA[1].z + (CA[2].z-CA[1].z)*uu };
+                const Vec3 bil{ pl.x + (pr.x-pl.x)*vv,
+                                pl.y + (pr.y-pl.y)*vv,
+                                pl.z + (pr.z-pl.z)*vv };
+                // the interpolated normal field, normalised
+                const Vec3 nl{ CN[0].x + (CN[3].x-CN[0].x)*uu,
+                               CN[0].y + (CN[3].y-CN[0].y)*uu,
+                               CN[0].z + (CN[3].z-CN[0].z)*uu };
+                const Vec3 nr{ CN[1].x + (CN[2].x-CN[1].x)*uu,
+                               CN[1].y + (CN[2].y-CN[1].y)*uu,
+                               CN[1].z + (CN[2].z-CN[1].z)*uu };
+                Vec3 nf{ nl.x + (nr.x-nl.x)*vv, nl.y + (nr.y-nl.y)*vv,
+                         nl.z + (nr.z-nl.z)*vv };
+                const float nl_len = std::sqrt(nf.x*nf.x + nf.y*nf.y + nf.z*nf.z);
+                if (nl_len > 1e-12f) { nf.x /= nl_len; nf.y /= nl_len; nf.z /= nl_len; }
+                // THE TARGET: the surface point the patch should pass
+                // through at (u,v).
+                //
+                // For a GRID patch the target is the substance evaluated on
+                // the sheet's domain at that (u,v). A DERIVED patch has no
+                // domain position -- its (u,v) is its own bilinear. So the
+                // target is the substance's surface NEAR the patch: the
+                // point on the substance closest to the patch's bilinear
+                // point, found by projecting along the interpolated normal.
+                //
+                // The projection is the same trick the grid path uses
+                // implicitly (the sheet's own field, evaluated at the
+                // domain position): take the bilinear point, and walk it
+                // onto the surface along the normal field until it is on
+                // the substance. The substance is a GRAPH z=f(x,y), so the
+                // walk is: solve z = f(x,y) for the z that puts the point
+                // on the graph, keeping x,y fixed.
+                Vec3 tgt = bil;
+                {
+                    // invert the sheet's placement: the bilinear point is in
+                    // WORLD space; the substance's Eval wants the sheet's
+                    // LOCAL space.
+                    const float inv_x = (scale.x != 0.f) ? 1.f/scale.x : 1.f;
+                    const float inv_y = (scale.y != 0.f) ? 1.f/scale.y : 1.f;
+                    const float inv_z = (scale.z != 0.f) ? 1.f/scale.z : 1.f;
+                    const float lx = (bil.x - origin.x) * inv_x;
+                    const float ly = (bil.y - origin.y) * inv_y;
+                    const SubstancePoint sp = sheet_el.substance->Eval(lx, ly);
+                    if (sp.valid) {
+                        tgt = Vec3{ origin.x + sp.p.x * scale.x,
+                                    origin.y + sp.p.y * scale.y,
+                                    origin.z + sp.p.z * scale.z };
+                    }
+                }
+                // the height along the interpolated normal, relative to the
+                // bilinear base -- the SAME quantity the grid path fits.
+                const double h = (tgt.x - bil.x) * nf.x
+                               + (tgt.y - bil.y) * nf.y
+                               + (tgt.z - bil.z) * nf.z;
+                double B[8]; cv_basis((float)cu, (float)cv, B);
+                for (int x = 0; x < 8; ++x) {
+                    r[x] += B[x] * h;
+                    for (int y = 0; y < 8; ++y) M[x][y] += B[x] * B[y];
+                }
+            }
+        SurfaceRecord s{};
+        for (int k = 0; k < 4; ++k) s.anchor_idx[k] = (uint16_t)(base + q.v[k]);
+        s.surface_def = 0;
+        if (!solve8(M, r, s.coef))
+            for (int x = 0; x < 8; ++x) s.coef[x] = 0.f;
+        // the constant colour, the same encoding the grid path uses
+        for (int ch = 0; ch < 3; ++ch) {
+            const float val = ch == 0 ? sheet_el.color.x
+                            : ch == 1 ? sheet_el.color.y : sheet_el.color.z;
+            uint8_t* cp = s.color_pattern + ch * 6;
+            cp[0] = 0x00; cp[1] = 0x00;
+            int8_t* K = reinterpret_cast<int8_t*>(cp + 2);
+            int kv = (int)(std::max(0.f, std::min(1.f, val)) * 63.f + 0.5f);
+            if (kv > 127) kv = 127;
+            K[0] = (int8_t)kv; K[1] = K[2] = K[3] = 0;
+        }
+        surfaces.push_back(s);
+    }
+
+    // ---- 5. the CONNECTIVITY, from the derived adjacency -------------------
+    //
+    // Two cells are neighbours when they share TWO vertices (an edge).
+    // The grid path derives this from the lattice; the derived path derives
+    // it from the cells themselves.
+    //
+    // WHY IT MATTERS: the anchor's connectivity slots are what the
+    // "surround" relation is stored in -- the anchor's four neighbours.
+    // That is the SAME relation SeamGraph::Build reconstructs for the seams,
+    // and it is what makes a pose change move the skin with the bone.
+    {
+        // the vertices each cell uses
+        std::map<uint32_t, std::vector<size_t>> by_vertex;
+        for (size_t c = 0; c < stats.quads.size(); ++c)
+            for (int k = 0; k < 4; ++k)
+                by_vertex[(uint32_t)(base + stats.quads[c].v[k])].push_back(c);
+        // for each cell, the cells that share an edge with it
+        std::map<size_t, std::vector<size_t>> edge_neighbours;
+        for (auto& [v, cells] : by_vertex) {
+            for (size_t i = 0; i < cells.size(); ++i)
+                for (size_t j = i + 1; j < cells.size(); ++j) {
+                    const MeshQuad& qa = stats.quads[cells[i]];
+                    const MeshQuad& qb = stats.quads[cells[j]];
+                    int shared = 0;
+                    for (int a = 0; a < 4; ++a)
+                        for (int b = 0; b < 4; ++b)
+                            if (qa.v[a] == qb.v[b]) ++shared;
+                    if (shared >= 2) {
+                        edge_neighbours[cells[i]].push_back(cells[j]);
+                        edge_neighbours[cells[j]].push_back(cells[i]);
+                    }
+                }
+        }
+        // the anchor's connectivity: the cells that touch it, and through
+        // them the anchors that share an EDGE with it (which is what a
+        // vertex's neighbours are).
+        for (auto& [v, cells] : by_vertex) {
+            if (v >= anchors.size()) continue;
+            std::vector<uint32_t> nb;
+            for (size_t c : cells) {
+                for (size_t d : edge_neighbours[c]) {
+                    const MeshQuad& q = stats.quads[d];
+                    for (int k = 0; k < 4; ++k) {
+                        const uint32_t a = (uint32_t)(base + q.v[k]);
+                        if (a == v) continue;
+                        if (std::find(nb.begin(), nb.end(), a) == nb.end())
+                            nb.push_back(a);
+                    }
+                }
+            }
+            for (int k = 0; k < 4 && (size_t)k < nb.size(); ++k)
+                anchors[v].connectivity[k] = nb[k];
+        }
+    }
+
+    return true;
+}
+
+} // namespace DeliRium
