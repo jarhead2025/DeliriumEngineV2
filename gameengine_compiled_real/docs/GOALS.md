@@ -1196,26 +1196,46 @@ grid one.
 (3200 vs the grid's 4608), and its silhouette balance is **1.0000×** (the
 grid's is 1.0002×) — a closed body.
 
-**And the measurement found four real bugs, all of them the SAME kind — the
-derived mesh was not TILING.**
+**And the measurement found FOUR real bugs, all of them the SAME kind — the
+derived mesh was not TILING.** (These were found and fixed in the working
+tree; the fixes are NOT yet landed, because the LAST one is still open.)
 
 | bug | symptom | fix |
 |---|---|---|
 | the quantisation box was never copied out of the per-sheet derivation | the body rendered as a huge flat sheet (the box stayed ZERO, so every position dequantised to a point) | the box is the UNION over the sheets |
 | the rim points were IN the cloud | a **truncated cone** instead of a dome — the Delaunay connected the rim's outermost points (r=0.477, z=0) to the apex (z=0.45) | the rim is the OVERLAP mechanism, not the surface: it is excluded from the cloud |
-| the cloud was sampled at the GRID's resolution | the cells were **2.5× too big** (a Delaunay's cell spans ~2.5× the point spacing), so the sagitta was ~6× and the render was faceted | the cloud is sampled **3× finer**, and the deformation fell from 15.28% to **8.77%** (the grid's is 8.30%) |
-| the quads were paired ARBITRARILY | **14,424 edges shared by three or more cells** and 70,464 boundary edges — the mesh did not tile | **NOT YET FIXED** — see below |
+| the cloud was sampled at the GRID's resolution | the cells were **2.5× too big** (a Delaunay's cell spans ~2.5× the point spacing), so the sagitta was ~6× and the render was faceted | the cloud is sampled **3× finer**; the deformation fell from 15.28% to **8.77%** (the grid's is 8.30%) |
+| the quads were paired ARBITRARILY | **14,424 edges shared by three or more cells** and 70,464 boundary edges — the mesh did not tile | **STILL OPEN** — see below |
 
-**THE OPEN ONE — and it is the crux.** A Delaunay's triangles must be paired
-into quads by a MATCHING that **tiles**. The current pairing takes the first
-pair it finds, and an arbitrary pairing does not tile: the cells overlap and
-leave gaps, and a mesh with gaps and overlaps renders **lumpy** even when its
-geometry, its shape profile and its normals are all correct (all three were
-measured good).
+**THE OPEN ONE — the crux.** A Delaunay's triangles must be paired into
+quads by a MATCHING that **tiles**. Three pairing rules were tried and
+measured:
 
-The fix is the incremental-Delaunay's standard trick: **pair each triangle
-across the edge OPPOSITE ITS OLDEST VERTEX**, which is what makes the
-pairing consistent and the mesh tile.
+| the rule | interior edges | overlapping edges |
+|---|---|---|
+| the first pair found (arbitrary) | 20,268 | **14,424** |
+| across the edge opposite the OLDEST vertex | 2,282 | 32,518 |
+| across the edge opposite the NEWEST vertex | 16,300 | 32,518 |
+| across the SHORTEST edge | **27,784** | **6,678** |
+
+The shortest-edge rule is the best so far and the standard for producing
+regular quads, but **6,678 overlapping edges remain** — the mesh still does
+not tile. For comparison, the grid mesh has **0** overlapping edges and
+6,320 interior ones.
+
+**WHY THE INCREMENTAL RULE FAILED.** It was tried because an incremental
+Delaunay (Sloan) pairs each triangle across the edge it was *born* across.
+But **Bowyer–Watson REBUILDS the cavity on every insertion**, so its
+triangles have no coherent birth edge — the rule does not apply to it.
+
+**THE NEXT STEP.** The remaining overlaps are the pairing's *boundary* cases:
+a triangle whose shortest edge is on the mesh's boundary has no partner, and
+a triangle whose shortest edge has ALREADY been claimed by another pairing
+is skipped — so the boundary is ragged. The likely fix is to pair the
+boundary triangles **last** (after the interior ones), so the interior is
+matched consistently and the boundary absorbs what is left. The gate that
+would prove it is the tiling measurement itself: **0 overlapping edges** and
+an interior-edge count near 2 × (cells − boundary).
 
 **Also settled along the way:** the "two sets" cannot be two SPATIAL
 SUBSETS of the cloud — a Delaunay of a subset covers only that subset's
