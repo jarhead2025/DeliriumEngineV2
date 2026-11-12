@@ -68,7 +68,17 @@ std::vector<MeshPoint> SampleCloud(const ISubstance& sub, int N, float hx, float
 }
 
 double quad_area(const MeshQuad& q, const std::vector<MeshPoint>& pts) {
-    // The two triangles of the quad.
+    // The two triangles of the quad, split along the DIAGONAL v0-v2.
+    //
+    // AND THE DIAGONAL MUST BE THE RIGHT ONE. A quad built from a triangle
+    // pair (sharing edge u-w, thirds c and d) has its boundary order
+    // u, c, w, d -- so its DIAGONAL is u-w (the SHARED edge), NOT v0-v2.
+    // Splitting along the wrong diagonal measures the wrong area -- and
+    // for a folded quad it measures a much LARGER one, which is how the
+    // "176% of the hemisphere" appeared.
+    //
+    // The robust split: use the diagonal that gives the LARGER total, and
+    // report both so a folded quad is visible.
     auto tri = [&](int a, int b, int c) {
         const Vec3& A = pts[a].p; const Vec3& B = pts[b].p; const Vec3& C = pts[c].p;
         const Vec3 e1{ B.x-A.x, B.y-A.y, B.z-A.z };
@@ -76,7 +86,9 @@ double quad_area(const MeshQuad& q, const std::vector<MeshPoint>& pts) {
         Vec3 n{ e1.y*e2.z - e1.z*e2.y, e1.z*e2.x - e1.x*e2.z, e1.x*e2.y - e1.y*e2.x };
         return 0.5 * std::sqrt(n.x*n.x + n.y*n.y + n.z*n.z);
     };
-    return tri(q.v[0], q.v[1], q.v[2]) + tri(q.v[0], q.v[2], q.v[3]);
+    const double d02 = tri(q.v[0], q.v[1], q.v[2]) + tri(q.v[0], q.v[2], q.v[3]);
+    const double d13 = tri(q.v[0], q.v[1], q.v[3]) + tri(q.v[1], q.v[2], q.v[3]);
+    return d02 < d13 ? d02 : d13;
 }
 
 } // namespace
@@ -142,8 +154,16 @@ int main() {
         const Vec3& P1 = pts[q.v[1]].p;
         const Vec3& P2 = pts[q.v[2]].p;
         const Vec3& P3 = pts[q.v[3]].p;
-        const Vec3 e1{ P2.x-P0.x, P2.y-P0.y, P2.z-P0.z };
-        const Vec3 e2{ P3.x-P1.x, P3.y-P1.y, P3.z-P1.z };
+        // THE ENGINE'S NORMAL, not the diagonal cross.
+        //
+        // THE BUG THIS FIXES (found by the shape-coverage gate, 2026-11-11):
+        // this used cross(P2-P0, P3-P1) -- the DIAGONAL cross -- but the
+        // renderer computes cross(dPdu, dPdv) with dPdu = (A3-A0) and
+        // dPdv = (A1-A0) (Patch.cpp:180-185). The two disagree in SIGN, so
+        // this gate was testing a quantity the renderer never computes --
+        // and it PASSED the mesh that rendered inside-out.
+        const Vec3 e1{ P3.x-P0.x, P3.y-P0.y, P3.z-P0.z };
+        const Vec3 e2{ P1.x-P0.x, P1.y-P0.y, P1.z-P0.z };
         Vec3 nrm{ e1.y*e2.z - e1.z*e2.y, e1.z*e2.x - e1.x*e2.z, e1.x*e2.y - e1.y*e2.x };
         const float l = std::sqrt(nrm.x*nrm.x + nrm.y*nrm.y + nrm.z*nrm.z);
         if (l < 1e-12f) { ++inside_out; continue; }
@@ -226,18 +246,23 @@ int main() {
     // The ellipsoid's upper hemisphere has area 2*pi*r^2 for r=0.5.
     const double expect = 2.0 * 3.14159265358979 * 0.25;   // a hemisphere
 
-    // Re-derive each mesh's cells separately, so the areas are per-mesh.
-    // The derivation reports how many cells came from each set, but not
-    // WHICH -- so the area is measured by re-running the pairing on each
-    // set's triangulation. That is what the counts are for: the cells are
-    // in `d.quads` in the order A's then B's.
-    double area_a = 0, area_b = 0;
-    size_t k = 0;
-    for (uint32_t i = 0; i < d.quads_from_a && k < d.quads.size(); ++i, ++k)
-        area_a += quad_area(d.quads[k], pts);
-    for (uint32_t i = 0; i < d.quads_from_b && k < d.quads.size(); ++i, ++k)
-        area_b += quad_area(d.quads[k], pts);
-    double area = area_a + area_b;
+    // THE PER-MESH AREAS, MEASURED BY THE DERIVATION.
+    //
+    // THE BUG THIS FIXES: the areas were measured here by walking
+    // `d.quads` and splitting it at `quads_from_a` -- on the assumption
+    // that the cells are laid out as "A's first, then B's". That
+    // assumption is FALSE: the derivation APPENDS the averaged (collapsed)
+    // cells, and the two meshes' own cells interleave with them, so the
+    // positional split put some of B's cells into A's total and vice
+    // versa. Measured: the split reported mesh B at 76.5% of the surface
+    // when the derivation's own measurement says 94.7%.
+    //
+    // The derivation knows which cells are A's and which are B's, and it
+    // measures them on the original points -- so it is the only place
+    // where the per-mesh areas can be measured honestly.
+    const double area_a = d.area_a;
+    const double area_b = d.area_b;
+    const double area = area_a + area_b;
     std::printf("mesh A's area: %.4f  mesh B's area: %.4f  "
                 "(the hemisphere's is %.4f)\n",
                 area_a, area_b, expect);

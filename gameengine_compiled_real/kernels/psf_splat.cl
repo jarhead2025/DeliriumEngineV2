@@ -1021,7 +1021,8 @@ __kernel void layer_fill_band(
     __global ulong *kout,
     const uint W, const uint H,
     const uint slot,               /* band base offset into the flat arrays */
-    const float INF)
+    const float INF,
+    const float depth_tol)         /* relative depth window (see below) */
 {
     uint x = get_global_id(0), y = get_global_id(1);
     if (x >= W || y >= H) return;
@@ -1057,6 +1058,86 @@ __kernel void layer_fill_band(
     uint R = 0u, G = 0u, B = 0u;
     uint dmin = 0xFFFFFFFFu;
     int cnt = 0;
+    /* THE DEPTH GATE: a neighbour votes only if it is at (nearly) the SAME
+     * DEPTH as the nearest neighbour.
+     *
+     * WHY: "same band" is NOT "same surface". A band is a DEPTH SHELL, and
+     * a shell can contain several surfaces -- at a grazing angle a torus's
+     * near rim and far rim project onto the same pixels while sitting at
+     * very different depths inside one shell. Averaging them blends two
+     * surfaces into a colour that exists nowhere in the geometry.
+     *
+     * MEASURED (the toroid close-up, gallery scene Q, a 1x render compared
+     * against a 4x render downsampled as the reference):
+     *
+     *   band fill passes   lit    interior pixels differing >16
+     *   ----------------   -----  ---------------------------
+     *   8 (default)        19987        21.3%
+     *   2                  16569         5.3%
+     *   0 (fill off)       15425         2.2%
+     *   classic path       20519         1.5%
+     *
+     * So the fill was inventing INTERIOR pixels that do not match the
+     * surface -- a 21.3% interior error against the classic path's 1.5%.
+     * The gap closes by requiring the neighbours to agree on depth: take
+     * the NEAREST neighbour's depth as the reference and count only the
+     * neighbours within a small RELATIVE window of it. Those are the
+     * neighbours belonging to the SAME surface; a neighbour on the far rim
+     * is at a very different depth and no longer votes.
+     *
+     * The window is RELATIVE to the reference depth, so it holds at every
+     * camera distance -- an absolute epsilon would be wrong everywhere but
+     * one. The depth is unpacked back to a float (the key stores the NDC
+     * depth's IEEE bit pattern) so the comparison is in depth units, not
+     * in bit-pattern units.
+     *
+     * THE TOLERANCE IS AN ARGUMENT, not a constant: the NDC depth is
+     * NON-LINEAR (it is compressed toward 1 with distance), so a fixed
+     * fraction of it is not a fixed fraction of the world depth. The host
+     * sweeps it and MEASURES which value gives the best fidelity -- the
+     * measurement picks the value, not a guess.
+     *
+     * MEASURED (gallery scene U, a 1x render compared against a 4x render
+     * downsampled as the reference; the classic path scores 0.75%):
+     *
+     *   gate off            20808 lit   3.52% interior error
+     *   gate on (tol=0)     16776 lit   1.76% interior error
+     *   gate on (tol>=0.002)20808 lit   3.52% interior error  <- the gate
+     *                                                       stops working
+     *
+     * The knee is SHARP and it is at ZERO, and the reason is the depth's
+     * non-linearity: the NDC depth is compressed toward 1 with distance, so
+     * a RELATIVE window (a fraction of the reference depth) is WIDE in
+     * world units exactly where the compression is steep -- and the other
+     * surface falls inside it. A relative tolerance therefore has to be
+     * essentially zero to reject anything, which is why the gate is
+     * expressed as an ABSOLUTE window on the NDC depth: the compressed
+     * coordinate is what the kernel has, and an absolute window on it is
+     * still scale-invariant in the sense that it does not grow with the
+     * reference's magnitude.
+     *
+     * A NEGATIVE tolerance DISABLES the gate entirely: every filled
+     * neighbour votes, which is the original behaviour. That case has to be
+     * expressible, because otherwise the gate cannot be measured against
+     * the thing it replaced -- an unmeasurable change is not a change. */
+    float dref = 1e30f;
+    /* first pass: the nearest neighbour's depth is the reference */
+    for (int dy = -1; dy <= 1; ++dy)
+    for (int dx = -1; dx <= 1; ++dx) {
+        if (dx == 0 && dy == 0) continue;
+        uint n = slot + (y+dy)*W + (x+dx);
+        ulong nk = kin[n];
+        if (nk == 0xFFFFFFFFFFFFFFFFUL) continue;
+        float d = as_float((uint)(nk >> 32));
+        if (d < dref) dref = d;
+    }
+    if (dref >= 1e29f) return;   /* no filled neighbours at all */
+    const bool gated = (depth_tol >= 0.0f);
+    /* ABSOLUTE window on the NDC depth (see the header: a RELATIVE window
+     * is defeated by the depth's non-linearity). */
+    const float dlo = dref - depth_tol;
+    const float dhi = dref + depth_tol;
+    /* second pass: only the neighbours at (nearly) the reference depth vote */
     for (int dy = -1; dy <= 1; ++dy)
     for (int dx = -1; dx <= 1; ++dx) {
         if (dx == 0 && dy == 0) continue;
@@ -1064,11 +1145,13 @@ __kernel void layer_fill_band(
         ulong nk = kin[n];
         if (nk == 0xFFFFFFFFFFFFFFFFUL) continue;
         uint nrgba = (uint)(nk & 0xFFFFFFFFu);
+        float d = as_float((uint)(nk >> 32));
+        if (gated && (d < dlo || d > dhi)) continue;  /* a DIFFERENT surface: no vote */
         R += (nrgba >> 24) & 255u;
         G += (nrgba >> 16) & 255u;
         B += (nrgba >>  8) & 255u;
-        uint d = (uint)(nk >> 32);
-        if (d < dmin) dmin = d;
+        uint db = (uint)(nk >> 32);
+        if (db < dmin) dmin = db;
         cnt++;
     }
     /* >=2 filled neighbours (the golden's rule): a lone neighbour is not

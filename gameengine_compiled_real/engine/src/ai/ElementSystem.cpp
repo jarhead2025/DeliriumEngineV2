@@ -573,6 +573,15 @@ bool ElementSystem::BakeDerived(const Element& root, int sample_n, float extent,
         stats.triangles_b += s.triangles_b;
         stats.pairable_edges_a += s.pairable_edges_a;
         stats.pairable_edges_b += s.pairable_edges_b;
+        // THE PER-MESH AREAS ACCUMULATE TOO.
+        //
+        // WHY THEY MUST BE COPIED HERE: this function accumulates the
+        // counts field-by-field, so a new field that is not added here is
+        // silently ZERO -- and a caller that trusts it measures a coverage
+        // of 0%. (Measured: the derived bake reported 0.0% coverage until
+        // this was added.)
+        stats.area_a += s.area_a;
+        stats.area_b += s.area_b;
     }
     stats.points.clear();
 

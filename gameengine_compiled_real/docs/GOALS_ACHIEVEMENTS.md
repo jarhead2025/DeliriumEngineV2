@@ -7,7 +7,7 @@ the way**. Almost every goal turned out to be a *diagnosis* goal rather than
 a construction goal: the stated symptom had a different cause than expected,
 and the fix was somewhere else.
 
-The number to keep in mind: **the suite went from 22 tests to 46**, and the
+The number to keep in mind: **the suite went from 22 tests to 49**, and the
 engine went from a renderer with a scene that had one visible object to a
 docked editor with a live local-LLM → geometry loop.
 
@@ -42,6 +42,7 @@ re-planned version is the one that shipped.
 | G19 | probes into `tests/` | 45 gates | the area path **averaged across depths** |
 | G20 | the closed body's representation | the overlap is **provably safe** | the rims are **exactly coincident** — the seams cannot cross |
 | G21 | the support-aware grid | the polar torus wastes **3.5%** (was 38%) | the angular axis **duplicated its endpoint** |
+| G22 | derive the mesh from the point set | the tiling **solves** (1,702 cells, 0 overlaps) | the winding used the **diagonal cross**, not the engine's — every cell was inside-out |
 
 ---
 
@@ -441,6 +442,84 @@ ellipsoid — which did not opt in — is **unchanged** at 16.3%.
 
 ---
 
+## G22. Derive the mesh from the POINT SET — **the tiling, solved**
+
+**Achieved.** The baker can now derive its cells from a **point cloud** rather
+than placing a grid on it — your rule: *"grab them into two sets, use the ones
+in the first set to determine the surround triangle in the second, and vice
+versa… overlap them and average them."*
+
+**The solution, in one line:** two triangulations of the **same** cloud
+(differing only in the co-circular tie-break), each paired into quads by a
+**perfect matching** of its dual graph, and the two meshes' cells **averaged
+in the surface fit** rather than merged in the topology.
+
+**Measured on the hemisphere** — the tiling, which was the open crux:
+
+| | before | after |
+|---|---|---|
+| cells | 634 | **1,702** |
+| edges shared by 3+ cells (overlap) | 1,186 | **0** |
+| vertices shared by 5+ cells | 854 | **0** |
+| unpaired triangles | 33 | **1** |
+| coverage (mesh A / B) | 94.5% / 94.7% | **95.1% / 95.4%** |
+
+**THE NEW GATE — `tests/validate_shape_coverage.cpp`** (72 checks, 0
+failures): the derivation over **seven basic geometric shapes**, each of which
+breaks a *different* assumption.
+
+| shape | what it breaks | cells | coverage | inside-out |
+|---|---|---|---|---|
+| sphere | the baseline | 1,456 | **101.9%** | 0 |
+| ellipsoid (prolate) | a non-spherical dome | 1,265 | 104.8% | 0 |
+| rod | a thin ribbon | 1,368 | 92.2% | 0 |
+| torus | **a hole** | 2,620 | 104.5% | 0 |
+| plane | an unbounded surface | 1,411 | 92.3% | 0 |
+| gaussian bump | a soft boundary | 1,872 | 94.0% | 0 |
+| heightfield saddle | non-convexity | 1,839 | 93.9% | 0 |
+
+**FOUND ON THE WAY — five bugs, and the fifth was the big one:**
+
+1. **The subset split could not work.** A Delaunay of a *subset* covers only
+   that subset's convex hull, so two subsets cannot both cover the domain,
+   and so they cannot overlap the way the idea requires. The two sets must be
+   two triangulations of the **same** cloud.
+2. **The pairing stranded triangles.** A triangle was marked `matched`
+   *before* the quad was validated, so a rejected pair consumed and stranded
+   **both** triangles.
+3. **The greedy matching stranded 20% of the area.** 203 triangles had
+   **zero** free neighbours — unreachable by a second pass. **Edmonds'
+   blossom** (augmenting paths + odd-cycle handling) took the unpaired count
+   from 33 to 1.
+4. **The winding used the wrong positions** — the jittered cloud, while the
+   cells index the original points.
+5. **The winding used the wrong QUANTITY.** `OrderQuad` computed the
+   **diagonal cross**; the renderer computes the **engine's** cross,
+   `cross(A3-A0, A1-A0)` (`Patch.cpp:180-185`). **They disagree in sign** —
+   so the winding satisfied a quantity the renderer never computes, and
+   **every cell came out inside-out** (134–316 per shape, on all seven).
+
+**AND THE LESSON THAT COST THE MOST TIME: a gate that tests the WRONG
+QUANTITY is worse than no gate.** The old `validate_mutual_mesh` had been
+computing the diagonal cross all along and reporting the inside-out mesh as
+**correct**. It passed the broken thing and reported confidence. The new gate
+found it only because it tested **the engine's own formula** — and it is
+**proven to catch the bug**: with the diagonal cross reintroduced, **7 of 72
+checks fail** (1,048–2,346 inside-out cells per shape).
+
+**Two measurement bugs of my own, both about the YARDSTICK:**
+- A **forward difference** for the gradient measured the slope over the
+  cell's forward half, which on a dome is systematically low: the reference
+  came out **34% short** of the true hemisphere. A yardstick 34% short makes
+  a mesh covering 101.7% look like it covers 135% — and **hides the very
+  error it was built to catch**. A **central difference** gives 6.9% (the
+  expected `O(dx²)` truncation).
+- The torus's analytic area was the **full** torus's, but `TorusSubstance`
+  models only the **upper half** of the tube. Verified numerically against a
+  surface-of-revolution integral (0.22% error) before using it.
+
+---
+
 ## The patterns worth keeping
 
 1. **A metric that answers a different question than the one being asked is
@@ -464,3 +543,14 @@ ellipsoid — which did not opt in — is **unchanged** at 16.3%.
 10. **The biggest wins were the goals whose premise turned out to be
     wrong** — G16, G17, G18, G19 and G20 were all "the stated symptom has a
     different cause than expected", and measuring first is what found it.
+11. **A gate that tests the WRONG QUANTITY is worse than no gate** — it
+    passes the broken thing and reports confidence. The old mutual-mesh gate
+    computed the *diagonal* cross while the renderer computes the *engine's*
+    cross; they disagree in sign, so the gate called a fully inside-out mesh
+    correct. **A gate must assert the same expression the production code
+    computes** — not a plausible-looking proxy for it.
+12. **The yardstick needs its own gate.** The shape-coverage gate's own
+    reference area was wrong twice (a forward difference, 34% short; and the
+    full torus's area against a half-torus substance). A broken yardstick
+    makes a correct subject look wrong *and* hides the real defect — so the
+    reference is checked against a **closed form** wherever one exists.

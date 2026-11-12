@@ -319,6 +319,19 @@ bool BakeDerivedSheet(const Element& sheet_el,
                 }
             }
         SurfaceRecord s{};
+        // THE CORNER ORDER IS THE QUAD'S, STRAIGHT THROUGH.
+        //
+        // The quad's order is a BOUNDARY order, and the engine's convention
+        // is A0=(0,0), A1=(1,0), A2=(1,1), A3=(0,1) -- but those are the
+        // SAME thing for a boundary order walked one way or the other, and
+        // WHICH one is correct is decided by OrderQuad, which now uses the
+        // engine's own normal formula (cross(A3-A0, A1-A0)) to pick the
+        // candidate whose sign agrees with the surface.
+        //
+        // So the quad's corners go in as they are. An earlier attempt
+        // permuted them here as well -- which would have DOUBLE-permuted
+        // them and re-broken the winding. The single point of truth is
+        // OrderQuad.
         for (int k = 0; k < 4; ++k) s.anchor_idx[k] = (uint16_t)(base + q.v[k]);
         s.surface_def = 0;
         if (!solve8(M, r, s.coef))

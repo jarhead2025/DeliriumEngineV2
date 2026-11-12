@@ -279,8 +279,9 @@ bool SplatRenderer::BuildProgram(const std::string& dir) {
             // 14-17 model_r*, 18 width, 19 height, 20 depth_bias,
             // 21 d_near, 22 d_far, 23 nbands, 24 band_key
             {"psf_splat_layered", (cl_kernel)k_splat_layered, 25},
-            // layer_fill_band: 0 kin, 1 kout, 2 W, 3 H, 4 slot, 5 INF
-            {"layer_fill_band",   (cl_kernel)k_layer_fill_band, 6},
+            // layer_fill_band: 0 kin, 1 kout, 2 W, 3 H, 4 slot, 5 INF,
+            // 6 depth_tol
+            {"layer_fill_band",   (cl_kernel)k_layer_fill_band, 7},
             // layer_stack_band: 0 keys, 1 W, 2 H, 3 slot, 4 INF, 5 fb,
             // 6 depth32
             {"layer_stack_band",  (cl_kernel)k_layer_stack_band, 7},
@@ -1927,6 +1928,42 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
         int v = 0; if (std::sscanf(e, "%d", &v) == 1 && v >= 0 && v <= 8) band_fill_passes = v;
     }
 
+    // THE DEPTH TOLERANCE for the band fill's neighbour vote.
+    //
+    // WHY IT EXISTS: the fill averages a missing pixel's filled NEIGHBOURS.
+    // "Same band" is not "same surface" -- a band is a depth shell, and a
+    // shell can hold several surfaces (at a grazing angle a torus's near
+    // rim and far rim project onto the same pixels at very different
+    // depths). Averaging across them blends two surfaces into a colour that
+    // exists nowhere in the geometry.
+    //
+    // MEASURED (gallery scenes U and W -- a 1x render compared against a 4x
+    // render downsampled as the reference; the classic path is the baseline
+    // at 0.75% interior error):
+    //
+    //   gate off               20808 lit   3.52% interior error  (scene U)
+    //   gate on, tol = 0       16776 lit   1.76% interior error  (scene U)
+    //   gate on, tol >= 0.002  20808 lit   3.52% interior error  (gate off!)
+    //
+    // So the fill was inventing INTERIOR pixels that do not match the
+    // surface, and the gate HALVES that error. The knee is sharp and it is
+    // at ZERO because the NDC depth is compressed toward 1 with distance:
+    // a RELATIVE window is WIDE in world units exactly where the
+    // compression is steep, so the other surface falls inside it. The gate
+    // is therefore an ABSOLUTE window on the NDC depth.
+    //
+    // WHY IT IS A KNOB: the host sweeps it and MEASURES which value gives
+    // the best fidelity -- the measurement picks the value, not a guess.
+    // A NEGATIVE value disables the gate (the pre-gate behaviour), which
+    // has to stay expressible so the gate can be measured against the
+    // thing it replaced.
+    float band_depth_tol = 0.0f;
+    if (const char* e = std::getenv("DELIRIUM_SPLAT_DEPTH_TOL")) {
+        float v = 0.f;
+        if (std::sscanf(e, "%f", &v) == 1 && v >= -1.0f && v <= 0.05f)
+            band_depth_tol = v;
+    }
+
     if (use_layered_splat && k_splat_layered && k_layer_fill_band && k_layer_stack_band) {
         // The band's depth range: the camera to the far side of the
         // body's world AABB (the same range the march path uses).
@@ -2129,6 +2166,7 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
                 CLC(clSetKernelArg((cl_kernel)k_layer_fill_band, f++, sizeof(cl_uint), &slot));
                 const float INF1 = 1e30f;
                 CLC(clSetKernelArg((cl_kernel)k_layer_fill_band, f++, sizeof(cl_float), &INF1));
+                CLC(clSetKernelArg((cl_kernel)k_layer_fill_band, f++, sizeof(cl_float), &band_depth_tol));
                 CLC(clEnqueueNDRangeKernel(q, (cl_kernel)k_layer_fill_band, 2, nullptr, g2, nullptr, 0, nullptr, nullptr));
                 // Swap the source and destination for the next pass.
                 void* t = src_key; src_key = dst_key; dst_key = t;

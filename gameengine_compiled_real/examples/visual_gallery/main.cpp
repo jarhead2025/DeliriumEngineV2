@@ -32,6 +32,11 @@
 //   O  asteroid           assets/asteroid.psf
 //   P  roughball          assets/roughball.psf
 //   Q  closeup            tight camera on the torus
+//   W  closeup_layered    Q's camera/body on the LAYERED path (the pixel-
+//                          fidelity pair: same body, same camera, only the
+//                          compositing differs)
+//   X  closeup_classic    Q's camera/body on the CLASSIC splat (the
+//                          reference: it never invents a blended colour)
 //   R  orbit              torus from a low, wide angle
 //   S  split_edges        a few splits (new patch edges / seams)
 //   T  weld               HarmonicWeld (global seam relaxation)
@@ -447,6 +452,47 @@ static bool scene_closeup(Ctx& c) {
     return ok;
 }
 
+// W) closeup on the LAYERED path -- scene Q's EXACT counterpart.
+//
+// WHY THIS EXISTS: the pixel-fidelity question ("is the render faithful to
+// the screen's pixel scale, or just a square when close up?") needs the
+// SAME camera and the SAME body on both paths, so the only difference is
+// the compositing. Q uses whatever path was last set (the gallery resets
+// to March after each scene), so Q alone cannot compare the paths.
+//
+// AND THE ENV VAR CANNOT DO IT: the gallery calls SetPath() per scene,
+// which marks the path EXPLICIT -- and an explicit path SUPERSEDES the
+// env-var seed (SplatRenderer::Initialize only seeds when the path is not
+// explicit). So DELIRIUM_SPLAT_LAYERS=1 --only Q renders the MARCH path and
+// the numbers come out byte-identical to a classic run. That is the same
+// trap as G19: before blaming a knob, check whether it reaches the thing.
+static bool scene_closeup_layered(Ctx& c) {
+    c.r->SetPath(SplatRenderer::Path::SplatLayered);
+    auto b = Load(c.torus);
+    if (!b) { c.r->SetPath(SplatRenderer::Path::March); return false; }
+    Camera cam = FrameCamera(*b, 30.f, 22.f, 1.35f);   // Q's camera, exactly
+    bool ok = Shot(*c.r, c.out, "W_closeup_layered.ppm", *b, cam);
+    c.r->SetPath(SplatRenderer::Path::March);
+    std::printf("  [W] closeup_layered    <- Q's camera/body on the LAYERED path\n");
+    return ok;
+}
+
+// X) closeup on the CLASSIC splat -- the third member of the Q/W/X set.
+//
+// The pixel-fidelity comparison needs a REFERENCE: the classic path never
+// invents a blended colour (a pixel is an impact's own colour or EMPTY),
+// so it is the baseline the layered path is measured against.
+static bool scene_closeup_classic(Ctx& c) {
+    c.r->SetPath(SplatRenderer::Path::SplatClassic);
+    auto b = Load(c.torus);
+    if (!b) { c.r->SetPath(SplatRenderer::Path::March); return false; }
+    Camera cam = FrameCamera(*b, 30.f, 22.f, 1.35f);   // Q's camera, exactly
+    bool ok = Shot(*c.r, c.out, "X_closeup_classic.ppm", *b, cam);
+    c.r->SetPath(SplatRenderer::Path::March);
+    std::printf("  [X] closeup_classic    <- Q's camera/body on the CLASSIC splat\n");
+    return ok;
+}
+
 // R) orbit
 static bool scene_orbit(Ctx& c) {
     auto b = Load(c.torus);
@@ -524,6 +570,8 @@ static const SceneDef kScenes[] = {
     {'O', "asteroid",      [](Ctx& c){ return scene_asset(c, 'O', "assets/asteroid.psf", "asteroid"); }},
     {'P', "roughball",     [](Ctx& c){ return scene_asset(c, 'P', "assets/roughball.psf", "roughball"); }},
     {'Q', "closeup",       scene_closeup},
+    {'W', "closeup_layered", scene_closeup_layered},
+    {'X', "closeup_classic", scene_closeup_classic},
     {'R', "orbit",         scene_orbit},
     {'S', "split_edges",   scene_split_edges},
     {'T', "weld",          scene_weld},

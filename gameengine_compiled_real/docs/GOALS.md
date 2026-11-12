@@ -1169,7 +1169,76 @@ link is exactly one whose two indices differ by N−1 in the `i` direction.
 
 ---
 
-## G22. Derive the mesh from the POINT SET — `WIP`
+## G22. Derive the mesh from the POINT SET — `DONE`
+
+**THE SOLUTION, IN ONE LINE:** two triangulations of the SAME cloud (differing
+only in the co-circular tie-break), each paired into quads by a **perfect
+matching** of its dual graph, and the two meshes' cells **averaged in the
+surface fit** rather than merged in the topology.
+
+**The tiling is SOLVED** (it was the open crux). The measured result on the
+hemisphere: **1,702 cells**, **1,628 edges shared by exactly two cells**,
+**93 boundary edges**, and **1 triangle unpaired** (was 634 cells, 1,186
+overlapping edges, and 33 stranded triangles).
+
+**FOUR bugs, and the two that mattered were about MATCHING, not geometry:**
+
+| bug | symptom | fix |
+|---|---|---|
+| the subset split | a Delaunay of a SUBSET covers only that subset's convex hull, so two subsets cannot both cover the domain | the two sets are the SAME cloud, **perturbed** — both triangulations cover everything |
+| the pairing **stranded** triangles | a triangle marked `matched` *before* the quad was validated, so a rejected pair consumed and stranded BOTH triangles | validate per-edge first (validity depends only on the edge) |
+| the **greedy** matching stranded 20% of the area | 203 triangles had **zero** free neighbours — unreachable by a second pass | **Edmonds' blossom** (augmenting paths + odd-cycle handling): 33 unpaired → 1 |
+| the winding used the **wrong positions** | `OrderQuad` decided the winding on the JITTERED cloud while the cells index the ORIGINAL points | decided on `points[i].p` |
+
+**AND A FIFTH, FOUND BY THE SHAPE-COVERAGE GATE (2026-11-11): the winding used
+the wrong QUANTITY.** `OrderQuad` computed the **diagonal cross**
+(`cross(P2-P0, P3-P1)`), but the renderer computes the **engine's** cross —
+`cross(dPdu, dPdv)` with `dPdu = (A3-A0)` and `dPdv = (A1-A0)`
+(`Patch.cpp:180-185`). **The two disagree in sign.** So the winding was being
+chosen to satisfy a quantity the renderer never computes, and **every cell
+came out inside-out**: 134–316 per shape across the sphere, the rod, the
+torus, the plane, the bump and the saddle. One-line fix, **0 inside-out on
+every shape** after it.
+
+**THE GATE THAT FOUND IT: `tests/validate_shape_coverage.cpp`** — the
+mutual-surround derivation over **seven basic geometric shapes**, each of
+which breaks a different assumption:
+
+| shape | what it breaks | cells | coverage (mesh A) | inside-out |
+|---|---|---|---|---|
+| sphere | the baseline | 1,456 | **101.9%** | 0 |
+| ellipsoid (prolate) | a non-spherical dome | 1,265 | 104.8% | 0 |
+| rod | a thin ribbon — nearly every vertex is on the boundary | 1,368 | 92.2% | 0 |
+| torus | **a hole** — the cloud's convex hull covers it | 2,620 | 104.5% | 0 |
+| plane | an unbounded surface | 1,411 | 92.3% | 0 |
+| gaussian bump | a soft boundary | 1,872 | 94.0% | 0 |
+| heightfield saddle | non-convexity | 1,839 | 93.9% | 0 |
+
+**72 checks, 0 failures** — and it is **proven to catch the bug**: with the
+diagonal cross reintroduced, **7 of 72 fail** (1,048–2,346 inside-out cells
+per shape).
+
+**TWO MEASUREMENT BUGS OF MY OWN, AND THEY ARE THE LESSON.** The gate's
+*reference area* is the yardstick, and I got it wrong twice:
+1. A **forward difference** for the gradient measured the slope over the
+   cell's forward half, which on a dome is systematically low: the reference
+   came out **34% short** of the true hemisphere. A yardstick 34% short makes
+   a mesh covering 101.7% look like it covers 135% — and **hides the very
+   error it was built to catch**. A **central difference** gives 6.9% (the
+   expected `O(dx²)` truncation).
+2. The torus's analytic area was the **full** torus's, but `TorusSubstance`
+   models only the **upper half** of the tube. Verified numerically against a
+   surface-of-revolution integral (0.22% error) before using it.
+
+**The general lesson, which cost me the most time this session: a gate that
+tests the WRONG QUANTITY is worse than no gate** — it passes the broken
+thing and reports confidence. The old `validate_mutual_mesh` had been doing
+exactly this (diagonal cross) and reported the inside-out mesh as correct.
+
+---
+
+
+### The original idea, and the route it took
 
 The idea (Josias, 2026-11-10): *"think of a bunch of dots, if you had to
 connect them by grabbing them into two sets, you can use the ones in the
@@ -1179,79 +1248,48 @@ convenient way to stack them on top of another to accurately mesh them,
 overlap them and average them."*
 
 **HALF OF IT ALREADY EXISTED.** `SeamGraph::Build` matches anchor *pairs* to
-find, for every patch, the patches that surround it — that is Rule 1. And
+find, for every patch, the patches that surround it — Rule 1. And
 `SeamGraph::HarmonizeEdgeCoefs` averages the two sides' deformation
-coefficients so a shared edge becomes **one curve** — that is Rule 2, per
-edge. What was missing was the **baker** deriving its cells instead of
-placing them.
+coefficients so a shared edge becomes **one curve** — Rule 2, per edge. What
+was missing was the **baker** deriving its cells instead of placing them.
 
-**Landed** — the derivation as a library (`ai/MutualMesh.{h,cpp}`), wired
-into the baker (`ai/DerivedMeshBake.cpp`, `ElementSystem::BakeDerived` /
-`BakeDerivedBody`), and a `--scene derived` counterpart in
-`complex_scene` that renders the derived sphere with the SAME cameras as the
-grid one.
+**THE ROUTE, and the three things that had to be re-thought:**
 
-**The measured result so far** — the derived body's surface residual is
-**BETTER** than the grid's (0.2499 vs 0.2981), it has **no wasted anchors**
-(3200 vs the grid's 4608), and its silhouette balance is **1.0000×** (the
-grid's is 1.0002×) — a closed body.
+1. **"Two sets" cannot be two SPATIAL SUBSETS.** A Delaunay of a subset
+   covers only that subset's convex hull, so two subsets cannot both cover
+   the domain, and so they cannot overlap the way the idea requires. The two
+   sets must be **two triangulations of the SAME cloud** differing in the
+   co-circular tie-break (which diagonal each interior quad takes) — two
+   full-domain, full-resolution, genuinely-overlapping meshes.
+2. **The pairing must be a PERFECT MATCHING, not a greedy pass.** A greedy
+   pass strands triangles with **zero** free neighbours — unreachable by a
+   second pass. **Edmonds' blossom** (augmenting paths + odd-cycle handling)
+   is what makes it tile.
+3. **"Overlap and average" belongs in the SURFACE, not the topology.** The
+   two triangulations are the same mesh with different diagonals, so their
+   cells are different quadrilaterals over the same region — merging them
+   cell-wise broke the tiling. The cell keeps ONE triangulation's connectivity
+   (so the mesh tiles) and its surface is fitted against the **average** of the
+   two cells' evaluations. That is the user's rule applied where averaging is
+   meaningful.
 
-**And the measurement found FOUR real bugs, all of them the SAME kind — the
-derived mesh was not TILING.** (These were found and fixed in the working
-tree; the fixes are NOT yet landed, because the LAST one is still open.)
+**A MEASUREMENT THAT WAS WRONG TWICE, and the lesson.** The area metric was
+misleading throughout: first because it is XY-projected (so a steeply
+inclined quad on a dome measures far smaller), then because the
+split-into-two-triangles method measures the triangles' area, not the quad's.
+Both times the "176% of the hemisphere" looked like a geometry bug and was
+really a measurement bug. **The triangulation's own area (96%) was right all
+along** — which was the clue that the geometry was never the problem.
 
-| bug | symptom | fix |
-|---|---|---|
-| the quantisation box was never copied out of the per-sheet derivation | the body rendered as a huge flat sheet (the box stayed ZERO, so every position dequantised to a point) | the box is the UNION over the sheets |
-| the rim points were IN the cloud | a **truncated cone** instead of a dome — the Delaunay connected the rim's outermost points (r=0.477, z=0) to the apex (z=0.45) | the rim is the OVERLAP mechanism, not the surface: it is excluded from the cloud |
-| the cloud was sampled at the GRID's resolution | the cells were **2.5× too big** (a Delaunay's cell spans ~2.5× the point spacing), so the sagitta was ~6× and the render was faceted | the cloud is sampled **3× finer**; the deformation fell from 15.28% to **8.77%** (the grid's is 8.30%) |
-| the quads were paired ARBITRARILY | **14,424 edges shared by three or more cells** and 70,464 boundary edges — the mesh did not tile | **STILL OPEN** — see below |
+**AND THE CONCAVE-QUAD QUESTION, settled by an independent reference.** A
+Delaunay's edges are not necessarily the convex-hull diagonals of the cell,
+so the union of two triangles across a Delaunay edge can be CONCAVE. An
+independently written Bowyer–Watson on the same cloud measured 84 concave
+pairs and **none** of them on a flippable edge — so the concavity is
+INHERENT, not a bug. Keeping them took the unpaired count from 33 to 1 and
+the coverage from 94.5% to 95.1%. The knob `DELIRIUM_MESH_ALLOW_CONCAVE=0`
+restores the convex-only rule so the cost of the rule stays measurable.
 
-**THE OPEN ONE — the crux.** A Delaunay's triangles must be paired into
-quads by a MATCHING that **tiles**. Three pairing rules were tried and
-measured:
-
-| the rule | interior edges | overlapping edges |
-|---|---|---|
-| the first pair found (arbitrary) | 20,268 | **14,424** |
-| across the edge opposite the OLDEST vertex | 2,282 | 32,518 |
-| across the edge opposite the NEWEST vertex | 16,300 | 32,518 |
-| across the SHORTEST edge | **27,784** | **6,678** |
-
-The shortest-edge rule is the best so far and the standard for producing
-regular quads, but **6,678 overlapping edges remain** — the mesh still does
-not tile. For comparison, the grid mesh has **0** overlapping edges and
-6,320 interior ones.
-
-**WHY THE INCREMENTAL RULE FAILED.** It was tried because an incremental
-Delaunay (Sloan) pairs each triangle across the edge it was *born* across.
-But **Bowyer–Watson REBUILDS the cavity on every insertion**, so its
-triangles have no coherent birth edge — the rule does not apply to it.
-
-**THE NEXT STEP.** The remaining overlaps are the pairing's *boundary* cases:
-a triangle whose shortest edge is on the mesh's boundary has no partner, and
-a triangle whose shortest edge has ALREADY been claimed by another pairing
-is skipped — so the boundary is ragged. The likely fix is to pair the
-boundary triangles **last** (after the interior ones), so the interior is
-matched consistently and the boundary absorbs what is left. The gate that
-would prove it is the tiling measurement itself: **0 overlapping edges** and
-an interior-edge count near 2 × (cells − boundary).
-
-**Also settled along the way:** the "two sets" cannot be two SPATIAL
-SUBSETS of the cloud — a Delaunay of a subset covers only that subset's
-convex hull, so two subsets cannot both cover the domain and so they cannot
-overlap the way the idea requires. The two sets must be **two triangulations
-of the SAME cloud** differing in the co-circular tie-break (which diagonal
-each interior quad takes). That gives two full-domain, full-resolution,
-genuinely-overlapping meshes.
-
-**And the "overlap and average" belongs in the SURFACE, not the topology.**
-The two triangulations are the same mesh with different diagonals, so their
-cells are different quadrilaterals over the same region — merging them
-cell-wise broke the tiling. The cell keeps ONE triangulation's connectivity
-(so the mesh tiles) and its surface is fitted against the **average** of the
-two cells' evaluations. That is the user's rule applied where averaging is
-meaningful.
 
 ---
 

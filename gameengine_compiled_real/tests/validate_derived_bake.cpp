@@ -234,13 +234,74 @@ int main() {
             area += 0.5 * std::sqrt(n.x*n.x + n.y*n.y + n.z*n.z);
         }
         const double expect = 2.0 * 3.14159265358979 * 0.25;   // a hemisphere
-        // The overlap factor: the averaged cells are counted twice.
-        const double overlap_factor = 1.0 + (double)stats.quads_averaged
-                                           / (double)std::max<size_t>(1, stats.quads.size());
-        const double union_area = area / overlap_factor;
-        std::printf("the derived body's cell area: %.4f (%.1f%% -- the OVERLAP "
-                    "factor is %.3f), so the union is %.4f\n",
-                    area, 100.0*area/expect, overlap_factor, union_area);
+        // THE COVERAGE MEASURE -- AND WHY IT IS NOT THE TOTAL.
+        //
+        // THE BUG THIS FIXES: the measure was the TOTAL area divided by an
+        // "overlap factor" of `1 + averaged/quads`. That factor corrects
+        // for ONLY the cells the "overlap and average" rule collapsed --
+        // but the derived body contains BOTH meshes' cells, and BOTH
+        // meshes cover the WHOLE surface. So the total counts the whole
+        // surface TWICE, and the factor divided out the averaged cells
+        // twice over. Measured: the measure reported 225% (convex) /
+        // 238% (concave) of the hemisphere for a mesh that actually
+        // covers 96% of it.
+        //
+        // THE HONEST MEASURE: the area of ONE mesh's cells. Each mesh
+        // covers the surface ONCE, so its area IS the covered area, and
+        // the two meshes together describe the same surface twice -- which
+        // is the whole POINT of the "each set determines the other's
+        // surround" idea.
+        //
+        // HOW IT IS OBTAINED: the body's patches are in the derivation's
+        // order -- A's cells, then B's, then the AVERAGED cells (one per
+        // collapsed pair). So the per-mesh areas can be measured directly
+        // by walking the patches in that order and using the counts the
+        // stats report.
+        //
+        // The averaged cells belong to BOTH meshes, so their area is
+        // counted once in each mesh's area.
+        const double total_cells = (double)std::max<size_t>(1, stats.quads.size());
+        const double n_a = (double)stats.quads_from_a;
+        const double n_b = (double)stats.quads_from_b;
+        const double n_avg = (double)stats.quads_averaged;
+        // The patches in order: A's own, B's own, then the averaged.
+        std::vector<double> patch_area;
+        patch_area.reserve(der_body->Patches().size());
+        for (const auto& p : der_body->Patches()) {
+            const Vec3 c[4] = { p.Evaluate(0,0), p.Evaluate(1,0),
+                                p.Evaluate(1,1), p.Evaluate(0,1) };
+            const Vec3 e1{ c[2].x-c[0].x, c[2].y-c[0].y, c[2].z-c[0].z };
+            const Vec3 e2{ c[3].x-c[1].x, c[3].y-c[1].y, c[3].z-c[1].z };
+            Vec3 n{ e1.y*e2.z-e1.z*e2.y, e1.z*e2.x-e1.x*e2.z,
+                    e1.x*e2.y-e1.y*e2.x };
+            patch_area.push_back(0.5 * std::sqrt(n.x*n.x + n.y*n.y + n.z*n.z));
+        }
+        double area_a = 0, area_b = 0, area_avg = 0;
+        {
+            // THE DERIVATION MEASURED THE PER-MESH AREAS ITSELF, on the
+            // original points. That is the honest source: the derivation
+            // knows which cells are A's and which are B's, and it measures
+            // them BEFORE the averaging collapses the shared ones.
+            //
+            // WHY A CALLER CANNOT COMPUTE IT: the body's patches are the
+            // two meshes' cells with the shared ones collapsed, so a sum
+            // over them counts the surface TWICE and the split between A
+            // and B depends on the emission order -- which is an
+            // implementation detail, not a fact about the mesh.
+            area_a = stats.area_a;
+            area_b = stats.area_b;
+            // The averaged cells are the shared region: the area both
+            // meshes agree on.
+            area_avg = std::min(area_a, area_b);
+        }
+        // The union of the two meshes is the surface they BOTH describe --
+        // so the coverage is the LARGER of the two (the one that covers
+        // more of it), not their sum.
+        const double union_area = std::max(area_a, area_b);
+        std::printf("the derived body's cell area: %.4f (%.1f%%) -- mesh A %.4f "
+                    "(%.1f%%), mesh B %.4f (%.1f%%)\n",
+                    area, 100.0*area/expect, area_a, 100.0*area_a/expect,
+                    area_b, 100.0*area_b/expect);
 
         // THE COMPARISON THAT MATTERS: the GRID body's coverage, on the
         // SAME measure.

@@ -2141,6 +2141,82 @@ the data, not metadata.* Carry it verbatim from the producer.
 
 ---
 
+## Fix 67 — the derived mesh's winding used the WRONG QUANTITY
+
+**Found by:** the new shape-coverage gate (`tests/validate_shape_coverage.cpp`),
+2026-11-11.
+
+**Symptom.** Every cell of the derived mesh rendered **inside-out** — the
+surface's normal came out with the opposite sign to the surface's own. On
+the sphere that is 1,286 of 1,463 cells; on the torus 2,346 of 2,620.
+
+**The cause.** `MutualMesh.cpp`'s `OrderQuad` chose the quad's winding by
+computing the **diagonal cross**:
+
+```cpp
+e1 = P2 - P0;  e2 = P3 - P1;   // cross(e1, e2)  -- the DIAGONALS
+```
+
+But the renderer never computes the diagonals. It computes the **engine's**
+cross (`Patch.cpp:180-185`):
+
+```cpp
+dPdu = (A3 - A0);   // the u axis runs A0 -> A3
+dPdv = (A1 - A0);   // the v axis runs A0 -> A1
+normal = cross(dPdu, dPdv);
+```
+
+**The two disagree in SIGN.** Measured on a flat +Z quad with the boundary
+order `(a,c,b,d)`: the diagonal cross is `+Z` while the engine's cross is
+`-Z`. So the winding was being chosen to satisfy a quantity the renderer
+never evaluates — and the cell came out with its normal reversed.
+
+**The fix** is one line: `OrderQuad` now computes the engine's cross. The two
+candidate orders differ only in which way the boundary is walked, so exactly
+one of them has a positive engine-cross, and that is the one chosen.
+
+**The far more important part: THE OLD GATE HAD THE SAME BUG.** The existing
+`validate_mutual_mesh` computed the diagonal cross too — so it had been
+**passing the fully inside-out mesh and reporting success**. It was not a
+weak gate; it was a gate asserting the **wrong expression**.
+
+> **A gate that tests the wrong quantity is worse than no gate.** It passes
+> the broken thing and reports confidence. A gate must assert the same
+> expression the production code computes — not a plausible-looking proxy
+> for it.
+
+**The new gate is proven to catch it**: with the diagonal cross
+reintroduced, **7 of 72 checks fail** (1,048–2,346 inside-out cells per
+shape, across the sphere, the ellipsoid, the rod, the torus, the plane, the
+gaussian bump and the heightfield saddle).
+
+### And the yardstick was broken twice
+
+The gate's *reference area* — the thing the coverage is measured against —
+was wrong in two separate ways:
+
+1. **A forward difference for the gradient.** `(f(x+dx)-f(x))/dx` at a cell's
+   centre measures the slope over the cell's *forward* half. On a dome the
+   slope is steepest at the footprint's centre, so the estimate is
+   systematically low: the reference came out **34% short** of the true
+   hemisphere (1.0357 against 1.5708). A **central difference** gives
+   1.4628 — a 6.9% shortfall, which is the expected `O(dx²)` truncation.
+
+   The consequence is worse than a wrong number: **a yardstick 34% short
+   makes a mesh covering 101.7% of the true area look like it covers 135%**
+   — and it hides the very defect the gate was built to find.
+
+2. **The torus's analytic area was the FULL torus's** (`4π²Rr`), but
+   `TorusSubstance` models only the **upper half** of the tube, so the
+   surface being measured is `2π²Rr`. Verified against a
+   surface-of-revolution integral (0.22% error) before it was used.
+
+**Lesson.** *The yardstick needs its own gate.* Check the reference against a
+**closed form** wherever one exists — otherwise a broken reference makes the
+subject look wrong *and* hides the real defect.
+
+---
+
 ## How the area-weighted path is measured
 
 **Measured by `tests/validate_layered_splat.py` (12 checks, 0 failures)** —
@@ -2264,54 +2340,102 @@ instead of looking like "the method made no difference".
 
 # Still open
 
-- **G13 (the success log as a retrieval corpus) is the next learning goal.**
-  The failure log already feeds the escalation prompt; the success log
-  should feed the *normal* prompt as a retrieved worked example (the
-  nearest prior document → its tree). That turns "accumulates complaints"
-  into "improves with use" — few-shot over a local corpus, no neural net
-  required.
-- **G14** — the escalation path has never been driven against a real
-  larger model; it is unit-tested with a stub callback.
-- **G15** — the document pipeline is not wired into the workspace UI. The
-  `DocLearner` is a library with a gate, not yet a console button.
-- **Nothing yet POSES a bone.** The baker emits `BoneRecord`s, the anchors
+**REFRESHED 2026-11-11.** This list had gone stale: it listed work as open
+that had been DONE for weeks. That is worse than omitting them — a stale
+"still open" list makes finished work look unfinished, and it sends the next
+reader hunting for a problem that is already solved. Every entry below was
+**verified against the code**, not against a memory of it.
+
+**REMOVED — verified done, not merely claimed:**
+- ~~"G13 — the success log as a retrieval corpus"~~ → **DONE.** The
+  retrieval is live: `DocErrorLog::RetrieveSimilar` +
+  `AsRetrievedContext` feed the FIRST attempt, and the corpus was proven
+  live (the second gearbox document retrieved the first at 85% similarity
+  and produced a valid body, faster).
+- ~~"G14 — the escalation path has never been driven against a real larger
+  model"~~ → **DONE.** The ladder fires live (the 7B unloads, the 14B loads
+  and answers), and the native endpoint's framing-by-reply-size was fixed.
+- ~~"G15 — the document pipeline is not wired into the workspace UI"~~ →
+  **DONE.** `--document`, `--auto-document`, `--doc-domain`,
+  `--escalate-model` and `--doc-corpus` are all live.
+- ~~"`tools/psf_encode.py` / `tools/psf_validate.py` … do not exist here"~~ →
+  **DONE** in a better form: `tests/validate_bit_compat.cpp` (18 checks), a
+  C++ gate rather than a Python one, because the CPU and the GPU do not do
+  the same arithmetic (FMA vs separate rounding).
+- ~~"`assets/sphere.psf` is the wrong format"~~ → **DONE.** A valid v3
+  binary now (`PSF\0` magic, 4,608 anchors / 3,666 surfaces, z-range
+  ±0.4998 against an x-span of 1.0000).
+- ~~"Six kernels are implemented but never launched; `psf_refine` is the
+  ready-made fix for the 38.9 ms/op AMR bottleneck"~~ → **DONE** (G16).
+  The kernel ports only 3% of the cost; the fix was algorithmic (the
+  deferred seam batch: 37.8 → 7.6 ms/op, bit-identical surface).
+- ~~"G22 — the derived mesh does not tile"~~ → **DONE.** The tiling is
+  solved: 1,702 cells, **0** edges shared by three or more cells, **0**
+  vertices shared by five or more, **1** triangle unpaired (was 634 cells,
+  1,186 overlapping edges, 33 stranded). Three things had to be re-thought:
+  the two sets must be two triangulations of the **same** cloud (a subset's
+  Delaunay covers only its own convex hull); the pairing must be a **perfect
+  matching** (Edmonds' blossom — a greedy pass strands triangles with *zero*
+  free neighbours); and the averaging belongs in the **surface fit**, not in
+  the topology. Plus the winding bug (fix 67).
+
+**STILL OPEN — the two structural boundaries:**
+
+- **Nothing yet POSES a bone.** This is the honest boundary of what is
+  built, and it is the last piece of the architecture the user described:
+  *"object reconstruction is encoded based on line segment (bones) or points
+  in space (articulations)"*. The baker emits `BoneRecord`s, the anchors
   carry `bone_index`, the material travels in the record's reserved bytes,
-  and the inertia and field layers read them — but no code transforms the
-  anchors a bone owns when the bone moves. That is the "live physical
-  reparametrization" step, and it is the honest boundary of what is built.
+  and the inertia and field layers read them — but **no code transforms the
+  anchors a bone owns when the bone moves**. Every `SetPosition` call in
+  the tree is physics (modal dynamics, local FEM) or geometry (the seam
+  weld, the patch merge); **none is driven by a bone's transform**. That is
+  the "live physical reparametrization" step: the pose change moves the
+  skin with the bone, and the surface must follow.
 - **Nothing yet SOLVES a field.** The field layer provides the material
-  data, the exact relations, and the lumped effective medium. There is no
-  PDE solver, and the layer does not pretend otherwise.
-- The **closed-body composition rule is not taught to the model yet**. The
-  baker now supports it (fix 26), but the document pipeline's prompt and
-  validator still need to state the rule that a closed body is an upper
-  sheet plus a **flipped sheet at the SAME origin** (`scale:[1,1,-1]`,
-  `origin:[0,0,0]`) — a stacked offset does not close it.
-- The `ElementSystem` substance vocabulary still has no first-class
-  closed-body **helper** — the composition is expressible in the tree, but
-  there is no `MakeSphere()` convenience.
-- The **area-weighted path** is implemented, verified, and wired into the
-  editor (the viewport's path buttons and the app's `--render-path` flag).
-- The learned categorizer (stage-1 neural weights) does not exist — the
-  procedural generator is still the stand-in.
-- The **stair-stepped rim** on baked bodies is fix 14 (the tangent-plane
-  chord), not a compositor problem — confirmed by the A/B above.
-- `tools/psf_encode.py` / `tools/psf_validate.py` (the CPU/GPU
-  bit-compat validator) exist in the proven tree but **not** here.
-- `assets/sphere.psf` is the **wrong format** (legacy text PSF) — gallery
-  scene N fails with a misleading "MISSING" message.
-- Six kernels are implemented but never launched; `psf_refine` is the
-  ready-made fix for the 38.9 ms/op AMR bottleneck.
-- `kernels/psf_area.cl` is a leftover scratch file (the logic was inlined
-  into `psf_splat.cl`); its deletion was blocked by a confirmation gate.
-  Nothing references it.
-- The **multi-layer bake** now has a dedicated gate
-  (`validate_closed_body`, `validate_azimuth_sweep`) — see fixes 30, 43–47.
-- The **inertia layer reads the mass-carrying anchors only** — the
-  placeholder anchors are excluded (fix 40). What it does not yet do is
-  derive *directional* inertia (the tensor's principal axes) as a first
-  class result; it reports the diagonalised eigenvalues.
+  data, the exact relations (`B = μH`, `D = εE`, `J = σE`,
+  `P/A = εσ_SB·T⁴`) and the lumped effective medium. There is no PDE
+  solver, and the layer does not pretend otherwise.
+
+**STILL OPEN — the smaller ones:**
+
+- **The learned categorizer (stage-1 neural weights) does not exist.** The
+  procedural generator is still the stand-in: it maps a few semantic
+  families to generic element trees by string matching. `ReconstructionModel`
+  parses the RMW1 weights container so the weights *can* be dropped in, but
+  nothing writes them.
+- **The closed-body rule IS taught** — the doc-learner's prompt states it
+  and names both wrong forms (the offset origin and the unflipped scale),
+  and the parser's error message repeats it — but there is still no
+  first-class closed-body **HELPER**: the composition is expressible in the
+  tree, but every caller writes the upper-plus-flipped-lower pair by hand,
+  and the model writes it correctly about half the time.
+- **The stair-stepped rim** on baked bodies is fix 14 (the tangent-plane
+  chord), not a compositor problem — confirmed by the A/B.
+- The **inertia layer reads the mass-carrying anchors only** (the
+  placeholders are excluded, fix 40) but does not derive *directional*
+  inertia (the tensor's principal axes) as a first-class result; it reports
+  the diagonalised eigenvalues.
 - The **closed body is still two sheets, not one watertight mesh** — they
   meet at a rim that now overlaps (the rim margin) rather than sharing an
-  edge. The overlap is deliberate: it is the "average out at the edges"
-  rule, and it costs a thin double-surface band at the seam.
+  edge. The overlap is deliberate (it is the "average out at the edges"
+  rule), it is **provably safe** (G20: the rims are exactly coincident,
+  their normals agree, and the depth tie is benign), and it costs a thin
+  double-surface band at the seam — 12.8% of the anchors.
+- `kernels/psf_area.cl` is a leftover scratch file (the logic was inlined
+  into `psf_splat.cl`); nothing references it.
+
+**AND THE ONE THIS SESSION ADDED — the model's GPU:**
+
+- **The local model was running on the CPU, not the GPU.** Measured: the
+  same prompt, the same model, the same machine — the CPU server took
+  **101.9 s / 94.6 s** (93.8 s of eval) and a GPU server took **9.6 s /
+  5.0 s** (4.69 s of eval): about **twenty times faster**. The cause is
+  NOT a missing driver, a missing runner, or a permissions problem (all
+  checked, all fine): the long-running systemd server's **startup discovery**
+  found only `id=cpu` (its log, Nov 6 13:21) and has run on the CPU ever
+  since. The same service HAD used the GPU before (Nov 6 01:12: "offloaded
+  29/29 layers to GPU") and stopped at the Nov 6 13:20 restart. A **fresh**
+  process finds the A770, so the fix is a restart — which needs root.
+  `tools/start_gpu_ollama.sh` starts a GPU-backed server without root and
+  verifies the device was found.

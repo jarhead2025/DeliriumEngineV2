@@ -157,6 +157,25 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/visual_gallery/main.cpp")
 endif()
 
 # ---------------------------------------------------------------------------
+# delirium_toroid_seam_probe - MEASURE the toroid's seam structure.
+#
+# WHY: the user proposed that two patch sets should NOT have to match edges
+# tightly ("breathing space"), with a deliberately made "empty path" mapped
+# to compensating anchors for the second set. Whether that is available
+# depends on HOW the edges currently resolve -- by exact anchor index, by
+# position (cross-chart), or not at all. That is a measurement, not an
+# opinion, so it gets a probe.
+#   cmake --build build_delirium --target delirium_toroid_seam_probe
+#   ./build_delirium/delirium_toroid_seam_probe assets/torus.psf
+# ---------------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/toroid_seam_probe/main.cpp")
+  add_executable(delirium_toroid_seam_probe
+    examples/toroid_seam_probe/main.cpp
+  )
+  target_link_libraries(delirium_toroid_seam_probe PRIVATE delirium_engine_lib)
+endif()
+
+# ---------------------------------------------------------------------------
 # delirium_playground - LIVE interactive playground (SDL window).
 # Drive every subsystem in real time: poke/dent/refine/coarsen/fracture/
 # morph/restitch/weld + live render-path switching (1/2/3) + auto-orbit.
