@@ -238,6 +238,32 @@ std::unique_ptr<PSFBody> BuildClosedSphere() {
     return ElementSystem::BakeBody(*tree, 48, 1.0f, why);
 }
 
+// The SAME closed sphere, baked by the DERIVED path (G22).
+//
+// WHY THE SAME TREE: the comparison must isolate the BAKE, not the shape.
+// The grid path places its cells on a lattice; the derived path derives
+// them from the point set. Same tree, same camera, same renderer -- so any
+// difference in the picture is the derivation's.
+//
+// The sample count is the derived path's coarseness budget: the grid path's
+// N x N becomes the cloud's N x N. 48 matches the grid path's grid, so the
+// two paths are given the SAME budget -- which is the only fair comparison.
+std::unique_ptr<PSFBody> BuildDerivedSphere(int sample_n = 48,
+                                            MeshDerivation* out_stats = nullptr) {
+    const char* tree_json = R"({
+      "kind":"body","substance":"ellipsoid",
+      "substance_params":{"sx":0.45,"sy":0.45,"sz":0.45},
+      "children":[
+        {"kind":"lower","substance":"ellipsoid",
+         "substance_params":{"sx":0.45,"sy":0.45,"sz":0.45},
+         "scale":[1,1,-1],"origin":[0,0,0]}
+      ]})";
+    std::unique_ptr<Element> tree;
+    std::string why;
+    if (!AI::ParseElementTree(tree_json, tree, why)) return nullptr;
+    return ElementSystem::BakeDerivedBody(*tree, sample_n, 1.0f, why, out_stats);
+}
+
 // A scene of FIVE separate bodies -- the pure multi-body compositing test.
 std::vector<Part> BuildFiveBodyScene() {
     std::vector<Part> parts;
@@ -342,6 +368,12 @@ int main(int argc, char** argv) {
         Part p; p.name = "sphere"; p.body = BuildClosedSphere();
         Region m_under{}, m_over{};
         if (p.body) {
+            // The GRID body's record structure, so it can be compared with
+            // the derived body's line for line.
+            std::printf("sphere:       anchors=%zu surfaces=%zu seams=%zu\n",
+                        (size_t)p.body->AnchorsConst().Count(),
+                        (size_t)p.body->SurfaceBlob().size(),
+                        (size_t)p.body->Seams().All().size());
             std::vector<Part> parts; parts.push_back(std::move(p));
             Camera cam;
             // below the seam, looking up and across at the sphere
@@ -422,6 +454,94 @@ int main(int argc, char** argv) {
         } else {
             std::printf("sphere:       FAIL: could not build the closed sphere\n");
             ++failures;
+        }
+    }
+
+    // --- scene 3b: the DERIVED mesh, rendered (G22) ------------------------
+    //
+    // WHY THIS SCENE EXISTS: every gate so far has measured the derived mesh
+    // in RECORDS -- residual, connectivity, tiling, coverage, winding. None
+    // of those is a PIXEL. A derivation that has never been rendered is a
+    // derivation whose visual quality is unknown.
+    //
+    // THE COMPARISON: the SAME closed sphere, baked two ways, from the SAME
+    // tree, with the SAME camera and the SAME renderer. The grid path places
+    // its cells on a lattice; the derived path derives them from the point
+    // set. So any difference in the picture is the derivation's.
+    //
+    // THE BUDGET IS THE SAME: 48 x 48 for both (the grid's N x N becomes the
+    // cloud's N x N). Comparing a 48-grid against a 96-cloud would measure
+    // the budget, not the method.
+    //
+    // WHAT IS ASSERTED:
+    //   A) the derived body BAKES (the library works end to end)
+    //   B) it RENDERS from BOTH sides (it is closed, like the grid's)
+    //   C) the side balance is SYMMETRIC (the geometric silhouette)
+    //   D) it is not a FLAT SHEET -- the silhouette must be a disc, so the
+    //      coverage must be a plausible fraction of the frame and the
+    //      silhouette's WIDTH and HEIGHT must be comparable. A flat sheet
+    //      seen edge-on is a thin bar; seen face-on it is a filled region.
+    //      The disc test is the one that catches "the quantisation box was
+    //      wrong" -- the bug that made the derived body a huge flat sheet.
+    if (want("derived")) {
+        MeshDerivation dstats;
+        std::unique_ptr<PSFBody> dbody = BuildDerivedSphere(48, &dstats);
+        if (!dbody) {
+            std::printf("derived:      FAIL: could not build the derived sphere\n");
+            ++failures;
+        } else {
+            std::printf("derived:      anchors=%zu surfaces=%zu seams=%zu\n",
+                        (size_t)dbody->AnchorsConst().Count(),
+                        (size_t)dbody->SurfaceBlob().size(),
+                        (size_t)dbody->Seams().All().size());
+            // THE CELL-COUNT DIAGNOSTIC: the emitted cells vs the distinct
+            // regions they cover. A tiling needs them close; a large gap
+            // means the two meshes' cells for the SAME region were both
+            // emitted -- overlapping duplicates, with two surfaces fighting
+            // over one region.
+            std::printf("derived:      cells=%d distinct_regions=%d  (A=%d B=%d averaged=%d unpaired=%d)\n",
+                        dstats.cells_emitted, dstats.distinct_regions,
+                        dstats.quads_from_a, dstats.quads_from_b,
+                        dstats.quads_averaged, dstats.triangles_unpaired);
+            // the same two cameras as the grid sphere
+            struct View { const char* tag; Camera cam; };
+            const View views[2] = {
+                { "under", Camera{ {0.f, -1.9f, -0.85f}, {0.f, 0.f, -0.15f},
+                                   {0.f, 0.f, 1.f}, 45.f } },
+                { "over",  Camera{ {0.f, -1.9f,  0.85f}, {0.f, 0.f,  0.15f},
+                                   {0.f, 0.f, -1.f}, 45.f } },
+            };
+            Region m[2];
+            for (int v = 0; v < 2; ++v) {
+                Part p; p.name = "derived"; p.body = BuildDerivedSphere(48);
+                std::vector<Part> parts; parts.push_back(std::move(p));
+                const std::string out = outdir + "/derived_" + views[v].tag + ".ppm";
+                if (!RenderAssembly(renderer, parts, views[v].cam, out)) {
+                    std::printf("derived(%s): FAIL: the save failed\n", views[v].tag);
+                    ++failures;
+                    continue;
+                }
+                m[v] = Measure(out);
+                std::printf("derived(%s):  lit=%d (%.2f%%)  geometry=%d (%.2f%%)  clusters=%d\n",
+                            views[v].tag, m[v].lit, m[v].fill_ratio * 100.0,
+                            m[v].nonbg, m[v].nonbg_ratio * 100.0, m[v].clusters);
+                // B) it renders from both sides
+                if (m[v].nonbg < 5000) {
+                    std::printf("derived(%s): FAIL: the half did not render\n", views[v].tag);
+                    ++failures;
+                }
+            }
+            // C) the geometric silhouette is symmetric -- the same invariant
+            // the grid sphere is checked against, measured on GEOMETRY.
+            if (m[0].nonbg > 0 && m[1].nonbg > 0) {
+                const double ratio = double(std::max(m[0].nonbg, m[1].nonbg)) /
+                                     double(std::min(m[0].nonbg, m[1].nonbg));
+                std::printf("  derived side balance (geometry): %.4fx (1.0 == symmetric)\n", ratio);
+                if (ratio > 1.5) {
+                    std::printf("  FAIL: the derived body is not closed\n");
+                    ++failures;
+                }
+            }
         }
     }
 

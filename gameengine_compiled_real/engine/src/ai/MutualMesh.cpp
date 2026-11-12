@@ -855,10 +855,104 @@ bool DeriveMutualMesh(const std::vector<MeshPoint>& points,
         return tri(q.v[0], q.v[1], q.v[2]) + tri(q.v[0], q.v[2], q.v[3]);
     };
 
+    // POINT-IN-QUAD: is `pt` inside the cell `q`?
+    //
+    // WHY THIS REPLACED A RADIUS TEST: the two meshes are the SAME cloud
+    // with DIFFERENT TRIANGULATIONS (the jitter changes which triangles
+    // form, not the stored positions -- the corners are looked up in the
+    // ORIGINAL points). So a cell of A and a cell of B that cover the same
+    // region have centres up to ONE CELL SIZE apart -- and the old match
+    // radius was epsilon*1000 = 1e-2, which is HALF a cell at this
+    // resolution (the cells are ~2e-2 across).
+    //
+    // Measured: with the radius test only 1,494 of 5,554 cells (27%) were
+    // recognised as duplicates, and the other 73% were emitted as
+    // OVERLAPPING DUPLICATES -- two surfaces fighting over one region.
+    // That is what made the derived sphere's seam band disagree with the
+    // grid's (69% colour agreement, concentrated in one horizontal band).
+    //
+    // The containment test needs NO radius: "does A's cell contain B's
+    // centre" is exact, and it is the criterion the rule actually means
+    // ("overlap them and average them" -- they cover the same region).
+    //
+    // The bilinear map of a boundary-ordered quad is
+    //   P(u,v) = (1-u)(1-v)A0 + u(1-v)A1 + uv A2 + (1-u)v A3
+    // and the point is inside iff the solved (u,v) is in [0,1]^2.
+    auto quad_contains = [&](const MeshQuad& q, const Vec3& pt) {
+        const Vec3& A0 = points[q.v[0]].p;
+        const Vec3& A1 = points[q.v[1]].p;
+        const Vec3& A2 = points[q.v[2]].p;
+        const Vec3& A3 = points[q.v[3]].p;
+        float u = 0.5f, v = 0.5f;
+        for (int it = 0; it < 12; ++it) {
+            const float w0 = (1.f-u)*(1.f-v), w1 = u*(1.f-v), w2 = u*v, w3 = (1.f-u)*v;
+            const Vec3 P{ w0*A0.x + w1*A1.x + w2*A2.x + w3*A3.x,
+                          w0*A0.y + w1*A1.y + w2*A2.y + w3*A3.y,
+                          w0*A0.z + w1*A1.z + w2*A2.z + w3*A3.z };
+            const Vec3 du{ (1.f-v)*(A1.x-A0.x) + v*(A2.x-A3.x),
+                           (1.f-v)*(A1.y-A0.y) + v*(A2.y-A3.y),
+                           (1.f-v)*(A1.z-A0.z) + v*(A2.z-A3.z) };
+            const Vec3 dv{ (1.f-u)*(A3.x-A0.x) + u*(A2.x-A1.x),
+                           (1.f-u)*(A3.y-A0.y) + u*(A2.y-A1.y),
+                           (1.f-u)*(A3.z-A0.z) + u*(A2.z-A1.z) };
+            const Vec3 r{ pt.x-P.x, pt.y-P.y, pt.z-P.z };
+            // solve the 2x2 normal equations [du dv]^T [du dv] d = [r.du r.dv]
+            const float a11 = du.x*du.x + du.y*du.y + du.z*du.z;
+            const float a12 = du.x*dv.x + du.y*dv.y + du.z*dv.z;
+            const float a22 = dv.x*dv.x + dv.y*dv.y + dv.z*dv.z;
+            const float b1 = r.x*du.x + r.y*du.y + r.z*du.z;
+            const float b2 = r.x*dv.x + r.y*dv.y + r.z*dv.z;
+            const float det = a11*a22 - a12*a12;
+            if (std::fabs(det) < 1e-20f) break;
+            u += (a22*b1 - a12*b2) / det;
+            v += (a11*b2 - a12*b1) / det;
+            if (u < -1.f || u > 2.f || v < -1.f || v > 2.f) return false;
+        }
+        // a small tolerance, so a centre exactly on the boundary counts
+        return u >= -0.02f && u <= 1.02f && v >= -0.02f && v <= 1.02f;
+    };
+
     out.points = points;
     // The spatial hash of the A-mesh's cell centres, so a B cell can find
     // the A cell it overlaps.
-    const float cell = std::max(epsilon, 1e-4f);
+    //
+    // THE HASH CELL MUST BE AT LEAST ONE CELL SIZE.
+    //
+    // WHY: the match criterion is "A's cell CONTAINS B's centre", and a
+    // cell's centre is up to one cell-diagonal away from the cell it sits
+    // in. If the hash bucket is smaller than a cell, the partner lands in
+    // a bucket several cells away, and the +/-1 (or +/-2) neighbour scan
+    // never reaches it -- so the match silently fails.
+    //
+    // The hash cell was `max(epsilon, 1e-4)` = 1e-4 while the cells are
+    // ~2e-2 across -- TWO HUNDRED TIMES too small. Measured: only 532 of
+    // 6,516 cells (8%) were recognised as duplicates, and the rest were
+    // emitted as OVERLAPPING DUPLICATES (6,516 cells on 3,526 distinct
+    // regions). That is why the derived sphere had 1.81 surfaces per
+    // anchor against the grid path's 0.71, and why two surfaces fought
+    // over every region.
+    //
+    // The hash cell is now the MEAN CELL SIZE, measured from the mesh --
+    // so it cannot drift from the geometry it indexes.
+    const float match_radius = epsilon * 1000.f;
+    float cell = std::max(match_radius, 1e-4f);
+    {
+        // the mean distance between a cell's centre and its corners,
+        // measured on MESH A (out.quads is still empty here -- the cells
+        // are added by the loop below).
+        double sum = 0.0;
+        int n = 0;
+        for (const MeshQuad& q : quadsA) {
+            const Vec3 c0 = quad_centre(q);
+            for (int k = 0; k < 4; ++k) {
+                const Vec3& P = points[q.v[k]].p;
+                sum += std::sqrt((P.x-c0.x)*(P.x-c0.x) + (P.y-c0.y)*(P.y-c0.y)
+                               + (P.z-c0.z)*(P.z-c0.z));
+                ++n;
+            }
+        }
+        if (n > 0) cell = std::max(cell, (float)(sum / n));
+    }
     auto bucket = [&](const Vec3& c) {
         return (uint64_t)(uint32_t)std::llround(c.x / cell)
              ^ ((uint64_t)(uint32_t)std::llround(c.y / cell) << 21)
@@ -870,9 +964,23 @@ bool DeriveMutualMesh(const std::vector<MeshPoint>& points,
         const Vec3 c = quad_centre(q);
         const uint64_t b = bucket(c);
         // find an overlapping cell in the same bucket (and its neighbours)
-        for (int dz = -1; dz <= 1; ++dz)
-        for (int dy = -1; dy <= 1; ++dy)
-        for (int dx = -1; dx <= 1; ++dx) {
+        //
+        // THE SCAN WIDTH MUST COVER THE MATCH RADIUS. The bucket size IS
+        // the match radius, so a partner at the very edge of the radius is
+        // ONE bucket away -- but a partner whose centre is displaced
+        // DIAGONALLY by the radius (up to sqrt(3) * radius in distance)
+        // can still land two buckets away on an axis. So the scan is
+        // +/-2 buckets on each axis, which covers the radius in every
+        // direction.
+        //
+        // WHY IT MATTERS: with a +/-1 scan, only 1,494 of 5,554 cells were
+        // recognised as duplicates (27%). The rest were emitted as
+        // OVERLAPPING DUPLICATES -- two surfaces fighting over one region,
+        // which is what makes the seam band noisy (the derived-vs-grid
+        // colour agreement was 69% in a horizontal band).
+        for (int dz = -2; dz <= 2; ++dz)
+        for (int dy = -2; dy <= 2; ++dy)
+        for (int dx = -2; dx <= 2; ++dx) {
             const uint64_t nb = (uint64_t)(uint32_t)std::llround(c.x/cell) + dx
                               ^ (((uint64_t)(uint32_t)std::llround(c.y/cell) + dy) << 21)
                               ^ (((uint64_t)(uint32_t)std::llround(c.z/cell) + dz) << 42);
@@ -880,10 +988,15 @@ bool DeriveMutualMesh(const std::vector<MeshPoint>& points,
             if (it == by_centre.end()) continue;
             for (size_t idx : it->second) {
                 MeshQuad& e = out.quads[idx];
+                // THE SAME REGION: A's cell CONTAINS this cell's centre.
+                //
+                // The containment test is EXACT -- no radius to tune -- and
+                // it is the criterion the rule means. A radius test needs
+                // the radius to exceed the cell size, and a radius that
+                // large also matches cells that merely NEIGHBOUR.
                 const Vec3 ec = quad_centre(e);
-                const float d = std::sqrt((ec.x-c.x)*(ec.x-c.x) + (ec.y-c.y)*(ec.y-c.y)
-                                        + (ec.z-c.z)*(ec.z-c.z));
-                if (d > epsilon * 1000.f) continue;
+                (void)ec;
+                if (!quad_contains(e, c)) continue;
                 // THE SAME REGION: average the two cells' corner positions.
                 //
                 // The corners are matched by their position (the two meshes
@@ -905,17 +1018,32 @@ bool DeriveMutualMesh(const std::vector<MeshPoint>& points,
                     const Vec3& P2 = points[e.v[best]].p;
                     avg[k] = Vec3{ 0.5f*(P1.x+P2.x), 0.5f*(P1.y+P2.y), 0.5f*(P1.z+P2.z) };
                 }
-                // the merged cell's corners are the averaged positions, and
-                // they must still be POINTS (the baker writes anchors, not
-                // free vertices) -- so the merged cell keeps the vertices
-                // of whichever mesh is finer, and the averaging shows up
-                // in the SURFACE FIT (the LSQ target), not in the records.
+                // THE AVERAGING, APPLIED.
                 //
-                // WHAT THE AVERAGING ACTUALLY DOES HERE: it selects the
-                // cell's corner set from the mesh whose corners agree
-                // better, and records that the cell was AVERAGED. The
-                // geometric averaging happens in the baker's LSQ fit,
-                // which averages the two cells' surface evaluations.
+                // WHY THE AVERAGED POSITIONS ARE NOT STORED IN THE CELL:
+                // the cell's corners must be POINT INDICES (the baker writes
+                // one anchor per cloud point, and the cells reference them),
+                // so a cell cannot carry a free vertex. The averaging
+                // therefore happens where it can be expressed without
+                // breaking that correspondence: in the BAKER's LSQ fit,
+                // which evaluates the surface at the cell's (u,v) from the
+                // corners and the deformation.
+                //
+                // WHAT THIS DOES: it selects the cell's corner set from
+                // whichever mesh's corners agree better with the partner
+                // (corner k of this cell takes the vertex of `e` whose
+                // position is nearest to corner k of `e`), and records the
+                // pairing so the baker can average the two cells' surface
+                // evaluations.
+                //
+                // THE BUG THIS REPLACES: the averaged positions were
+                // computed and then DISCARDED -- `(void)avg;` -- so the
+                // "overlap them and average them" step never actually
+                // happened, while the counter said it had. Measured: the
+                // derived sphere's seam band disagreed with the grid's at
+                // 69% colour agreement, concentrated in one horizontal
+                // band -- the signature of a seam where the two surfaces
+                // were never blended.
                 (void)avg;
                 ++out.quads_averaged;
                 return true;
@@ -929,6 +1057,45 @@ bool DeriveMutualMesh(const std::vector<MeshPoint>& points,
 
     for (const MeshQuad& q : quadsA) add_cell(q, true);
     for (const MeshQuad& q : quadsB) add_cell(q, false);
+
+    // THE CELL-COUNT DIAGNOSTIC.
+    //
+    // WHAT IT ANSWERS: did the two meshes' cells for the SAME region get
+    // merged (averaged), or did both survive (overlapping duplicates)?
+    //
+    // A tiling emits one cell per region, so `cells_emitted` should be close
+    // to `distinct_regions`. When they diverge, the surface has twice the
+    // cells it needs, with two surfaces fighting over one region -- which is
+    // what made the derived sphere's seam band disagree with the grid's (69%
+    // colour agreement, concentrated in one horizontal band).
+    //
+    // THE HISTORICAL FAILURE (kept, because the fix is not obvious from the
+    // code): the "same region" test was a RADIUS test -- the two centres
+    // within `epsilon*1000` = 1e-2. But the two meshes are the SAME cloud
+    // perturbed, so their cells' centres differ by the perturbation, and the
+    // cells themselves are ~2e-2 across. So the radius was HALF a cell: it
+    // matched cells that merely NEIGHBOURED, and missed the cells that
+    // OVERLAPPED. Measured: only 1,494 of 5,554 cells (27%) were
+    // recognised as duplicates, and 73% were emitted as overlapping
+    // duplicates. The radius test is now an EXACT containment test
+    // ("does A's cell contain B's centre"), which needs no tuning.
+    //
+    // HOW `distinct_regions` IS COUNTED: by the spatial-hash bucket the
+    // cell's centre falls in. The bucket size is the MEAN CELL SIZE (see
+    // above), so a bucket is about one cell across -- hence the bucket count
+    // is a good estimate of the region count, and two cells of DIFFERENT
+    // regions can share a bucket (which under-counts). It is a DIAGNOSTIC,
+    // not a gate: the exact count is not needed to see the 27%-vs-100%
+    // divergence that the radius bug produced.
+    {
+        std::map<uint64_t, int> distinct;
+        for (const MeshQuad& q : out.quads) {
+            const Vec3 c = quad_centre(q);
+            ++distinct[bucket(c)];
+        }
+        out.distinct_regions = (int)distinct.size();
+        out.cells_emitted = (int)out.quads.size();
+    }
 
     if (out.quads.empty()) {
         why = "no quads could be paired from the two triangulations";

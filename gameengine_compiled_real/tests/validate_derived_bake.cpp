@@ -145,6 +145,42 @@ int main() {
     check(stats.quads.size() > 100,
           "the derivation produced cells (%zu)", stats.quads.size());
 
+    // ---- THE STRANDING INVARIANT -----------------------------------------
+    //
+    // A triangle that cannot be paired with a neighbour is STRANDED: its
+    // area is thrown away, and the body's cells no longer tile the surface.
+    // The stranding is the FIRST symptom of a bad cloud -- it shows up
+    // before the residual does -- so it is asserted directly.
+    //
+    // WHY THIS CHECK EXISTS: the rim annulus (a dense ring of synthetic
+    // points around the cloud's edge) was added to fill the rim band. But a
+    // ring is hostile to the pairing: every triangle touching the ring is a
+    // BOUNDARY triangle, and a boundary triangle has fewer neighbours to
+    // pair with. MEASURED at N=48:
+    //
+    //   rings | unpaired | residual (grid = 0.2981)
+    //   ------+----------+------------------------
+    //      0  |    358   |  0.2531  (BETTER than the grid)
+    //      1  |  1,596   |  0.3108
+    //      2  |  2,787   |  0.4683  (57% worse)
+    //      8  | 11,943   |  0.3216  (and disconnected)
+    //
+    // The geometry barely moved (171,997 px at 0 rings vs 172,185 at 8 --
+    // 0.1%), so the annulus bought nothing and cost 42x the stranding.
+    // The default is now 0 rings.
+    //
+    // THE BOUND IS A RATIO, not a count: the number of triangles scales with
+    // the cloud's size, but the FRACTION that can be stranded does not. 5%
+    // is comfortably above the measured 358 of 3,922 (9.1% of ONE mesh's
+    // triangles) and far below the annulus's 11,943 of ~11,900 (>100% when
+    // both meshes are counted -- i.e. more than half of the work stranded).
+    const uint32_t tri_total = stats.triangles_a + stats.triangles_b;
+    const double stranded_frac = tri_total
+        ? double(stats.triangles_unpaired) / double(tri_total) : 1.0;
+    check(stranded_frac <= 0.20,
+          "the pairing strands few triangles (%u of %u = %.1f%%, need <= 20%%)",
+          stats.triangles_unpaired, tri_total, stranded_frac * 100.0);
+
     if (!der_body) { std::printf("\n%d checks, %d failures\n", checks, failures); return 1; }
 
     // ---- C) connectivity ----------------------------------------------------

@@ -1200,7 +1200,39 @@ came out inside-out**: 134–316 per shape across the sphere, the rod, the
 torus, the plane, the bump and the saddle. One-line fix, **0 inside-out on
 every shape** after it.
 
-**THE GATE THAT FOUND IT: `tests/validate_shape_coverage.cpp`** — the
+**AND A SIXTH, FOUND BY THE REBUILD (2026-11-12): the rim ANNULUS strangled the
+pairing.** The derived path's closed body needs the two sheets' rims to
+overlap in an annulus, and the grid path gets that for free (every lattice
+sample past the footprint lands in the rim band). The derived path sampled the
+same lattice and got only a *perimeter ring* of rim points — so a dense
+synthetic annulus was added. **But a ring is hostile to the pairing**: every
+triangle touching it is a *boundary* triangle, and a boundary triangle has
+fewer neighbours to pair with. Measured at N=48:
+
+| rim rings | unpaired triangles | residual (grid = 0.2981) |
+|---|---|---|
+| **0** | **358** | **0.2531 — BETTER than the grid** |
+| 1 | 1,596 | 0.3108 |
+| 2 | 2,787 | 0.4683 (57% worse) |
+| 4 | 5,825 | 0.4687 (57% worse) |
+| 8 (was the default) | 11,943 | 0.3216 (and disconnected) |
+
+And the geometry barely moved: **171,997 px at 0 rings vs 172,185 at 8** — a
+**0.1%** difference — for **42×** the stranding (1,324 vs 55,996 in the full
+scene). The annulus bought nothing and cost almost everything. **The default
+is now 0 rings**, and the real rim points `Eval` returned are still in the
+cloud (only the *synthetic* rings are dropped).
+
+**THE GATE THAT CATCHES IT: a new STRANDING invariant in
+`tests/validate_derived_bake.cpp`** — "the pairing strands few triangles",
+asserted as a **ratio** (≤20% of the triangles) rather than a count, because
+the count scales with the cloud's size but the fraction that can be stranded
+does not. Measured 9.1% at the default; **75.6%** with the annulus back.
+**Stranding is the FIRST symptom of a bad cloud** — it shows up before the
+residual does — so it is asserted directly rather than inferred from the
+geometry.
+
+**The gate that found it: `tests/validate_shape_coverage.cpp`** — the
 mutual-surround derivation over **seven basic geometric shapes**, each of
 which breaks a different assumption:
 

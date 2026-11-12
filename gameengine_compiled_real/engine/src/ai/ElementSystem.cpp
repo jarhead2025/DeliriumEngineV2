@@ -557,31 +557,93 @@ bool ElementSystem::BakeDerived(const Element& root, int sample_n, float extent,
     // The anchor count after each sheet's bake -- the LAYER BOUNDARIES, so
     // the bone binding can be applied per layer.
     std::vector<size_t> layer_ends;
-    for (const Sheet& sh : sheets) {
-        MeshDerivation s;
-        if (!BakeDerivedSheet(*sh.el, sh.origin, sh.scale, sample_n, extent,
-                              anchors, surfaces, s, why))
-            return false;
-        layer_ends.push_back(anchors.size());
-        // The counts ACCUMULATE across the sheets.
-        stats.quads.insert(stats.quads.end(), s.quads.begin(), s.quads.end());
-        stats.quads_from_a += s.quads_from_a;
-        stats.quads_from_b += s.quads_from_b;
-        stats.quads_averaged += s.quads_averaged;
-        stats.triangles_unpaired += s.triangles_unpaired;
-        stats.triangles_a += s.triangles_a;
-        stats.triangles_b += s.triangles_b;
-        stats.pairable_edges_a += s.pairable_edges_a;
-        stats.pairable_edges_b += s.pairable_edges_b;
-        // THE PER-MESH AREAS ACCUMULATE TOO.
-        //
-        // WHY THEY MUST BE COPIED HERE: this function accumulates the
-        // counts field-by-field, so a new field that is not added here is
-        // silently ZERO -- and a caller that trusts it measures a coverage
-        // of 0%. (Measured: the derived bake reported 0.0% coverage until
-        // this was added.)
-        stats.area_a += s.area_a;
-        stats.area_b += s.area_b;
+
+    // ---- THE QUANTISATION BOX, computed ONCE over every sheet ------------
+    //
+    // WHY IT MUST BE THE UNION: the stored positions are quantised against
+    // this box, so it IS the coordinate system they are expressed in. If
+    // each sheet were quantised against its OWN box, the two halves of a
+    // closed body would live in different coordinate systems -- and the
+    // body's single box (the one the dequantisation uses) would place them
+    // in the wrong place. Measured: the derived body rendered as a huge flat
+    // sheet because the box stayed zero and the renderer fell back to a unit
+    // cube. This is the G16/G18 lesson, applied a third time.
+    //
+    // The box is the span of the placed points plus the SAME 5% margin the
+    // grid path's Bake applies -- so the two paths' dequantisation agree.
+    {
+        // sample every sheet's cloud first, so the box can span all of them
+        std::vector<std::vector<MeshPoint>> clouds;
+        clouds.reserve(sheets.size());
+        Vec3 mn{ 1e30f, 1e30f, 1e30f }, mx{ -1e30f, -1e30f, -1e30f };
+        for (const Sheet& sh : sheets) {
+            std::vector<MeshPoint> c;
+            if (!SampleSheetCloud(*sh.el, sample_n, extent, c, why))
+                return false;
+            for (const MeshPoint& mp : c) {
+                const float wx = sh.origin.x + mp.p.x * sh.scale.x;
+                const float wy = sh.origin.y + mp.p.y * sh.scale.y;
+                const float wz = sh.origin.z + mp.p.z * sh.scale.z;
+                mn.x = std::min(mn.x, wx); mn.y = std::min(mn.y, wy); mn.z = std::min(mn.z, wz);
+                mx.x = std::max(mx.x, wx); mx.y = std::max(mx.y, wy); mx.z = std::max(mx.z, wz);
+            }
+            clouds.push_back(std::move(c));
+        }
+        if (mn.x > 1e29f) { why = "no in-support samples"; return false; }
+        const Vec3 span0{ mx.x-mn.x, mx.y-mn.y, mx.z-mn.z };
+        const float diag0 = std::sqrt(span0.x*span0.x + span0.y*span0.y
+                                     + span0.z*span0.z) + 1e-9f;
+        const float m = 0.05f * diag0;
+        stats.bbox_min = Vec3{ mn.x - m, mn.y - m, mn.z - m };
+        stats.bbox_span = Vec3{ span0.x + 2*m, span0.y + 2*m, span0.z + 2*m };
+        stats.has_bbox = true;
+
+        for (size_t si = 0; si < sheets.size(); ++si) {
+            const Sheet& sh = sheets[si];
+            MeshDerivation s;
+            if (!BakeDerivedSheet(*sh.el, sh.origin, sh.scale, clouds[si],
+                                  stats.bbox_min, stats.bbox_span,
+                                  anchors, surfaces, s, why))
+                return false;
+            layer_ends.push_back(anchors.size());
+            // The counts ACCUMULATE across the sheets.
+            stats.quads.insert(stats.quads.end(), s.quads.begin(), s.quads.end());
+            stats.quads_from_a += s.quads_from_a;
+            stats.quads_from_b += s.quads_from_b;
+            stats.quads_averaged += s.quads_averaged;
+            stats.triangles_unpaired += s.triangles_unpaired;
+            stats.triangles_a += s.triangles_a;
+            stats.triangles_b += s.triangles_b;
+            stats.pairable_edges_a += s.pairable_edges_a;
+            stats.pairable_edges_b += s.pairable_edges_b;
+            // THE PER-MESH AREAS ACCUMULATE TOO.
+            //
+            // WHY THEY MUST BE COPIED HERE: this function accumulates the
+            // counts field-by-field, so a new field that is not added here is
+            // silently ZERO -- and a caller that trusts it measures a coverage
+            // of 0%. (Measured: the derived bake reported 0.0% coverage until
+            // this was added.)
+            stats.area_a += s.area_a;
+            stats.area_b += s.area_b;
+            // THE CELL-COUNT DIAGNOSTIC, accumulated too.
+            //
+            // WHY IT MUST BE COPIED HERE: the same reason as the areas above
+            // -- this function copies field-by-field, so a new field left out
+            // is silently ZERO. And a ZERO here is not neutral: `cells_emitted`
+            // and `distinct_regions` are the pair that says whether the
+            // emitted cells TILE (the two counts agree) or whether the two
+            // meshes' cells for the same region were both emitted (the counts
+            // diverge -- overlapping duplicates, two surfaces fighting over
+            // one region).
+            //
+            // Measured: the derived render reported "cells=0 distinct_regions=0"
+            // while emitting 7,476 cells -- the diagnostic was structurally
+            // unable to report anything because the fields never arrived.
+            // A diagnostic that cannot report is worse than no diagnostic: it
+            // reads as "no duplicates found".
+            stats.cells_emitted += s.cells_emitted;
+            stats.distinct_regions += s.distinct_regions;
+        }
     }
     stats.points.clear();
 
@@ -1292,6 +1354,40 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
                                 std::vector<int8_t>{},
                                 Vec3{mn.x - m, mn.y - m, mn.z - m},
                                 Vec3{span0.x + 2*m, span0.y + 2*m, span0.z + 2*m},
+                                0.0f);
+}
+
+// -----------------------------------------------------------------------------
+// BakeDerivedBody -- the DERIVED counterpart of BakeBody.
+//
+// The grid path's BakeBody RE-DERIVES the quantisation box by re-sampling the
+// field, because the grid bake's box is not published. The derived path
+// DOES publish its box (the union over the sheets, computed before
+// anything was quantised), so this uses that box directly.
+//
+// WHY THAT MATTERS: a recomputed box is a DIFFERENT coordinate system. The
+// grid path can afford to recompute one because it re-samples exactly the
+// same way; the derived path cannot, because the derivation's box comes
+// from the PLACED CLOUD, which only the derivation knows. Recomputing it
+// from the field would give a different box -- and every stored position
+// would dequantise wrong. Measured: the derived body rendered as a huge flat
+// sheet because the box stayed zero.
+// -----------------------------------------------------------------------------
+std::unique_ptr<PSFBody> ElementSystem::BakeDerivedBody(
+        const Element& root, int sample_n, float extent,
+        std::string& why, MeshDerivation* stats_out,
+        Vec3 world_offset) {
+    ModelOutput mo;
+    MeshDerivation stats;
+    if (!BakeDerived(root, sample_n, extent, mo, why, stats, world_offset))
+        return nullptr;
+    std::string vwhy;
+    if (!ReconstructionModel::Validate(mo, vwhy)) { why = vwhy; return nullptr; }
+    if (!stats.has_bbox) { why = "the derivation published no quantisation box"; return nullptr; }
+    if (stats_out) *stats_out = stats;
+    return PSFBody::FromRecords(std::move(mo.anchors), std::move(mo.surfaces),
+                                std::vector<int8_t>{},
+                                stats.bbox_min, stats.bbox_span,
                                 0.0f);
 }
 

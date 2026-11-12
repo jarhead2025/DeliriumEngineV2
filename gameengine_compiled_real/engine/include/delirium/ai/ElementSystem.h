@@ -526,17 +526,36 @@ struct Element {
 // Category-agnostic: it never inspects `kind`; it only composes the field and
 // fits patches. This is the seam the categorization method drives.
 // -----------------------------------------------------------------------------
-// Bake ONE sheet's DERIVED mesh (the G22 path): the substance is sampled
-// into a point cloud, the cloud's cells are derived (see MutualMesh.h), and
-// the cells become patches with the SAME 64-byte records the grid path
-// emits.
+// Sample ONE sheet's substance into the point cloud the derivation works on
+// (the "bunch of dots"). Split out from the bake so the caller can compute
+// the body's quantisation box BEFORE anything is quantised.
+//
+// WHY IT IS SEPARATE: the quantisation box must be the UNION over every
+// sheet, but each sheet's cloud is only known once it has been sampled.
+// The grid path has the same requirement -- BakeBody re-derives the box by
+// re-sampling the field -- and violating it is a bug this project has now
+// paid for twice (G16's rod mass, G18's sphere): the box IS the coordinate
+// system the stored positions are expressed in, not metadata.
+bool SampleSheetCloud(const Element& sheet_el,
+                      int sample_n, float extent,
+                      std::vector<MeshPoint>& cloud,
+                      std::string& why);
+
+// Bake ONE sheet's DERIVED mesh (the G22 path): the cloud's cells are
+// derived (see MutualMesh.h), and the cells become patches with the SAME
+// 64-byte records the grid path emits.
+//
+// `cloud` is the point set from SampleSheetCloud. `bbmin`/`bbspan` are the
+// body's quantisation box -- the SAME box for every sheet, so the layers
+// share one coordinate system.
 //
 // `anchors`/`surfaces` are APPENDED to -- the caller concatenates the
 // layers, exactly as the grid bake does. `stats` receives the derivation's
 // counts.
 bool BakeDerivedSheet(const Element& sheet_el,
                       const Vec3& origin, const Vec3& scale,
-                      int sample_n, float extent,
+                      const std::vector<MeshPoint>& cloud,
+                      const Vec3& bbmin, const Vec3& bbspan,
                       std::vector<AnchorRecord>& anchors,
                       std::vector<SurfaceRecord>& surfaces,
                       MeshDerivation& stats,
@@ -625,6 +644,32 @@ public:
     static int LodOf(const Element& root) {
         return root.lod < 0 ? 1 : root.lod;
     }
+
+    // -------------------------------------------------------------------------
+    // BakeDerivedBody -- the DERIVED counterpart of BakeBody.
+    //
+    // BakeBody returns a materialised PSFBody from the GRID bake. This one
+    // does the same for the DERIVED bake (G22): the substance is sampled
+    // into a cloud, the cloud's cells are derived, and the cells become
+    // patches with the same 64-byte records.
+    //
+    // WHY IT EXISTS: without it the derived path is a LIBRARY -- the records
+    // exist, but nothing can RENDER them. A derivation that has never been
+    // rendered is a derivation whose geometry quality is unknown: the gates
+    // measure residual, connectivity, tiling and coverage, none of which is
+    // a pixel.
+    //
+    // The quantisation box is the derivation's OWN union box (published in
+    // `stats.bbox_min`/`stats.bbox_span`), NOT a recomputed one -- the
+    // stored positions were quantised against it, so recomputing a
+    // different box would dequantise every position wrong. This is the
+    // G16/G18 lesson, applied a third time.
+    //
+    // `stats` may be null when the caller does not need the counts.
+    static std::unique_ptr<class PSFBody> BakeDerivedBody(
+            const Element& root, int sample_n, float extent,
+            std::string& why, MeshDerivation* stats = nullptr,
+            Vec3 world_offset = Vec3{0.f, 0.f, 0.f});
 };
 
 // -----------------------------------------------------------------------------

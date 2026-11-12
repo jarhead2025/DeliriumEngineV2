@@ -154,6 +154,35 @@ struct MeshDerivation {
     // MEASURED (the hemisphere, 851+853 cells): mesh A covers 96.0% of
     // the surface, mesh B 82.7%.
     double area_a = 0.0, area_b = 0.0;
+    // THE CELL-COUNT DIAGNOSTIC: how many cells were EMITTED, and how many
+    // DISTINCT REGIONS they cover.
+    //
+    // WHY IT MATTERS: a tiling needs the emitted count to be close to the
+    // distinct-region count. When they diverge, the two meshes' cells for
+    // the same region were both emitted -- OVERLAPPING DUPLICATES -- and
+    // the surface has twice the cells it needs, with two surfaces fighting
+    // over the same region (which is what makes the seam band noisy).
+    int cells_emitted = 0;
+    int distinct_regions = 0;
+    // THE QUANTISATION BOX, published by the producer.
+    //
+    // WHY IT IS HERE: the stored positions are quantised against this box,
+    // so the box is the COORDINATE SYSTEM the numbers are expressed in --
+    // not metadata. A caller that materialises the body must use THIS box,
+    // and a caller that recomputes one gets a different coordinate system
+    // and every position dequantises wrong.
+    //
+    // The G16-style bug this prevents: the derived body rendered as a huge
+    // flat sheet because the box stayed ZERO (every position collapsed to
+    // one point) and the renderer fell back to a unit cube.
+    //
+    // It is the UNION over the sheets: each sheet's own box spans only its
+    // half (an upper sheet z>=0 and a mirrored lower one z<=0).
+    Vec3 bbox_min{ 0.f, 0.f, 0.f };
+    Vec3 bbox_span{ 1.f, 1.f, 1.f };
+    // TRUE when the producer actually computed a box (so a caller can tell
+    // "the box is (0,0,0)/(1,1,1) by default" from "the box is real").
+    bool has_bbox = false;
 };
 
 // Derive the mesh from a point cloud.

@@ -308,6 +308,24 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ai_pipeline_probe/main.cpp")
 endif()
 
 # -----------------------------------------------------------------------
+# geo_tool_probe - DOES THE LOCAL MODEL ACTUALLY DEPLOY THE GEOMETRIC
+# ANALYSIS TOOLS?
+#   The registry's maths is unit-tested (tests/validate_geo_tools.cpp).
+#   This probe asks the LIVE model a task that REQUIRES the tool, runs the
+#   tool loop, and checks that (a) the model called the tool and (b) the
+#   final answer carries the right numbers. Run it with and without the
+#   tools -- the difference is the measurement.
+#   cmake --build build_delirium --target geo_tool_probe
+#   ./build_delirium/geo_tool_probe --model qwen2.5:7b-instruct-q8_0
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/geo_tool_probe/main.cpp")
+  add_executable(geo_tool_probe
+    examples/geo_tool_probe/main.cpp
+  )
+  target_link_libraries(geo_tool_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
 # doc_learner_probe - drives the DOCUMENT-driven reconstruction loop
 # against a LIVE local model:
 #   technical document -> LLMClient -> element tree -> validate -> BAKE
@@ -364,6 +382,34 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/complex_scene/main.cpp")
       WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
       TIMEOUT 600)
   endforeach()
+
+  # The DERIVED-mesh render gate: the same closed sphere, baked two ways,
+  # from the same tree, with the same cameras.
+  #
+  # WHY IT IS A SEPARATE TARGET: the derived path (G22) derives its cells
+  # from the point set instead of placing them on a lattice. A derivation
+  # that has never been RENDERED is a derivation whose visual quality is
+  # unknown -- the record-level gates measure residual, connectivity,
+  # tiling and coverage, none of which is a pixel.
+  add_test(NAME render_derived
+           COMMAND complex_scene --out "${DELIRIUM_COMPLEX_SCENE_OUT}/derived" --scene derived)
+  set_tests_properties(render_derived PROPERTIES
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+    TIMEOUT 600)
+endif()
+
+# -----------------------------------------------------------------------
+# sheet_probe - WHY THE DERIVED SEAM SITS AT A DIFFERENT HEIGHT THAN THE
+# GRID'S.
+#
+# The render comparison showed the derived sphere's seam discontinuity 8
+# rows higher than the grid's. This compares the two bodies' anchor z
+# distributions -- the per-sheet z ranges and how many anchors straddle
+# z=0 -- so the cause is named rather than guessed.
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/complex_scene/sheet_probe.cpp")
+  add_executable(sheet_probe examples/complex_scene/sheet_probe.cpp)
+  target_link_libraries(sheet_probe PRIVATE delirium_engine_lib)
 endif()
 
 # -----------------------------------------------------------------------
