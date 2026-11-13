@@ -336,6 +336,16 @@ public:
         // not under-resolved around the circle.
         return std::max(n_radial * 2, want);
     }
+    // The tube's radii.
+    //
+    // These are part of the torus's IDENTITY, not internals: the parser has
+    // to convert a quoted "outer radius" into a major radius, and the only
+    // way to CHECK that conversion is to read the result back. The polar
+    // sampling above already treats them as the substance's defining
+    // quantities (r_min = major - minor, r_max = major + minor), so
+    // exposing them is consistent with how the engine already uses them.
+    float Major() const { return major_; }
+    float Minor() const { return minor_; }
 private:
     float major_, minor_;
 };

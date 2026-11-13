@@ -554,3 +554,70 @@ checks fail** (1,048–2,346 inside-out cells per shape).
     full torus's area against a half-torus substance). A broken yardstick
     makes a correct subject look wrong *and* hides the real defect — so the
     reference is checked against a **closed form** wherever one exists.
+13. **A model that fails at arithmetic does not fail *visibly* — it fails
+    plausibly.** The tools-off run answered `0.56 / 0.28` for a torus whose
+    radii are `0.32 / 0.12`: `outer + tube` and `2×tube`. Nothing in the
+    output looked wrong. The compartment turned a silent plausible error into
+    a call the engine answers.
+
+---
+
+## G23. Geometric analysis tools the model can deploy mid-reasoning
+
+**Achieved.** Sixteen **compartments** — small, named, self-describing units
+that each answer ONE question with ONE number — over the engine's *own*
+mathematics: the exact closed forms (volumes, surface areas, inertias), the
+field relations, and the four arithmetic/vocabulary operations the model
+provably gets wrong (`resolve_torus_radii`, `fit_sphere_to_mass`,
+`closed_body_rule`, `field_properties`). The model deploys them mid-reasoning
+over Ollama's native tool-calling.
+
+**The live A/B — same model, same task, tools on vs off:**
+
+| | tools ON | tools OFF |
+|---|---|---|
+| major | **0.32** ✅ | **0.56** ❌ |
+| minor | **0.12** ✅ | **0.28** ❌ |
+
+The tools-off model did not fail visibly: `0.56 / 0.28` is `outer + tube`
+and `2×tube` — a **plausible, confident** answer that would render the ring
+75% too big. The model has no *concept* of the distinction; it does
+arithmetic that happens to be wrong. The compartment turns a silent
+plausible error into a call the engine answers.
+
+**Found on the way — four defects, all in the error path:**
+
+- The expression check sat **after** the value was parsed, so the number
+  `7850` parsed first and the reader then reported `"expected ',' or '}' at
+  byte 257"` — naming neither the mistake nor the way out. Moving the check
+  earlier made it worse (the key had been *moved* into the map, so the
+  message said `the value for ""`), and moving it back without a `SkipWs()`
+  made it miss entirely (the `*` was behind a space). The working position
+  is: **after the value, after the whitespace, before the member is
+  emplaced.**
+- The part-name heuristic was "it has an underscore, so it is a part name" —
+  so the invented substance `dragon_scale` was diagnosed as a part name,
+  teaching the model to move it to `kind` and still have no shape. The
+  discriminator is now the engine's own **part-word vocabulary**.
+- The torus contradiction was checked as `major != outer`, but the model
+  wrote **both** `major: 0.44` and `outer_radius: 0.44` — the same number
+  twice — so the check *passed* and the right answer arrived only by
+  accident. The contradiction the geometry defines is `major != outer -
+  minor`.
+- The gate's own assertion was case-sensitive against a message that
+  shouts `EXPRESSION` in capitals. The gate now compares
+  case-insensitively: **the wording is not the contract, the behaviour is.**
+
+**The gates.** `validate_geo_tools` pins the maths against the closed forms
+and the engine's own physics. `validate_tool_loop` (new, **41 checks**) pins
+the *loop*: the call is detected in **both** reply shapes (the server's
+native `tool_calls` block and the text shape), **the tool's answer is fed
+back into the conversation** (the load-bearing part — without it the model
+reasons over a value it never saw), the loop terminates on the tool budget
+*and* the turn budget, a failing tool produces a self-correcting message
+naming the accepted arguments, and the transcript records every call.
+
+**Proven to catch its bugs:** dropping the feed-back → the gate fails on
+*"the tool's ANSWER was fed BACK to the model"*; disabling the tool budget →
+it fails on *"the TOOL budget stopped it"*.
+

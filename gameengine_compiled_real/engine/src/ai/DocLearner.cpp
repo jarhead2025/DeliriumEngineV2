@@ -4,6 +4,8 @@
 // See engine/include/delirium/ai/DocLearner.h for the design and the
 // reasons behind it.
 #include "delirium/ai/DocLearner.h"
+#include "delirium/ai/GeoTools.h"
+#include "delirium/llm/LLMToolLoop.h"
 
 #include <algorithm>
 #include <cstdio>
@@ -363,6 +365,29 @@ WORK IN THREE PASSES, and emit only the final JSON:
      plate or a face uses "plane"; a part that has a shaped surface (a
      gear tooth, a fin, a blade, a cam profile) uses "heightfield".
 
+=== THE TWO NAME FIELDS (READ THIS -- IT IS THE MOST COMMON MISTAKE) ===
+
+Every element has TWO name-ish fields, and they mean DIFFERENT things:
+
+  "kind"      -- the part's NAME. A free-text label you choose:
+                 "ring_housing", "input_shaft", "pinion_gear". It is a
+                 LABEL. Nothing is computed from it.
+  "substance" -- the SHAPE TYPE. It must be exactly one of:
+                 plane | ellipsoid | sphere | torus | donut | gaussian |
+                 bump | heightfield | wave
+
+MEASURED against a live qwen2.5:7b: asked for a ring housing, it wrote
+  {"kind": "ring_housing", "substance": "ring_housing"}
+-- the part's name in the SHAPE slot. The parser reads "substance" as the
+shape, so it rejected the tree as an unknown substance.
+
+The rule: put the part's name in "kind", and the SHAPE in "substance".
+A part called "pinion gear" is not a substance; a pinion gear is usually
+an "ellipsoid" or a "torus".
+
+If an element is only a CONTAINER (it groups other parts and has no
+surface of its own), write "substance": null -- or "" (both are accepted).
+
   2. RELATIONS. Each part's position and size come from the document's
      description of how the parts fit together: "the rotor sits inside the
      housing" -> the rotor is a CHILD of the housing, with its origin at
@@ -461,6 +486,32 @@ component. NEVER use a negative half-extent.
 "scale" field holds the ORIENTATION and the placement. A negative
 "sx"/"sy"/"sz" is rejected.
 
+=== NUMBERS ARE VALUES, NOT FORMULAS (READ THIS) ===
+
+Every number you write must be a FINISHED NUMBER. Do NOT write an
+expression, and do NOT write code.
+
+  WRONG   "mass": 7850 * (4/3 * Math.PI * (Math.pow(0.44,3) - Math.pow(0.32,3)))
+  WRONG   "mass": density * volume
+  RIGHT   "mass": 12.847
+
+If a value requires arithmetic -- a mass from a density and a volume, a
+torus's major radius from an outer radius, a sphere's radius from a mass
+-- CALL THE GEOMETRIC TOOL that computes it (they are listed in the
+system prompt), read the number it returns, and write THAT number.
+
+MEASURED against a live qwen2.5:7b: asked for a steel ring's mass it
+wrote the JavaScript formula instead of the number. The parser rejects a
+formula, and the tool that returns the number was available all along.
+
+=== ONE "children" ARRAY PER ELEMENT (READ THIS) ===
+
+An element has ONE "children" array. If you want to add another part,
+put it INSIDE that same array -- do not write a second "children" key.
+
+  WRONG   {"kind":"a", "children":[...], "children":[...]}
+  RIGHT   {"kind":"a", "children":[...,...]}
+
 === OUTPUT ===
 Emit ONLY the JSON object. No prose, no explanation, no markdown fence.
 )";
@@ -506,7 +557,8 @@ DocResult InterpretDocument(
     DocErrorLog& log,
     bool escalate,
     const std::function<std::string(const std::string& system,
-                                    const std::string& user)>* larger_model_ask)
+                                    const std::string& user)>* larger_model_ask,
+    bool use_geo_tools)
 {
     DocResult res;
 
@@ -563,12 +615,55 @@ DocResult InterpretDocument(
     }
 
     // --- TRANSPORT ---------------------------------------------------------
-    const std::string reply = asker ? asker(system, user) : std::string();
+    //
+    // With the geometric tools, the model runs through the TOOL LOOP: it may
+    // ask for a tool, the tool's answer goes back into the conversation, and
+    // the model continues. The final TEXT is what we parse.
+    //
+    // The tools are OFF by default so the behaviour stays measurable: a
+    // caller can run both ways and compare what the model produced.
+    std::string reply;
+    std::string tool_transcript;
+    if (use_geo_tools && asker) {
+        const AI::GeoToolSet& gtools = AI::GeoToolSet::Instance();
+        // The catalogue goes into the SYSTEM prompt as well as being
+        // offered to the server, because not every local runtime honours the
+        // server-side "tools" field.
+        const std::string system_with_tools =
+            system + LLM::ToolCataloguePrompt(gtools);
+
+        LLM::ModelResponder responder =
+            [&](const std::vector<std::pair<std::string, std::string>>& history,
+                std::string& out) -> bool {
+                // Rebuild the conversation as one user message plus the
+                // tool results, so the caller's simple (system, user)
+                // interface can carry the loop's history.
+                std::string u = user;
+                for (const auto& h : history) {
+                    if (h.first == "tool") u += "\n\n" + h.second;
+                }
+                out = asker(system_with_tools, u);
+                return !out.empty();
+            };
+
+        LLM::ToolLoopResult lr = LLM::RunToolLoop(system_with_tools, user,
+                                                   gtools, responder, 6, 8);
+        reply = lr.text;
+        // The transcript: what was asked, and what each tool answered.
+        for (const auto& t : lr.turns) {
+            tool_transcript += t.failed ? "[FAILED] " : "";
+            tool_transcript += t.tool_name + " " + t.arguments_json + " -> "
+                            + t.result + "\n";
+        }
+    } else {
+        reply = asker ? asker(system, user) : std::string();
+    }
     if (reply.empty()) {
         DocAttempt a;
         a.document_id = doc.id;
         a.document_text = doc.text;
         a.domain = doc.domain;
+        a.tool_transcript = tool_transcript;
         a.failed_stage = "transport";
         a.reason = "the model returned nothing (unreachable, or an empty reply)";
         a.ok = false;
@@ -588,6 +683,7 @@ DocResult InterpretDocument(
         a.document_text = doc.text;
         a.domain = doc.domain;
         a.raw_reply = reply;
+        a.tool_transcript = tool_transcript;
         a.failed_stage = "parse";
         a.reason = why;
         a.ok = false;
@@ -633,6 +729,7 @@ DocResult InterpretDocument(
         a.document_text = doc.text;
         a.domain = doc.domain;
         a.raw_reply = reply;
+        a.tool_transcript = tool_transcript;
         a.failed_stage = "validate";
         a.reason = "the tree describes only ONE sheet, so it cannot be a "
                    "closed body (a closed body needs several sheets "
@@ -651,6 +748,7 @@ DocResult InterpretDocument(
     a.document_text = doc.text;
     a.domain = doc.domain;
     a.raw_reply = reply;
+    a.tool_transcript = tool_transcript;
     a.ok = true;
     log.Record(a, escalate);
     res.ok = true;

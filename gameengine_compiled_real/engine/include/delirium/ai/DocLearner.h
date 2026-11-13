@@ -63,6 +63,18 @@ struct DocAttempt {
     std::string domain;
     // The model's raw reply.
     std::string raw_reply;
+    // The GEOMETRIC TOOL TRANSCRIPT -- what the model asked for, and what
+    // each tool answered, in order.
+    //
+    // It is the evidence the learner needs. A successful document becomes a
+    // worked example carrying the tools it used (so the next attempt can
+    // imitate the SEQUENCE, not just the answer); a failure carries the
+    // tools it TRIED (so the escalation prompt can say "you called
+    // resolve_torus_radii with outer_radius, which that tool does not
+    // accept").
+    //
+    // Empty when the tools were not used.
+    std::string tool_transcript;
     // The stage that failed (empty on success).
     //   "parse"        -- the reply was not a valid element tree
     //   "validate"     -- the tree was structurally invalid
@@ -241,6 +253,24 @@ struct DocResult {
 // already failed and `larger_model_ask` is provided, the ESCALATED
 // attempt goes to the larger model instead -- that is the "consult a
 // larger model if necessary" path.
+//
+// -----------------------------------------------------------------------------
+// THE GEOMETRIC TOOLS (opt-in)
+// -----------------------------------------------------------------------------
+//
+// `use_geo_tools` makes the learner run the model through the TOOL LOOP
+// (LLM::RunToolLoop) with the engine's geometric analysis tools, so the
+// model can compute the arithmetic it gets wrong -- the torus's radii, a
+// part's scale, the closed-body rule -- instead of guessing it.
+//
+// It is OPT-IN and the reason is measurement: the tools change what the
+// model produces, so a caller must be able to run both ways and compare.
+// The default (off) preserves the previous behaviour exactly.
+//
+// When the tools are used, the tool transcript is recorded in the attempt
+// (`tool_transcript`). That is the evidence a learner needs: a successful
+// document becomes a worked example carrying the tools it used, and a
+// failure carries the tools it TRIED.
 DocResult InterpretDocument(
     const Document& doc,
     const std::function<std::string(const std::string& system,
@@ -248,7 +278,8 @@ DocResult InterpretDocument(
     DocErrorLog& log,
     bool escalate = false,
     const std::function<std::string(const std::string& system,
-                                    const std::string& user)>* larger_model_ask = nullptr);
+                                    const std::string& user)>* larger_model_ask = nullptr,
+    bool use_geo_tools = false);
 
 } // namespace AI
 } // namespace DeliRium

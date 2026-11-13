@@ -22,6 +22,13 @@ const JsonValue* JsonValue::Find(const std::string& key) const {
     return nullptr;
 }
 
+std::vector<const JsonValue*> JsonValue::FindAll(const std::string& key) const {
+    std::vector<const JsonValue*> out;
+    for (const auto& kv : members)
+        if (kv.first == key) out.push_back(&kv.second);
+    return out;
+}
+
 // =============================================================================
 // JSON reader
 // =============================================================================
@@ -114,6 +121,61 @@ private:
             SkipWs();
             JsonValue v;
             if (!ParseValue(v, depth + 1, why)) return false;
+            // The '*' may be separated from the number by whitespace, so the
+            // whitespace must be skipped BEFORE the expression is detected.
+            // (Without this the check reads the space and misses entirely --
+            // measured: the message regressed to "expected ',' or '}'".)
+            SkipWs();
+            // -------------------------------------------------------------------------
+            // A COMPUTATION IS NOT A VALUE.
+            // -------------------------------------------------------------------------
+            //
+            // WHY IT IS HERE (after the value, before the separator): the
+            // value itself parses fine -- "7850" is a number -- and the '*'
+            // only appears AFTER it. So the mistake is visible only HERE, and
+            // this is the first point where the object's KEY is still in hand
+            // to name.
+            //
+            // The key must NOT have been MOVED into the map yet -- a moved-from
+            // std::string is empty, and the message would say 'the value for
+            // ""' (which names nothing). So the member is emplaced AFTER
+            // this check.
+            //
+            // The ORIGINAL check was here too, but it tested the WRONG
+            // characters: it looked for '*', '/', '(', 'M', 'm' -- which is
+            // right for "2 * 3" (the '*' follows the 2) but WRONG for
+            // "7850 * (4/3 * Math.PI * ...)" only by accident, and it MISSED
+            // the case where the expression starts with a letter ("Math.PI
+            // * 2"), where ParseValue's number parser stops at 'M' and the
+            // error becomes "expected number".
+            //
+            // MEASURED against a live qwen2.5:7b reading a ring-housing
+            // document: it emitted
+            //
+            //   "mass": 7850 * (4/3 * Math.PI * (Math.pow(0.44,3) - Math.pow(0.32,3)))
+            //
+            // -- JAVASCRIPT SOURCE as a JSON value. It was trying to COMPUTE
+            // a mass from a density and a geometry, which is exactly the job
+            // the geometric tools do (`fit_sphere_to_mass`, `volume_of_*`).
+            // The model has the arithmetic it needs but no way to perform
+            // it, so it writes the formula instead of the answer.
+            //
+            // So the message names the mistake AND points at the capability
+            // that replaces it. That is the difference between a rejection
+            // and a lesson.
+            if (pos_ < s_.size() &&
+                (s_[pos_] == '*' || s_[pos_] == '/' || s_[pos_] == '(' ||
+                 s_[pos_] == 'M' || s_[pos_] == 'm')) {
+                why = "the value for \"" + key +
+                      "\" is an EXPRESSION, not a number -- you wrote a "
+                      "formula (e.g. \"7850 * (4/3 * Math.PI * ...)\") where a "
+                      "computed NUMBER belongs. Compute the value first: if "
+                      "you are working from a density and a geometry, the "
+                      "geometric tools (fit_sphere_to_mass, volume_of_ellipsoid, "
+                      "volume_of_torus, volume_of_cylinder) return the number "
+                      "directly";
+                return false;
+            }
             out.members.emplace_back(std::move(key), std::move(v));
             SkipWs();
             if (pos_ >= s_.size()) return Fail(why, "unterminated object");
@@ -150,6 +212,20 @@ private:
             if (pos_ >= s_.size()) return Fail(why, "unterminated array");
             if (s_[pos_] == ',') { ++pos_; continue; }
             if (s_[pos_] == ']') { ++pos_; return true; }
+            // The same lesson as in ParseObject: an expression is not a value.
+            // An array element can carry one too (a model writing a computed
+            // coordinate or mass inside an array), and the raw "expected ','
+            // or ']'" names neither the mistake nor the way out.
+            if (s_[pos_] == '*' || s_[pos_] == '/' || s_[pos_] == '(' ||
+                s_[pos_] == 'M' || s_[pos_] == 'm') {
+                why = "the value at byte " + std::to_string(pos_) +
+                      " is an EXPRESSION, not a number -- you wrote a formula "
+                      "where a computed NUMBER belongs. Compute the value "
+                      "first: the geometric tools (fit_sphere_to_mass, "
+                      "volume_of_ellipsoid, volume_of_torus, "
+                      "volume_of_cylinder) return the number directly";
+                return false;
+            }
             return Fail(why, "expected ',' or ']'");
         }
     }
@@ -398,11 +474,82 @@ std::unique_ptr<ISubstance> MakeSubstance(const std::string& kind,
         // minor = the tube's own radius. A model that says "radius" for a
         // torus almost always means the OUTER radius, so outer -> major is
         // derived from outer - minor.
+        //
+        // -------------------------------------------------------------------------
+        // THE OUTER-RADIUS MISTAKE, AND WHY IT IS CAUGHT HERE.
+        // -------------------------------------------------------------------------
+        //
+        // MEASURED against a live qwen2.5:7b reading a ring-housing document
+        // that said "a steel torus with an outer radius of 0.44 units and a
+        // tube radius of 0.12 units": the model emitted
+        //
+        //   "substance_params": {"major": 0.44, "minor": 0.12}
+        //
+        // -- the OUTER radius used as major. The correct major is
+        // 0.44 - 0.12 = 0.32. The resulting ring's outer edge is at 0.56
+        // instead of 0.44, so the part is 27% too big and sits wrong
+        // relative to the other parts.
+        //
+        // The parser could not detect this by comparing magnitudes alone: a
+        // torus whose major really IS its outer radius is a legitimate
+        // (if unusual) shape. What makes it detectable is the DOCUMENT's
+        // own wording -- and the parser does not have the document.
+        //
+        // So the correction is NOT attempted here. What IS done is that when
+        // the model supplies an explicit "outer_radius", it is converted
+        // correctly (outer -> major), and when it supplies "major" together
+        // with an "outer_radius", the two are checked against each other
+        // and the inconsistency is reported with the tool that resolves it.
+        // The tool `resolve_torus_radii` is the capability the model should
+        // have used; naming it here is what teaches the deployment.
         const float minor = float(Param(params, "minor", Param(params, "tube_radius", 0.12)));
-        const float major = float(Param(params, "major", Param(params, "ring_radius", 0.32)));
+        const bool has_outer = params.Find("outer_radius") != nullptr;
+        float major = float(Param(params, "major", Param(params, "ring_radius", 0.32)));
+        if (has_outer) {
+            const float outer = float(Param(params, "outer_radius", 0.0));
+            if (outer > 0.f) {
+                // -------------------------------------------------------------------------
+                // THE CONTRADICTION IS major != outer -- NOT major != outer - minor.
+                // -------------------------------------------------------------------------
+                //
+                // MEASURED: the model wrote BOTH "major": 0.44 AND
+                // "outer_radius": 0.44 -- the same number twice, because it
+                // had the outer radius in mind and copied it into both slots.
+                //
+                // The OLD check compared major against OUTER, so 0.44 vs 0.44
+                // AGREED, the check passed, and then the code silently did
+                // `major = outer - minor = 0.32` -- which happens to be the
+                // RIGHT answer here, but only by accident. The model's
+                // stated intent (major = outer) was never challenged, so on
+                // the next document it would write "major": 0.56 (outer +
+                // minor) and get a ring 27% too big with NO error anywhere.
+                //
+                // The CORRECT contradiction is the one the geometry defines:
+                // major IS the tube-centre radius, so it must equal
+                // outer - minor. If the model says major = outer, it is
+                // using the outer radius as the major -- which is the
+                // measured mistake.
+                const float expected_major = outer - minor;
+                if (params.Find("major") != nullptr &&
+                    std::fabs(major - expected_major) > 1e-4f) {
+                    why = "the torus's \"major\" and \"outer_radius\" "
+                          "disagree. \"major\" is the TUBE-CENTRE radius and "
+                          "\"outer_radius\" is the OUTER edge, so "
+                          "major = outer_radius - minor = " +
+                          std::to_string(expected_major) +
+                          ". Use the resolve_torus_radii tool to compute it "
+                          "rather than guessing";
+                    return nullptr;
+                }
+                // No explicit major, or it agrees: derive it from the outer.
+                major = expected_major;
+            }
+        }
         if (minor <= 0.f) { why = "torus minor radius must be > 0"; return nullptr; }
         if (major <= minor) {
-            why = "torus major radius must be greater than the minor radius";
+            why = "torus major radius must be greater than the minor radius. "
+                  "If you were given the OUTER radius, call "
+                  "resolve_torus_radii to get major = outer - minor";
             return nullptr;
         }
         return std::make_unique<TorusSubstance>(major, minor);
@@ -423,8 +570,131 @@ std::unique_ptr<ISubstance> MakeSubstance(const std::string& kind,
                 return amp * std::sin(fx * x + ph) * std::cos(fy * y + ph);
             });
     }
-    why = "unknown substance '" + kind +
-          "' (use plane, ellipsoid/sphere, torus/donut, gaussian/bump, or heightfield/wave)";
+    // -------------------------------------------------------------------------
+    // THE ERROR MUST TEACH THE CORRECTION.
+    // -------------------------------------------------------------------------
+    //
+    // MEASURED against a live qwen2.5:7b reading a ring-housing document:
+    // it wrote `{"kind": "ring_housing", ...}` -- a PART'S NAME -- where the
+    // schema wants a SUBSTANCE TYPE, and the parser's flat "unknown
+    // substance 'ring_housing'" gave the model nothing to act on.
+    //
+    // There are TWO different mistakes here, and they need DIFFERENT
+    // corrections:
+    //
+    //   1. the model put a PART NAME in the substance slot ("ring_housing",
+    //      "housing", "pinion_gear"). It understood the DOCUMENT perfectly
+    //      -- it just used the wrong FIELD. The correction is: "put the
+    //      part's name in \"kind\" (a free label) and the SHAPE TYPE in
+    //      \"substance\"".
+    //
+    //   2. the model invented a substance that does not exist ("dragon_scale",
+    //      "torusx"). The correction is: "use one of these types".
+    //
+    // A part name is recognisable: it contains an underscore or a space, or
+    // it is a word the document would use to NAME a part. A made-up
+    // substance type is a single lowercase token. That distinction is
+    // heuristic, so the message says BOTH corrections when it cannot tell --
+    // an over-hedged message is still far better than a flat rejection,
+    // because the escalation attempt (and the tool loop) feed this text
+    // back to the model, and a message that names the wrong field teaches
+    // the model where the field IS.
+    // -------------------------------------------------------------------------
+    // IS IT A PART NAME, OR AN INVENTED SUBSTANCE?
+    // -------------------------------------------------------------------------
+    //
+    // These are TWO different mistakes and they need TWO different
+    // corrections. The gate caught the heuristic getting it WRONG:
+    //
+    //   "ring_housing"  -- a PART's name (it is a name a document would use)
+    //   "dragon_scale"  -- an INVENTED substance type (a made-up shape)
+    //
+    // The old heuristic said "it has an underscore, so it is a part name" --
+    // and so "dragon_scale" was diagnosed as a part name, telling the model
+    // to move it to "kind". That is the WRONG lesson: it would put
+    // "dragon_scale" in the free-text field and still have no shape, so the
+    // next attempt would fail the same way.
+    //
+    // THE DISCRIMINATOR: a part name is a name the DOCUMENT would use for a
+    // part -- and the parser has no document. But it DOES have the list of
+    // substances the engine knows. So the rule is:
+    //
+    //   * a name that is a KNOWN substance (or an obvious synonym of one)
+    //     is not an error at all;
+    //   * a name that CONTAINS a known substance's name ("ring_housing"
+    //     contains "housing"... hmm, not a substance) -- so instead:
+    //   * a name whose LAST token is a known substance ("torus_housing",
+    //     "steel_cylinder") is a part name QUALIFIED by its shape;
+    //   * a name whose last token is NOT a known substance is INVENTED.
+    //
+    // "ring_housing" -> last token "housing" -> not a substance -> INVENTED?
+    // But the measurement says the model meant it as a part name.
+    //
+    // The honest resolution: a name is a PART NAME when it reads like a
+    // noun phrase about a part -- and the engine's own vocabulary is the
+    // authority on what a SHAPE is. So:
+    //
+    //   * if the whole name IS a known substance -> not an error;
+    //   * else if the name CONTAINS a known substance as a token
+    //     ("pinion_gear" does not, but "gear_housing" does not either) --
+    //     so fall back to: a name that a document would use is one with a
+    //     space or hyphen ("ring housing", "gear-housing"), OR one whose
+    //     first token is a common part word (housing, gear, shaft, pinion,
+    //     bearing, cover, plate, rotor, housing, case, flange, rotor);
+    //   * else -> INVENTED.
+    //
+    // "dragon_scale" -> "dragon" is not a part word -> INVENTED. Correct.
+    // "ring_housing" -> "ring" is not in the part-word list either... but
+    // "housing" IS. So the check must look at ANY token.
+    //
+    // The part-word list is the engine's own -- the words the geometry
+    // vocabulary and the documents use to name the parts of a mechanism.
+    static const char* kPartWords[] = {
+        "housing", "gear", "shaft", "pinion", "bearing", "cover", "plate",
+        "rotor", "case", "flange", "gearbox", "pump", "valve", "disc",
+        "disk", "wheel", "ring", "body", "bracket", "spindle", "axle",
+        "seat", "seal", "hub", "spoke", "rim", "barrel", "cap", "bolt",
+        "screw", "nut", "washer", "spring", "lever", "crank", "rod",
+        "piston", "cylinder", "block", "head", "cam", "flywheel", "clutch",
+        "coupling", "collar", "bush", "key", "pin", "roller", "yoke"
+    };
+    const std::string lower_kind = lower(kind);
+    bool names_a_part = false;
+    {
+        // Split on '_', '-' and ' ' and look for a part word in any token.
+        std::string tok;
+        auto consider = [&](const std::string& t) {
+            if (t.empty()) return;
+            for (const char* w : kPartWords) {
+                if (t == w) { names_a_part = true; return; }
+            }
+        };
+        for (char c : lower_kind + " ") {
+            if (c == '_' || c == '-' || c == ' ') { consider(tok); tok.clear(); }
+            else tok.push_back(c);
+        }
+    }
+    // A multi-word name ("ring housing") is a part name by construction.
+    if (lower_kind.find(' ') != std::string::npos ||
+        lower_kind.find('-') != std::string::npos) {
+        names_a_part = true;
+    }
+
+    if (names_a_part) {
+        why = "'" + kind +
+              "' looks like a PART NAME, not a substance type. The schema "
+              "has two separate fields: put the part's name in \"kind\" (a "
+              "free-text label, e.g. \"kind\": \"ring_housing\") and the "
+              "SHAPE TYPE in \"substance\" (one of: plane, ellipsoid, sphere, "
+              "torus, donut, gaussian, bump, heightfield, wave). A part's "
+              "name does not belong in \"substance\"";
+    } else {
+        why = "unknown substance '" + kind +
+              "'. Use one of: plane, ellipsoid/sphere, torus/donut, "
+              "gaussian/bump, or heightfield/wave. If '" + kind +
+              "' is a part's NAME, put it in \"kind\" instead and put the "
+              "shape type in \"substance\"";
+    }
     return nullptr;
 }
 
@@ -434,13 +704,28 @@ bool BuildElement(const JsonValue& v, std::unique_ptr<Element>& out, std::string
 
 // Build the children array of `v`.
 bool BuildChildren(const JsonValue& v, Element& parent, std::string& why, int depth) {
-    const JsonValue* kids = v.Find("children");
-    if (!kids) return true;
-    if (!kids->IsArray()) { why = "\"children\" must be an array"; return false; }
-    for (const JsonValue& k : kids->items) {
-        std::unique_ptr<Element> child;
-        if (!BuildElement(k, child, why, depth + 1)) return false;
-        parent.AddChild(std::move(child));
+    // EVERY "children" array, not just the first.
+    //
+    // MEASURED against a live qwen2.5:7b reading a ring-housing document:
+    // it emitted TWO "children" arrays in one element -- the first holding
+    // the pinion and the support bar, the second holding the mirrored lower
+    // ring. `Find` returns the FIRST, so the second array was silently
+    // discarded and the body baked OPEN, with no error anywhere: the
+    // document clearly asked for a closed housing and the geometry just
+    // quietly lost half of it.
+    //
+    // Merging is the right resolution, not rejecting: both arrays hold
+    // children, their union is unambiguous, and the alternative (a hard
+    // failure) throws away a generation that was correct in substance.
+    // (A duplicate "origin" would NOT be mergeable -- that one is genuinely
+    // ambiguous, and the first wins as before.)
+    for (const JsonValue* kids : v.FindAll("children")) {
+        if (!kids->IsArray()) { why = "\"children\" must be an array"; return false; }
+        for (const JsonValue& k : kids->items) {
+            std::unique_ptr<Element> child;
+            if (!BuildElement(k, child, why, depth + 1)) return false;
+            parent.AddChild(std::move(child));
+        }
     }
     return true;
 }
@@ -614,6 +899,43 @@ bool BuildElement(const JsonValue& v, std::unique_ptr<Element>& out, std::string
         bone.radius    = float(Param(*b, "radius", 0.0));
         bone.mass      = float(Param(*b, "mass", 0.0));
         bone.stiffness = float(Param(*b, "stiffness", 1.0));
+        // -------------------------------------------------------------------------
+        // A COMPUTATION IS NOT A VALUE.
+        // -------------------------------------------------------------------------
+        //
+        // MEASURED against a live qwen2.5:7b reading a ring-housing document:
+        // it emitted
+        //
+        //   "mass": 7850 * (4/3 * Math.PI * (Math.pow(0.44,3) - Math.pow(0.32,3)))
+        //
+        // -- JAVASCRIPT SOURCE as a JSON value. That is not valid JSON, so
+        // the parse fails with "invalid JSON at byte N", which tells the
+        // model nothing about WHY.
+        //
+        // But WHY it did that is the interesting part: it was trying to
+        // COMPUTE a mass, because the document gave it a density and a
+        // geometry. That is exactly the job the geometric tools exist to do
+        // (`fit_sphere_to_mass`, `volume_of_*`). The model has the
+        // arithmetic it needs but no way to perform it, so it writes the
+        // formula instead of the answer.
+        //
+        // So this message must do two things: name the mistake, and point at
+        // the capability that replaces it. That is the difference between a
+        // rejection and a lesson.
+        for (const char* numkey : { "mass", "radius", "stiffness" }) {
+            if (const JsonValue* nv = b->Find(numkey)) {
+                if (!nv->IsNumber()) {
+                    why = std::string("bone.") + numkey +
+                          " must be a NUMBER, not an expression. You wrote a "
+                          "formula instead of its result. Compute the value "
+                          "first -- if you are working from a density and a "
+                          "geometry, the geometric tools (fit_sphere_to_mass, "
+                          "volume_of_ellipsoid, volume_of_torus) return the "
+                          "number directly";
+                    return false;
+                }
+            }
+        }
         if (bone.radius < 0.f) { why = "bone radius must be >= 0"; return false; }
         if (bone.mass < 0.f)   { why = "bone mass must be >= 0"; return false; }
         if (bone.stiffness < 0.f || bone.stiffness > 1.f) {

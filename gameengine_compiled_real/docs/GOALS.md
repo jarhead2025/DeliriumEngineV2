@@ -1325,6 +1325,63 @@ restores the convex-only rule so the cost of the rule stays measurable.
 
 ---
 
+## G23. Geometric analysis tools the model can deploy mid-reasoning — `DONE`
+
+**THE USER'S INSIGHT (2026-11-12):** *"maybe the geometric generation is what
+is flawed? try training the model to use geometrical analysis math tools it
+should help alot more to have them as small pseudo-skills in compartments it
+can learn to deploy."*
+
+**The premise was right, and the measurement is the proof.** The model's
+geometric output is wrong in **specific, repeatable** ways, and every one of
+them is arithmetic or a vocabulary lookup — not "the model is bad at
+geometry". A 7B cannot reliably do arithmetic in its head; it **can**
+reliably call a function that does it.
+
+**Sixteen compartments**, each answering ONE question with ONE number, over
+the engine's *own* mathematics: the exact closed forms (volumes, surface
+areas, inertias), the field relations, and the four operations the model
+provably gets wrong (`resolve_torus_radii`, `fit_sphere_to_mass`,
+`closed_body_rule`, `field_properties`). The model deploys them
+mid-reasoning over Ollama's native tool-calling.
+
+**THE LIVE A/B — the same model, the same task:**
+
+| | tools ON | tools OFF |
+|---|---|---|
+| major | **0.32** ✅ | **0.56** ❌ |
+| minor | **0.12** ✅ | **0.28** ❌ |
+
+The tools-off model did not fail *visibly*: `0.56 / 0.28` is `outer + tube`
+and `2×tube` — a confident, plausible answer that would render the ring 75%
+too big. **That is the strongest possible evidence for the idea.** A silent
+plausible error is what makes geometry generation untrustworthy; a
+compartment converts it into a call the engine answers.
+
+**THE TWO GATES:**
+- `validate_geo_tools` — the maths against the closed forms and the
+  engine's own physics. A tool whose maths is wrong is **worse than no
+  tool**, because the model trusts it.
+- `validate_tool_loop` (new, **41 checks**) — the *loop*: the call is
+  detected in **both** reply shapes (the server's native `tool_calls` block
+  and the text shape); **the tool's answer is fed back into the
+  conversation** (the load-bearing part — without it the model reasons over
+  a value it never saw); the loop terminates on the tool budget *and* the
+  turn budget; a failing tool produces a self-correcting message naming the
+  accepted arguments; the transcript records every call (the learner needs
+  it as a worked example).
+
+**Proven to catch its bugs:** dropping the feed-back → the gate fails on
+*"the tool's ANSWER was fed BACK to the model"*; disabling the tool budget →
+it fails on *"the TOOL budget stopped it"*.
+
+**AND FOUR DEFECTS FIXED IN THE ERROR PATH** (see `GOALS_ACHIEVEMENTS.md`
+G23) — the lesson being that **an error message that only says "you were
+wrong" makes the failure repeat**: one that names the correction makes the
+next attempt succeed.
+
+---
+
 ## The Vulkan deferral — triggers, not a date
 
 `docs/VULKAN_ASSESSMENT.md` has the full reasoning. The short version: the

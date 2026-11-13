@@ -14,7 +14,9 @@
 // Usage:
 //   doc_learner_probe [--host H] [--port P] [--model M]
 //                      [--escalate-model M2] [--docs N] [--out DIR]
-//                      [--save-log PATH]
+//                      [--save-log PATH] [--geo-tools]
+//                      [--file PATH]... [--domain D]
+//                      [--max-tokens N] [--timeout N]
 //
 // Exit code: 0 if at least one document produced a real baked body.
 #include "delirium/ai/DocLearner.h"
@@ -199,6 +201,21 @@ int main(int argc, char** argv) {
     // minutes, and still going).
     int timeout_seconds = 1800;
     bool escalate = false;
+    // --geo-tools: let the model DEPLOY the engine's geometric analysis
+    // tools while it reasons.
+    //
+    // WHY IT IS A FLAG AND NOT THE DEFAULT:
+    //   The tools CHANGE what the model produces (measured: the same model
+    //   on the same task went from a doubled-radius torus to the correct
+    //   one). That makes the tool path and the plain path two DIFFERENT
+    //   experimental conditions, and a comparison between them is only
+    //   meaningful if a caller can run BOTH. So the default stays off --
+    //   the previous behaviour is preserved exactly -- and the flag turns
+    //   the tools on.
+    //
+    //   The same flag drives the escalation attempt, so a ladder run can
+    //   be compared tool-on against tool-off on identical inputs.
+    bool use_geo_tools = false;
     // --file PATH: interpret a DOCUMENT FROM DISK instead of the built-in
     // corpus.
     //
@@ -224,6 +241,7 @@ int main(int argc, char** argv) {
         else if (!std::strcmp(argv[i], "--docs") && i + 1 < argc) ndocs = std::atoi(argv[++i]);
         else if (!std::strcmp(argv[i], "--save-log") && i + 1 < argc) log_path = argv[++i];
         else if (!std::strcmp(argv[i], "--escalate")) escalate = true;
+        else if (!std::strcmp(argv[i], "--geo-tools")) use_geo_tools = true;
         else if (!std::strcmp(argv[i], "--file") && i + 1 < argc) files.push_back(argv[++i]);
         // --max-tokens N: the completion budget. It must fit the ANSWER,
         // and the answer grows with the document's part count -- a
@@ -337,9 +355,29 @@ int main(int argc, char** argv) {
             return ask_model(cfg, system, user, &secs, &err, max_tokens, timeout_seconds);
         };
 
-        DocResult r = InterpretDocument(doc, ask, log);
+        DocResult r = InterpretDocument(doc, ask, log, /*escalate=*/false,
+                                        /*larger_model_ask=*/nullptr,
+                                        /*use_geo_tools=*/use_geo_tools);
         std::printf("    attempt 1: %s (%.1fs)\n",
                     r.ok ? "OK" : ("FAILED at " + r.failed_stage).c_str(), secs);
+        // The TOOL TRANSCRIPT -- printed because the tools' USE is the
+        // evidence, not just their outcome. A run that succeeds while
+        // deploying three tools is a different phenomenon from a run that
+        // succeeds by luck, and only the transcript distinguishes them.
+        if (use_geo_tools) {
+            const auto attempts = log.Attempts();
+            if (!attempts.empty() && !attempts.back().tool_transcript.empty()) {
+                std::printf("    tools:\n");
+                std::string line;
+                for (const char* p = attempts.back().tool_transcript.c_str(); *p; ++p) {
+                    if (*p == '\n') { std::printf("      %s\n", line.c_str()); line.clear(); }
+                    else line += *p;
+                }
+                if (!line.empty()) std::printf("      %s\n", line.c_str());
+            } else {
+                std::printf("    tools: (none deployed)\n");
+            }
+        }
         if (!r.ok) {
             std::printf("      reason: %s\n", r.reason.c_str());
             // The learner's reason is GENERIC ("the model returned nothing"),
@@ -365,7 +403,8 @@ int main(int argc, char** argv) {
             std::printf("    attempt 2: escalating to %s ...\n",
                         use_larger ? escalate_model.c_str() : model.c_str());
             DocResult r2 = InterpretDocument(doc, ask2, log, /*escalate=*/true,
-                                              use_larger ? &larger : nullptr);
+                                              use_larger ? &larger : nullptr,
+                                              /*use_geo_tools=*/use_geo_tools);
             std::printf("    attempt 2: %s (%.1fs)\n",
                         r2.ok ? "OK" : ("FAILED at " + r2.failed_stage).c_str(), secs);
             if (!r2.ok) std::printf("      reason: %s\n", r2.reason.c_str());

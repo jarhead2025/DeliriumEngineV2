@@ -74,6 +74,19 @@ struct JsonValue {
 
     // Object member lookup (nullptr if absent).
     const JsonValue* Find(const std::string& key) const;
+    // EVERY member with this key, in document order.
+    //
+    // WHY: a model can write the SAME key TWICE in one object -- measured
+    // against a live qwen2.5:7b: it emitted two "children" arrays in one
+    // element (the second holding the mirrored lower half). `Find` returns
+    // the FIRST, so the second array -- and the geometry in it -- was
+    // silently DISCARDED. The tree then baked as an open body, with no
+    // error anywhere.
+    //
+    // A duplicate "children" key is not ambiguous in the way a duplicate
+    // "origin" would be: both arrays hold children, and the union is what
+    // the model meant. So the parser MERGES them rather than picking one.
+    std::vector<const JsonValue*> FindAll(const std::string& key) const;
     // Convenience accessors with defaults.
     double GetNumber(double fallback) const { return IsNumber() ? number : fallback; }
     std::string GetString(const std::string& fallback) const {
