@@ -663,3 +663,16 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/cube_diag2.cpp")
   add_executable(cube_diag2 examples/make_cube_asset/cube_diag2.cpp)
   target_link_libraries(cube_diag2 PRIVATE delirium_engine_lib)
 endif()
+
+# -----------------------------------------------------------------------
+# seam_diag - measure the torus's equator serration at the record level.
+# The cube work proved shading/normals/winding correct; the remaining
+# artifact is the serrated teeth at the seam. This names the seam's
+# geometry: rim radii distribution, straddling patches, duplicate anchors.
+#   cmake --build build_delirium --target seam_diag
+#   ./build_delirium/seam_diag
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/seam_diag.cpp")
+  add_executable(seam_diag examples/make_cube_asset/seam_diag.cpp)
+  target_link_libraries(seam_diag PRIVATE delirium_engine_lib)
+endif()

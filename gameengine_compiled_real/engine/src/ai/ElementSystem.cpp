@@ -1109,7 +1109,23 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                     // still closed around the axis.
                     const float ang = 6.283185307179586f *
                         ((float(i) + 0.5f) / float(N));
-                    const float rad = r_min + (r_max - r_min) * v;
+                    // THE RADIAL AXIS USES CELL CENTRES TOO (the seam-teeth
+                    // fix). v = j/(N-1) put the FIRST and LAST rows exactly
+                    // ON the support's boundary (|r - major| = minor ->
+                    // inside = 0 -> invalid), so ~81 anchors per sheet became
+                    // out-of-support placeholders at the bbox CENTRE -- a
+                    // cluster of fake surfels with +Z normals sitting right
+                    // where the two sheets' rims meet. THAT CLUSTER IS THE
+                    // SEAM SERRATION (measured: 162 placeholders at the
+                    // exact body centre on the procedural torus; the march's
+                    // neighbourhood handed rim rays those fake normals).
+                    // Cell centres ((j+0.5)/N) sample just INSIDE the
+                    // support: Eval is valid everywhere and a torus has ZERO
+                    // placeholders. The surface now stops half a cell short
+                    // of the tube's exact rim -- 0.28% of the tube width,
+                    // invisible, and strictly better than teeth.
+                    const float rad = r_min + (r_max - r_min)
+                                    * ((float(j) + 0.5f) / float(N));
                     lx = rad * std::cos(ang);
                     ly = rad * std::sin(ang);
                 }
@@ -1342,7 +1358,10 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
                         sheets[si].el->substance->PolarRadius(pr_min, pr_max);
                         const float ang = 6.283185307179586f *
                             ((wu * float(N - 1)) + 0.5f) / float(N);
-                        const float rad = pr_min + (pr_max - pr_min) * wv;
+                        // Cell centres, matching the anchor sampling
+                        // (the seam-teeth fix -- see the sampling loop).
+                        const float rad = pr_min + (pr_max - pr_min)
+                                        * ((wv * float(N - 1) + 0.5f) / float(N));
                         tx = rad * std::cos(ang);
                         ty = rad * std::sin(ang);
                     }
@@ -1457,7 +1476,11 @@ std::unique_ptr<PSFBody> ElementSystem::BakeBody(const Element& root,
             if (polar) {
                 const float ang = 6.283185307179586f *
                     ((float(i) + 0.5f) / float(N));
-                const float rad = pr_min + (pr_max - pr_min) * v;
+                // Cell centres, matching the anchor sampling (the
+                // seam-teeth fix): the box must span exactly the points
+                // the baker sampled.
+                const float rad = pr_min + (pr_max - pr_min)
+                                * ((float(j) + 0.5f) / float(N));
                 lx = rad * std::cos(ang);
                 ly = rad * std::sin(ang);
             }
