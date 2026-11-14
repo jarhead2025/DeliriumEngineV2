@@ -621,3 +621,23 @@ naming the accepted arguments, and the transcript records every call.
 *"the tool's ANSWER was fed BACK to the model"*; disabling the tool budget →
 it fails on *"the TOOL budget stopped it"*.
 
+
+---
+
+## The model-generated cube (fix 68) — what one flat-faced shape bought
+
+| defect | how the cube exposed it | how the torus/sphere hid it |
+|---|---|---|
+| the doc path's missing fenced-reply fallback | the run failed at parse on a valid tree | the semantic path masked it (it has the fallback) |
+| the box's unreachable wall band | two floating flat sheets | no box-shaped body existed to test |
+| the inward patch winding | 1521/1521 top patches geometrically inward | the camera flip made convex bodies look plausible |
+| the march key light from below | top/wall = 0.509 (light is above) | inward normals + the flip cancelled the inversion |
+
+**The pattern:** three defects, each masking the others on convex bodies.
+The cube pulled them apart in an afternoon. New standing rule: *bake a
+cube before theorising about a render artifact*.
+
+The model itself passed: given only a cube document, it applied the
+closed-body rule (upper sheet + mirrored lower at the same origin)
+unprompted — and the fail chain was transport/parser/baker, never the
+model's geometry.

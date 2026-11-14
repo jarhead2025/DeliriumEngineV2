@@ -2439,3 +2439,84 @@ reader hunting for a problem that is already solved. Every entry below was
   process finds the A770, so the fix is a restart — which needs root.
   `tools/start_gpu_ollama.sh` starts a GPU-backed server without root and
   verifies the device was found.
+
+---
+
+## Fix 68 — the model-generated cube exposed THREE render-pipeline defects
+
+**The trigger (the user's, 2026-11-14):** *"i see a couple visual glitches
+with the torus render, test a cube render with the local model maybe itll
+shed light to the issues with the render pipelines."* The cube's flat faces
+with constant normals are the sharpest lens: every normal/shading defect
+becomes a crisp edge or a missing face instead of a subtle mottle.
+
+**A CUBE BEFORE THEORIES.** On convex bodies (torus, sphere) three defects
+were mutually masking: inward patch winding + the camera flip accidentally
+cancelled an inverted key light. Only a hard-edged body separates "shaded
+right" from "shaded plausibly".
+
+### 68a — the doc path had no fenced-reply fallback
+
+`ParseElementTree` on the raw reply -> "invalid JSON: expected number at
+byte 0" for a perfectly good fenced tree. The SEMANTIC path
+(Workspace.cpp) has `ExtractJsonObject`; the DOC path did not. One
+fallback added to `DocLearner.cpp` (with a `[recover]` line in the tool
+transcript). Same model, same fence, different pipeline, different result
+-- the definition of an integration gap rather than a model failure.
+
+### 68b — the box's walls were never baked
+
+Measured: `top 2304 / bottom 2304 / SIDE-WALL 0`; every patch normal
+vertical; the render was TWO FLOATING FLAT SHEETS. The chain:
+
+1. `BoxSubstance::Domain()` returned exactly the footprint -> Eval's whole
+   wall branch (~40 lines) was unreachable. `domain_probe` proved the
+   substance DID model the wall (Eval(0.55,0.1) -> a valid wall point
+   with an outward horizontal normal) -- the DOMAIN was the failure.
+2. `SheetDomain`'s canvas clip (`hx > extent*0.5 -> extent*0.5`) silently
+   undid the declared band -- and had been silently clipping the
+   ellipsoid's 6% rim all along (the measured cause of the derived path's
+   "perimeter ring" rim). Now a bounded 25% overshoot: a runaway domain
+   (gaussian 3-sigma) is still clipped; a declared band survives.
+3. A one-row band is a sliver, not a wall (the wall points sat at
+   z = 0.48 and rounded into the top-face test). The band is 18% of the
+   footprint (4 rows at grid 48), normalised so the descent reaches the
+   seam.
+4. THE SEAM-ROW EPSILON: the band's outermost row lands at
+   o = 1.0000001 and `o > wall_ = 1.0` REJECTED the one row that reaches
+   the seam -> a measured 0.28-unit hollow band where neither sheet had a
+   surface. `1e-4` epsilon. `cube_diag2` after: the single sheet spans
+   z in [0.0000, +0.5000] exactly.
+
+End state: top 1600 / bottom 1600 / WALL 1408, interior 0 -- a closed box.
+
+### 68c — the patch winding was inward; the march key light pointed down
+
+ALGEBRA-LEVEL PROOF: with the baker's old corner order (A1=(i+1,j),
+A3=(i,j+1)), convention A's cross(dPdu,dPdv) is -Z on every flat +Z patch
+(dPdu along +j, dPdv along +i -> cross = -z). Measured: 1521/1521 top
+patches inward while the RECORDED anchor normals were outward -- the
+geometric normal and the data disagreed.
+
+The fix swaps corner slots 1<->3 (A1=(i,j+1), A3=(i+1,j)): the same four
+corners, the same quad, coefficients refit in the same block. After:
+geometric cross agrees with the recorded normals on 1521/1521.
+
+AND: the two kernels disagreed on the light convention --
+`psf_splat.cl` shades `dot(N, -light_dir)`, `surfel_march.cl` used
+`dot(n, +light)`. The host feeds BOTH one vector
+(`light_dir = -toward_light`), so the march's key light came from BELOW.
+Masked until the winding fix exposed it. One sign, 3 sites.
+
+MEASURED: top/wall luminance 0.509 -> 1.11 (march), 1.10 (splat-classic).
+The light is above; the top face is now the brighter one.
+
+### The tools
+
+`make_cube_asset` (bakes the MODEL'S OWN tree, reads it back, verifies
+closure), `cube_diag` / `cube_diag2` / `bake_probe` / `domain_probe` (the
+layer attribution chain), gallery scene Y. Suite: 54/54.
+
+> **When a render artifact is subtle on curved bodies, bake a cube before
+> theorising.** Three defects hid behind each other for the entire torus
+> investigation; one flat-faced body pulled them apart in an afternoon.
