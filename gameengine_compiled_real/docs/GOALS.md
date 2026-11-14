@@ -534,6 +534,25 @@ them; the unit gates were green throughout. See FIXES_REGISTER entries 54,
 The ladder is unit-tested against a stub and has never run against a second
 endpoint.
 
+**THE LIVE RECORD (2026-11-14):** two live runs against qwen2.5:14b on the
+GPU server (one model at a time -- keep_alive=0 on the native endpoint
+unloads the 7B before the 14B loads):
+
+- **THE MEASURED RESCUE** (crank-assembly document): the 7B emitted
+  `cylinder` (not in the vocabulary) -> attempt 1 rejected at parse ->
+  the ladder escalated -> the 14B produced a valid multi-sheet tree that
+  baked and passed the geometry check. The rung FIRED and RESCUED.
+- **The capsule document**: the 7B answered correctly on attempt 1
+  (4 sheets, 8836 patches, 28.1 s on GPU) -- no rung fired. Recorded
+  because a null result that DISAPPOINTS the hypothesis is still a
+  result: the parser/baker fixes (grouping node, fenced reply, wall
+  band) removed exactly the failure modes the 7B was producing, so the
+  ladder now fires only on genuinely hard documents.
+- The watch document exhausts BOTH models' time budgets (~917 s each) --
+  a document that is too HARD, not one the ladder can rescue; "slow" and
+  "failed" are different failure classes and the ladder only treats the
+  latter.
+
 **Wiring landed.** `tests/validate_escalation.cpp` — 36 checks, 0 failures.
 It asserts the CONTRACT of the ladder, not a snapshot:
 - the escalated attempt goes to the **larger** model, and **only** to it (the
