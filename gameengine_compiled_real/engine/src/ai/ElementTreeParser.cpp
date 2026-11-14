@@ -554,6 +554,19 @@ std::unique_ptr<ISubstance> MakeSubstance(const std::string& kind,
         }
         return std::make_unique<TorusSubstance>(major, minor);
     }
+    if (k == "box" || k == "cube" || k == "block" || k == "slab") {
+        const float sx = float(Param(params, "sx", Param(params, "size", 0.5)));
+        const float sy = float(Param(params, "sy", sx));
+        const float sz = float(Param(params, "sz", sx));
+        if (sx <= 0.f || sy <= 0.f || sz <= 0.f) {
+            why = "box half-extents (sx, sy, sz) must be > 0 -- to point a "
+                  "sheet DOWNWARD use the element's \"scale\" field with a "
+                  "negative component, e.g. \"scale\":[1,1,-1], and keep "
+                  "sx/sy/sz positive";
+            return nullptr;
+        }
+        return std::make_unique<BoxSubstance>(sx, sy, sz);
+    }
     if (k == "gaussian" || k == "bump" || k == "node") {
         const float amp  = float(Param(params, "amp", 0.2));
         const float sig  = float(Param(params, "sigma", 0.35));
@@ -686,12 +699,13 @@ std::unique_ptr<ISubstance> MakeSubstance(const std::string& kind,
               "has two separate fields: put the part's name in \"kind\" (a "
               "free-text label, e.g. \"kind\": \"ring_housing\") and the "
               "SHAPE TYPE in \"substance\" (one of: plane, ellipsoid, sphere, "
-              "torus, donut, gaussian, bump, heightfield, wave). A part's "
+              "torus, donut, box, cube, gaussian, bump, heightfield, wave). "
+              "A part's "
               "name does not belong in \"substance\"";
     } else {
         why = "unknown substance '" + kind +
               "'. Use one of: plane, ellipsoid/sphere, torus/donut, "
-              "gaussian/bump, or heightfield/wave. If '" + kind +
+              "box/cube, gaussian/bump, or heightfield/wave. If '" + kind +
               "' is a part's NAME, put it in \"kind\" instead and put the "
               "shape type in \"substance\"";
     }
@@ -1128,12 +1142,15 @@ std::string ElementTreeSystemPrompt() {
 "  lod             number  optional COARSENESS level, 0..3 (see below)\n"
 "  children        array   sub-systems that OVERLAP this one\n"
 "\n"
-"Substances (only these five are valid):\n"
+"Substances (only these six are valid):\n"
 "  \"plane\"      flat infinite surface. params: {}\n"
 "  \"ellipsoid\"  upper hemisphere of an ellipsoid. params: {sx,sy,sz}\n"
 "  \"torus\"      a ring with a hole. params: {major,minor}\n"
 "                  major = distance from the centre to the tube's centre\n"
 "                  minor = the tube's own radius (major MUST exceed minor)\n"
+"  \"box\"        a box of half-extents. params: {sx,sy,sz} -- the top\n"
+"                  face plus the four walls; the bottom is a second box\n"
+"                  node with \"scale\":[1,1,-1]\n"
 "  \"gaussian\"   localized bump on a flat plane. params: {amp,sigma}\n"
 "  \"heightfield\" sinusoidal wave field. params: {amp,freq_x,freq_y,phase}\n"
 "\n"

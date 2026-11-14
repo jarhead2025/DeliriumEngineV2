@@ -136,6 +136,83 @@ void Workspace::FrameScene() {
 }
 
 // =============================================================================
+// The multi-view capture sweep
+// =============================================================================
+//
+// WHY A SWEEP: a single capture proves one view. A defect that hides on one
+// side of an object (an antiparallel normal, a seam that only breaks from
+// below) is only VISIBLE from several perspectives -- and the evidence a
+// human can check is pixels, not gate numbers. The sweep pins the camera,
+// lets the render settle (the renderer rebuilds its surfel bake and grid
+// for the new angle), captures the COMPOSITED window (panels included, so
+// the context is visible), and advances.
+void Workspace::ArmOrbitSweep(int count, const std::string& prefix,
+                              bool vary_pitch, int settle_frames) {
+    sweep_count_ = std::max(1, count);
+    sweep_prefix_ = prefix;
+    vary_pitch_ = vary_pitch;
+    sweep_vary_pitch_ = vary_pitch;
+    sweep_deferred_ = false;   // an immediate arm cancels any pending defer
+    sweep_settle_ = std::max(1, settle_frames);
+    sweep_next_ = 0;
+    sweep_captured_ = 0;
+    sweep_armed_ = true;
+    sweep_settle_left_ = 0;   // pin the FIRST viewpoint on the next frame
+    Logf("orbit sweep armed: %d view(s), prefix '%s', settle %d frame(s)",
+         sweep_count_, prefix.c_str(), sweep_settle_);
+}
+
+// One sweep step per frame: settle -> capture -> advance. Runs BEFORE the
+// camera update in OnFrame so the pinned viewpoint is the one rendered.
+void Workspace::SweepStep() {
+    if (!sweep_armed_) return;
+
+    // Done: every viewpoint captured. Ask the app to close itself.
+    if (sweep_next_ >= sweep_count_) {
+        sweep_armed_ = false;
+        Logf("orbit sweep complete: %d capture(s) written",
+             sweep_captured_);
+        engine_.RequestQuit();
+        return;
+    }
+
+    // PIN the viewpoint on the first frame of each step.
+    if (sweep_settle_left_ == 0) {
+        const float yaw   = float(sweep_next_) * (2.0f * 3.14159265f)
+                            / float(sweep_count_);
+        // Alternate elevation across the sweep so both hemispheres are
+        // seen: +20 deg, -15 deg, +10 deg, -5 deg ... A defect that only
+        // shows from below needs a below camera to exist.
+        const float pitch = vary_pitch_
+            ? 0.35f * ((sweep_next_ % 2 == 0) ? 1.0f : -0.5f)
+            : 0.35f;
+        SetOrbitYaw(yaw);
+        SetOrbitPitch(pitch);
+        // Distance stays at the FRAMED value -- FrameScene() already pulled
+        // the camera back so the whole object fits; overriding it here
+        // would crop the object and defeat the purpose.
+        sweep_settle_left_ = sweep_settle_;
+        std::printf("workspace: sweep viewpoint %d/%d  yaw=%.2f pitch=%.2f\n",
+                    sweep_next_ + 1, sweep_count_, yaw, pitch);
+        return;   // render this frame from the new camera first
+    }
+
+    // Still settling: the render needs a few frames at the new angle (the
+    // surfel bake and the grid are rebuilt per camera), and a capture taken
+    // on the same frame as the pin would read the OLD camera's frame.
+    if (--sweep_settle_left_ > 0) return;
+
+    // Capture now. The request is drained AFTER Present(), so the pixels
+    // written are the pixels this frame rendered.
+    char buf[512];
+    std::snprintf(buf, sizeof(buf), "%s_%d.ppm", sweep_prefix_.c_str(), sweep_next_);
+    engine_.RequestWindowCapture(buf);
+    std::printf("workspace: sweep capture requested: %s\n", buf);
+    ++sweep_next_;
+    sweep_settle_left_ = 0;   // pin the next viewpoint on the next frame
+}
+
+// =============================================================================
 // Layout
 // =============================================================================
 void Workspace::ComputeLayout(int w, int h) {
@@ -389,6 +466,16 @@ GameObject* Workspace::AddFromTree(const std::unique_ptr<Element>& tree,
     if (!obj) { Logf("scene rejected the object"); return nullptr; }
     obj->GetTransform().position = { offset - 1.4f, 0.f, 0.f };
     Select(s->Objects().size() - 1);
+    // The DEFERRED orbit sweep (ArmOrbitSweepOnNextObject) starts HERE:
+    // the AI object has landed, so frame the scene on it and begin the
+    // multi-view capture. FrameScene() recomputes the distance from the
+    // new object's world bounds first, so every viewpoint frames it.
+    if (sweep_deferred_) {
+        FrameScene();
+        ArmOrbitSweep(sweep_count_, sweep_prefix_, sweep_vary_pitch_,
+                      sweep_settle_);
+        Logf("orbit sweep started on the generated object");
+    }
     return obj;
 }
 
@@ -666,6 +753,9 @@ void Workspace::OnFrame() {
                           layout_.viewport.w, layout_.viewport.h);
     }
 
+    // The orbit sweep (if armed) pins the camera BEFORE UpdateCamera(), so
+    // the frame that follows renders from the pinned viewpoint.
+    SweepStep();
     HandleCameraInput();
     HandleKeyboardCamera(1.0f / 60.0f);
     UpdateCamera();

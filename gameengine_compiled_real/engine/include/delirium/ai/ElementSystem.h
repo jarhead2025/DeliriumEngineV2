@@ -350,6 +350,78 @@ private:
     float major_, minor_;
 };
 
+// A BOX of half-extents (sx, sy, sz) centred at the local origin: the top
+// face z = sz for (x,y) inside the footprint, with a RIM that drops the
+// vertical side walls.
+//
+// WHY THIS EXISTS (the cube diagnostic): a box has hard 90-degree edges and
+// AXIS-ALIGNED normals -- exactly where a wrong winding, an interpolated
+// normal, or a tangent-plane fit shows FIRST. A sphere hides all three
+// (every normal is unique, every edge is smooth). If the render pipelines
+// have a normal or fitting defect, the cube exposes it and the sphere does
+// not.
+//
+// THE GRAPH CONSTRAINT: a PSF body is z = f(x,y), so the substance can
+// directly describe only the TOP face. The side walls are the RIM: past
+// the footprint, the rim is the vertical wall hanging from the edge --
+// x,y clamped to the footprint edge, z descending toward -sz. That is
+// exactly the same trick the ellipsoid's rim uses (a bounded-edge
+// extension that continues the surface instead of stopping dead), except
+// a box's rim is VERTICAL, so the four walls hang DOWN from the top
+// face's edge and a single sheet describes 5 of the 6 faces. The bottom
+// face is the mirrored sheet (scale z = -1), the same closed-body rule
+// the ellipsoid and the torus use.
+class BoxSubstance : public ISubstance {
+public:
+    BoxSubstance(float sx = 0.5f, float sy = 0.5f, float sz = 0.5f)
+        : sx_(sx), sy_(sy), sz_(sz) {}
+    SubstancePoint Eval(float x, float y) const override;
+    // The sampling domain must cover the FULL footprint (the top face)
+    // PLUS the wall band: the walls live OUTSIDE the footprint (Eval's
+    // q > 1 branch), so a domain of exactly [sx, sy] never samples a wall
+    // point and the wall code is dead. Measured (cube_diag + domain_probe):
+    //   - anchors: top 2304, bottom 2304, SIDE-WALL 0
+    //   - patch normals: wall-like 0, top/bottom-like 4418
+    //   - yet Eval(0.55, 0.10) returns a VALID wall point (0.5, 0.1, 0.45)
+    //     with an outward normal (1,0,0)
+    //
+    // THE BAND'S WIDTH IS SEVERAL ROWS, NOT ONE.
+    //
+    // A 2% domain gave the band ONE grid row (measured: the wall points sat
+    // at z = 0.48, a 0.02-unit sliver -- cube_diag still reported
+    // "SIDE-WALL 0" because they rounded into the top-face test). A wall is
+    // a SURFACE: it needs multiple rows to be represented, and the descent
+    // must reach the SEAM (z = 0) where the mirrored sheet's wall takes
+    // over. The band is therefore ~4 grid rows wide at the default grid 48:
+    // f = 2k/(N-1-2k) for k = 4 rows is 18.6%, so the domain is 1.18x the
+    // footprint. The band's normalised width in Eval matches (0.18), so the
+    // outermost row lands at the seam and the two sheets' walls MEET there
+    // with AGREEING normals (both outward-horizontal -- the flip is in Z,
+    // the wall normal is in XY), the same rim-agreement property the
+    // ellipsoid's rim has.
+    //
+    // At finer grids the band is proportionally wider in rows (8 rows at
+    // 96), at coarser ones narrower (2 rows at 24) -- a fixed fraction
+    // cannot be exactly k rows at every N, but it stays proportional, which
+    // is what the ellipsoid's rim does too.
+    static constexpr float kWallBand = 0.18f;
+    void Domain(float& half_x, float& half_y) const override {
+        half_x = sx_ * (1.f + kWallBand);
+        half_y = sy_ * (1.f + kWallBand);
+    }
+    // No rim margin in the ISubstance sense: the box's "rim" is its WALL,
+    // handled inside Eval, not an extension past the footprint.
+    float RimMargin() const override { return 0.f; }
+    // The wall's height as a fraction of the box's height (0..1): how far
+    // down the side walls reach before the sheet stops. 1.0 reaches the
+    // bottom (z = -sz), where the mirrored sheet's bottom face meets it.
+    // The default is 1.0 (a full box).
+    void SetWallDepth(float f) { wall_ = f < 0.f ? 0.f : (f > 1.f ? 1.f : f); }
+private:
+    float sx_, sy_, sz_;
+    float wall_ = 1.0f;
+};
+
 // A localized gaussian "system": a bump of height `amp` with falloff `sigma`
 // centered at the local origin, on an otherwise flat plane. Models a subsystem
 // that occupies a bounded region (a node, a cluster, a feature) and fades to

@@ -7,6 +7,7 @@
 #include <memory>
 #include <string>
 #include <functional>
+#include <vector>
 #include "Scene.h"
 #include "../render/SplatRenderer.h"
 #include "../physics/PhysicsWorld.h"
@@ -106,6 +107,14 @@ public:
     // Capture the composited window to a PPM. Returns false if the read
     // failed (no SDL, no window, or a readback error).
     bool SaveWindowPPM(const std::string& path) const;
+    // Queue a window capture to `path`, taken right AFTER the next Present().
+    //
+    // WHY after Present and not from a frame hook: the frame hook runs
+    // BEFORE the scene renders, so a capture taken there reads the PREVIOUS
+    // frame's backbuffer (or, on some backends, an invalidated one) -- the
+    // pixels on disk would not be the pixels the just-set camera produced.
+    // Draining the request after Present guarantees capture == render.
+    void RequestWindowCapture(const std::string& path) { capture_requests_.push_back(path); }
 
     // Window size in pixels (the SDL window, NOT the render viewport).
     int WindowWidth()  const { return window_w; }
@@ -171,6 +180,10 @@ private:
     double max_fps_ = 60.0;
     // If set, the window is captured to this PPM when Run() ends.
     std::string shot_on_exit_;
+    // Queued window captures, drained right AFTER Present(). A capture
+    // requested from a frame hook would read the PREVIOUS frame's
+    // backbuffer -- draining here guarantees capture == render.
+    std::vector<std::string> capture_requests_;
     // Published by the render loop; read by the workspace status bar.
     int   fps_display = 0;
     float frame_ms_display = 0.0f;

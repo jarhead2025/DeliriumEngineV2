@@ -410,7 +410,19 @@ __kernel void march_draw(
             // matches the splat back-face cull so shading is stable.
             if(dot(n, fwd) > 0.f) n = -n;
             // key + camera fill + floor (EXACT splat lighting model).
-            float keyL  = clamp(dot(n, light), 0.f, 1.f);
+            /* THE LIGHT CONVENTION MUST MATCH THE SPLAT KERNEL.
+             * psf_splat.cl shades with dot(N, -light_dir); the host passes
+             * light_dir = -toward_light, so the splat's key term is
+             * dot(N, +toward) -- a surface facing the light is lit. This
+             * kernel used dot(n, +light) = dot(n, -toward) -- INVERTED: the
+             * key light came from BELOW. With outward normals (the winding
+             * fix) that made every upward-facing surface dark (measured on
+             * the model cube: top/wall luminance ratio 0.509 where the
+             * light-above model needs > 1). Before the winding fix the
+             * inward normals plus the camera flip accidentally cancelled
+             * the inversion on convex bodies, which is why the torus and
+             * the sphere looked shaded correctly. */
+            float keyL  = clamp(dot(n, -light), 0.f, 1.f);
             float fillL = clamp(dot(n, -fwd),  0.f, 1.f);
             float lam   = clamp(keyL*0.85f + fillL*0.30f, 0.f, 1.f) + 0.15f;
             float cr=R*inv, cg=G*inv, cb=B*inv;
@@ -447,7 +459,19 @@ __kernel void march_draw(
     float3 n=normalize((float3)(anx*inv, any*inv, anz*inv));
     if(dot(n, fwd) > 0.f) n = -n;
     // key + camera fill + floor (EXACT splat lighting model).
-    float keyL  = clamp(dot(n, light), 0.f, 1.f);
+    /* THE LIGHT CONVENTION MUST MATCH THE SPLAT KERNEL.
+             * psf_splat.cl shades with dot(N, -light_dir); the host passes
+             * light_dir = -toward_light, so the splat's key term is
+             * dot(N, +toward) -- a surface facing the light is lit. This
+             * kernel used dot(n, +light) = dot(n, -toward) -- INVERTED: the
+             * key light came from BELOW. With outward normals (the winding
+             * fix) that made every upward-facing surface dark (measured on
+             * the model cube: top/wall luminance ratio 0.509 where the
+             * light-above model needs > 1). Before the winding fix the
+             * inward normals plus the camera flip accidentally cancelled
+             * the inversion on convex bodies, which is why the torus and
+             * the sphere looked shaded correctly. */
+            float keyL  = clamp(dot(n, -light), 0.f, 1.f);
     float fillL = clamp(dot(n, -fwd),  0.f, 1.f);
     float lam   = clamp(keyL*0.85f + fillL*0.30f, 0.f, 1.f) + 0.15f;
     float cr=aR*inv, cg=aG*inv, cb=aB*inv;
@@ -689,7 +713,19 @@ __kernel void layer_draw_band(
 
     // The EXACT splat lighting model (key + camera fill + emissive floor),
     // so the band path and the splat path agree on brightness.
-    float keyL  = clamp(dot(n, light), 0.f, 1.f);
+    /* THE LIGHT CONVENTION MUST MATCH THE SPLAT KERNEL.
+             * psf_splat.cl shades with dot(N, -light_dir); the host passes
+             * light_dir = -toward_light, so the splat's key term is
+             * dot(N, +toward) -- a surface facing the light is lit. This
+             * kernel used dot(n, +light) = dot(n, -toward) -- INVERTED: the
+             * key light came from BELOW. With outward normals (the winding
+             * fix) that made every upward-facing surface dark (measured on
+             * the model cube: top/wall luminance ratio 0.509 where the
+             * light-above model needs > 1). Before the winding fix the
+             * inward normals plus the camera flip accidentally cancelled
+             * the inversion on convex bodies, which is why the torus and
+             * the sphere looked shaded correctly. */
+            float keyL  = clamp(dot(n, -light), 0.f, 1.f);
     float fillL = clamp(dot(n, -fwd),  0.f, 1.f);
     float lam   = clamp(keyL*0.85f + fillL*0.30f, 0.f, 1.f) + 0.15f;
     color[pid]=(uchar4)((uchar)(clamp(aR*lam,0.f,1.f)*255),

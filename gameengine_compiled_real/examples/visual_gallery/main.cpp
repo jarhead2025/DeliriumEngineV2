@@ -572,6 +572,7 @@ static const SceneDef kScenes[] = {
     {'Q', "closeup",       scene_closeup},
     {'W', "closeup_layered", scene_closeup_layered},
     {'X', "closeup_classic", scene_closeup_classic},
+    {'Y', "cube",          [](Ctx& c){ return scene_asset(c, 'Y', "assets/cube.psf", "cube"); }},
     {'R', "orbit",         scene_orbit},
     {'S', "split_edges",   scene_split_edges},
     {'T', "weld",          scene_weld},

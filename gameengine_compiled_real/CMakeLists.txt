@@ -597,3 +597,69 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/tests/perf_engine.cpp")
   add_test(NAME perf_engine COMMAND perf_engine)
   set_tests_properties(perf_engine PROPERTIES WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
+
+# -----------------------------------------------------------------------
+# make_cube_asset - bake the MODEL-GENERATED cube (the closed-body recipe
+# the model applied by itself: upper "box" sheet + mirrored lower sheet)
+# and write it as a valid binary .psf asset. The cube is the sharpest lens
+# on the render pipelines: flat faces with constant normals turn any
+# normal/shading artifact into crisp edges or missing faces.
+#   cmake --build build_delirium --target make_cube_asset
+#   ./build_delirium/make_cube_asset --out assets/cube.psf
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/main.cpp")
+  add_executable(make_cube_asset
+    examples/make_cube_asset/main.cpp
+  )
+  target_link_libraries(make_cube_asset PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# cube_diag - WHERE did the model-generated cube's side walls go?
+# The anchors span a perfect cube, but the render shows two flat sheets.
+# This measures the anchor distribution and the patch normals to name the
+# stage that dropped the walls.
+#   cmake --build build_delirium --target cube_diag
+#   ./build_delirium/cube_diag assets/cube.psf
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/cube_diag.cpp")
+  add_executable(cube_diag examples/make_cube_asset/cube_diag.cpp)
+  target_link_libraries(cube_diag PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# domain_probe - does the baker's sampling ever visit the cube's wall band?
+# The cube diag showed zero wall anchors; this names the cause: the
+# substance's Domain() vs its own wall band.
+#   cmake --build build_delirium --target domain_probe
+#   ./build_delirium/domain_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/domain_probe.cpp")
+  add_executable(domain_probe examples/make_cube_asset/domain_probe.cpp)
+  target_link_libraries(domain_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# bake_probe - instrument the cube bake: the substance yields 188 wall
+# samples on the grid, but the baked body had SIDE-WALL 0. This probe
+# bakes the cube tree and reports the distribution, naming the dropping
+# stage.
+#   cmake --build build_delirium --target bake_probe
+#   ./build_delirium/bake_probe
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/bake_probe.cpp")
+  add_executable(bake_probe examples/make_cube_asset/bake_probe.cpp)
+  target_link_libraries(bake_probe PRIVATE delirium_engine_lib)
+endif()
+
+# -----------------------------------------------------------------------
+# cube_diag2 - the cube's two sheets: does the mirrored one seal the box
+# or poke out behind? Bakes the tree with and without the mirrored sheet
+# and compares extents.
+#   cmake --build build_delirium --target cube_diag2
+#   ./build_delirium/cube_diag2
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/cube_diag2.cpp")
+  add_executable(cube_diag2 examples/make_cube_asset/cube_diag2.cpp)
+  target_link_libraries(cube_diag2 PRIVATE delirium_engine_lib)
+endif()

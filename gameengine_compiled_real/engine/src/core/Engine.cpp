@@ -383,6 +383,19 @@ void Engine::Run() {
             }
             if (render_hook) render_hook(*renderer, cam);
             renderer->Present();
+            // DRAIN queued window captures HERE, after Present(): the frame
+            // hook runs BEFORE the render, so a capture taken there would
+            // read the previous frame. Draining after Present guarantees
+            // capture == the pixels the just-rendered frame produced.
+            if (!capture_requests_.empty()) {
+                std::vector<std::string> reqs;
+                reqs.swap(capture_requests_);
+                for (const auto& p : reqs) {
+                    if (!SaveWindowPPM(p))
+                        std::fprintf(stderr, "Engine: window capture failed (%s)\n",
+                                     p.c_str());
+                }
+            }
         }
         ++f;
         // Cap before sampling FPS so the printed number measures complete

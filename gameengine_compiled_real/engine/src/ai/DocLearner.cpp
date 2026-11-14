@@ -466,6 +466,22 @@ still point up, so it renders as a hollow shell).
   WRONG (inside)   the lower sheet's scale is [1,1,1] (not flipped)
 
 Other closures:
+  - a box/cube = a "box" node + a SECOND "box" node with the SAME origin
+    and "scale":[1,1,-1]. The box substance describes the top face AND the
+    four walls; the mirrored second node supplies the bottom face.
+
+  COMPLETE EXAMPLE -- the document "a simple grey cube, half-extents 0.4":
+
+    {"kind":"body","color":[0.75,0.72,0.65],"children":[
+      {"kind":"box_upper","substance":"box",
+       "substance_params":{"sx":0.4,"sy":0.4,"sz":0.4}},
+      {"kind":"box_lower","substance":"box",
+       "substance_params":{"sx":0.4,"sy":0.4,"sz":0.4},
+       "origin":[0,0,0],"scale":[1,1,-1]}]}
+
+  Note BOTH nodes carry the same "substance_params" and the SAME origin;
+  only the lower one has the flipped scale. That tree has TWO sheets and
+  bakes into a closed cube.
   - a cylinder = an ellipsoid (elongated in z) + a plane at each end
   - a ring/housing = a torus, optionally with ellipsoids inside it
 Each element's "origin" places it in the PARENT's local frame, and
@@ -675,9 +691,24 @@ DocResult InterpretDocument(
     }
 
     // --- PARSE -------------------------------------------------------------
+    // A model often wraps its JSON in prose or a markdown fence: extract the
+    // first balanced object before parsing. (The same fallback the semantic
+    // prompt path in Workspace.cpp uses; without it the doc path rejects a
+    // perfectly good fenced reply with "invalid JSON: expected number at
+    // byte 0".)
+    std::string json = reply;
+    JsonValue probe;
+    std::string perr;
+    if (!ParseJson(json, probe, perr)) {
+        std::string extracted;
+        if (ExtractJsonObject(reply, extracted)) {
+            json = extracted;
+            tool_transcript += "[recover] fenced/prose reply, JSON extracted\n";
+        }
+    }
     std::unique_ptr<Element> tree;
     std::string why;
-    if (!ParseElementTree(reply, tree, why)) {
+    if (!ParseElementTree(json, tree, why)) {
         DocAttempt a;
         a.document_id = doc.id;
         a.document_text = doc.text;

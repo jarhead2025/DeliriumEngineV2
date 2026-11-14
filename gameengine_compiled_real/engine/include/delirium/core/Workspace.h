@@ -312,6 +312,26 @@ private:
     bool  gizmo_drag_ = false;
     int   gizmo_last_x_ = 0, gizmo_last_y_ = 0;
 
+    // --- the multi-view capture sweep --------------------------------------
+    // The orbit sweep is a scripted capture loop: pin viewpoint k, wait
+    // settle_frames for the render to catch up (the renderer's surfel bake
+    // and grid are rebuilt for the new angle), queue the capture, advance.
+    // settle_frames > 1 exists because a capture taken on the SAME frame as
+    // the camera change reads a frame rendered from the OLD camera.
+    bool        sweep_armed_ = false;
+    // The deferred arm: the sweep starts when the next AI object lands.
+    bool        sweep_deferred_ = false;
+    bool        sweep_vary_pitch_ = true;
+    int         sweep_count_ = 0;
+    int         sweep_next_ = 0;          // next viewpoint index to capture
+    int         sweep_settle_ = 10;       // frames to wait after pinning
+    int         sweep_settle_left_ = 0;
+    bool        vary_pitch_ = true;
+    std::string sweep_prefix_;
+    int         sweep_captured_ = 0;
+    // One step of the sweep per frame (see ArmOrbitSweep).
+    void SweepStep();
+
     // --- keyboard camera movement -----------------------------------------
     // WASD / arrows move the camera in its own frame; Q/E rise and fall.
     // The keys are read as HELD state, so the camera moves continuously
@@ -484,6 +504,45 @@ public:
     void SetOrbitPitch(float p) { orbit_pitch_ = p; }
     void SetOrbitDist(float d)  { orbit_dist_ = d; }
     void SetOrbitTarget(const Vec3& t) { orbit_target_ = t; }
+
+    // --- the multi-view capture sweep ---------------------------------------
+    //
+    // WHY THIS EXISTS: a single pinned-angle capture proves ONE view. The
+    // user's point is stronger than that: a defect that hides on one side
+    // of an object (an antiparallel normal, a seam that only breaks from
+    // below) is only VISIBLE if the app shows the object from SEVERAL
+    // perspectives, so the evidence is pixels the user can look at rather
+    // than gate numbers they have to trust.
+    //
+    // Arm a sweep of `count` viewpoints spread over azimuth (and, when
+    // `vary_pitch`, alternating elevation), all at the scene's framed
+    // distance. On each subsequent frame the sweep advances: it pins the
+    // camera to viewpoint k, queues a window capture (drained AFTER
+    // Present, so capture == render), and when the last viewpoint is done
+    // it requests the app to quit. The result is `count` PPMs named
+    // `<prefix>_<k>.ppm`, each already staring at the target object.
+    void ArmOrbitSweep(int count, const std::string& prefix,
+                       bool vary_pitch = true, int settle_frames = 10);
+    // True once every queued viewpoint has been captured (or none was
+    // armed). A harness uses this to know the run is over.
+    bool OrbitSweepDone() const { return sweep_armed_ && sweep_next_ >= sweep_count_; }
+    // The number of captures actually written (for the app to report).
+    int OrbitSweepCaptured() const { return sweep_captured_; }
+    // Arm the sweep so it STARTS when the next AI-generated object lands.
+    //
+    // WHY: a model reply takes tens of seconds, and the sweep quits the app
+    // when it finishes -- so arming both together would capture the STARTUP
+    // scene and exit long before the model answers. Deferred arming waits
+    // for AddFromTree to succeed, then frames the scene and starts.
+    void ArmOrbitSweepOnNextObject(int count, const std::string& prefix,
+                                   bool vary_pitch = true, int settle_frames = 10) {
+        sweep_deferred_ = true;
+        sweep_count_ = count;
+        sweep_prefix_ = prefix;
+        sweep_vary_pitch_ = vary_pitch;
+        sweep_settle_ = settle_frames;
+    }
+    bool OrbitSweepDeferred() const { return sweep_deferred_; }
 private:
 
     // --- model reachability probe (background thread) ---------------------

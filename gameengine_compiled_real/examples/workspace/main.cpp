@@ -42,6 +42,13 @@
 //                                 --auto-quit, when a gate asserts on pixels.
 //   --shot FILE.png               capture the window to FILE.png before
 //                                 quitting (proves the UI actually painted)
+//   --views N --shot-prefix P    capture the target from N perspectives
+//                                 (spread over azimuth, alternating
+//                                 elevation), one PPM each named P_<k>.ppm,
+//                                 then close itself. The app STARTS already
+//                                 framed on the target, so the evidence is
+//                                 pixels a human can look at, not gate
+//                                 numbers to be trusted on faith.
 //   --auto-prompt TEXT            type TEXT into the AI console and press
 //                                 Generate automatically once the window
 //                                 is up. This drives the SAME path a
@@ -89,6 +96,10 @@ int main(int argc, char** argv) {
     int auto_frames = 0;
     std::string shot;
     std::string auto_prompt;
+    // Multi-view capture sweep (the "start staring at the object" mode):
+    // N viewpoints spread over azimuth, a capture at each, then quit.
+    int         views = 0;
+    std::string shot_prefix;
     std::string semantic = "orb";
     int render_path = -1;   // -1 = the workspace's default
     // Camera placement, so a capture can be taken from a KNOWN angle.
@@ -115,6 +126,12 @@ int main(int argc, char** argv) {
         else if (a == "--auto-quit") auto_quit = std::atof(next("0").c_str());
         else if (a == "--auto-frames") auto_frames = std::atoi(next("0").c_str());
         else if (a == "--shot") shot = next("");
+        // --views N --shot-prefix P: capture the target from N perspectives
+        // (spread over azimuth, alternating elevation), one PPM each named
+        // P_<k>.ppm, then close itself. The camera is an INPUT, so a
+        // view-dependent defect is visible instead of flaky.
+        else if (a == "--views")       views = std::atoi(next("0").c_str());
+        else if (a == "--shot-prefix") shot_prefix = next("");
         else if (a == "--auto-prompt") auto_prompt = next("");
         else if (a == "--semantic") semantic = next("orb");
         // --document PATH: switch the console into DOCUMENT mode and load
@@ -224,6 +241,29 @@ int main(int argc, char** argv) {
         // frame, so this is instant -- the same mechanism the viewport's
         // path buttons use. The renderer announces the change itself.
         ws.SetRenderPath(render_path);
+    }
+
+    // --- the multi-view capture sweep ---------------------------------------
+    //
+    // WHY: the user's requirement is that the app should START already
+    // staring at the target object, show it from several perspectives, and
+    // screenshot each -- so the evidence is pixels a human can look at,
+    // not gate numbers that have to be trusted. FrameScene() (in Attach)
+    // has already framed the target; the sweep orbits it through N
+    // viewpoints with alternating elevation and captures each. The sweep
+    // quits the app itself when done, so no external kill is needed.
+    if (views > 0 && !shot_prefix.empty()) {
+        if (!auto_prompt.empty()) {
+            // With --auto-prompt, the sweep must wait for the MODEL's object
+            // to land (the reply takes tens of seconds and the sweep quits
+            // the app), so arm it DEFERRED: it starts when AddFromTree
+            // succeeds.
+            ws.ArmOrbitSweepOnNextObject(views, shot_prefix,
+                                         /*vary_pitch=*/true, /*settle=*/10);
+        } else {
+            ws.ArmOrbitSweep(views, shot_prefix, /*vary_pitch=*/true,
+                             /*settle=*/10);
+        }
     }
 
     // --- document mode (G15) ----------------------------------------------

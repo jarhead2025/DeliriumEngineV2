@@ -228,12 +228,26 @@ ElementSystem::Field SheetAt(const Sheet& s, float lx, float ly) {
 //     leaves the canvas alone).
 //   * A degenerate domain (a zero-radius substance) would divide by zero;
 //     fall back to the canvas.
-//   * CLIP to the canvas: the canvas is the world the tree occupies, so a
-//     support reaching past it is not represented anyway -- and clipping
-//     keeps the grid step from getting COARSER than it was before the
-//     per-substance domains existed (a gaussian with 3 sigma = 0.9 would
-//     otherwise stretch the grid over 1.8 units and halve the resolution
-//     inside the canvas).
+//   * CLIP to the canvas -- BUT WITH A BOUNDED OVERSHOOT.
+//
+//     WHY NOT EXACTLY THE CANVAS: a substance's domain deliberately extends
+//     PAST its footprint -- the ellipsoid's rim (6%) and the box's wall band
+//     live outside the footprint, and that is where their continuation
+//     surfaces are. A clip at exactly extent/2 silently undo.es the
+//     declaration and the band is never sampled. MEASURED TWICE:
+//       - the cube (BoxSubstance wall band): anchors came out "top 2304,
+//         bottom 2304, SIDE-WALL 0" and every patch normal was vertical --
+//         the ~40 lines of wall code in Eval were unreachable.
+//       - the ellipsoid's 6% rim (0.53) was clipped to 0.50 -- which is why
+//         the derived path measured the rim as "a perimeter ring, not a
+//         filled annulus" and had to add explicit rim points.
+//
+//     The overshoot bound (25%) keeps the clip's real purpose -- a runaway
+//     domain must not coarsen the grid over the canvas (the gaussian's
+//     3-sigma = 0.9 case is still clipped, since 0.9 > 0.625) -- while a
+//     substance's own declared band survives. The derived path's cloud
+//     sampler uses the same idea with a 1.5 safety factor; the two bounds
+//     are independent because they guard different failure modes.
 // =============================================================================
 static void SheetDomain(const Element& el, float extent, float& hx, float& hy) {
     hx = extent * 0.5f;
@@ -241,8 +255,9 @@ static void SheetDomain(const Element& el, float extent, float& hx, float& hy) {
     if (el.substance) el.substance->Domain(hx, hy);
     if (hx < 1e-6f) hx = extent * 0.5f;
     if (hy < 1e-6f) hy = extent * 0.5f;
-    if (hx > extent * 0.5f) hx = extent * 0.5f;
-    if (hy > extent * 0.5f) hy = extent * 0.5f;
+    const float lim = extent * 0.5f * 1.25f;
+    if (hx > lim) hx = lim;
+    if (hy > lim) hy = lim;
 }
 
 // =============================================================================
@@ -391,6 +406,91 @@ SubstancePoint TorusSubstance::Eval(float x, float y) const {
     const float nl = std::sqrt(n.x * n.x + n.y * n.y + n.z * n.z);
     if (nl > 1e-9f) { n.x /= nl; n.y /= nl; n.z /= nl; }
     return { Vec3{x, y, z}, n };
+}
+
+SubstancePoint BoxSubstance::Eval(float x, float y) const {
+    // THE WALL BAND: the side walls hang DOWN from the footprint's edge.
+    // A point (x, y) outside the footprint is on a wall iff the distance
+    // to the footprint's nearest edge point is within the wall's XY
+    // reach -- but since a wall is VERTICAL, its XY projection is exactly
+    // the footprint's EDGE LINE. So: clamp (x,y) to the footprint edge,
+    // and treat the overhang as the parameter along the wall.
+    //
+    // For (x,y) inside the footprint: the top face at z = +sz, normal +Z.
+    // For (x,y) outside: clamp to the edge -- the wall point directly
+    // below the clamped position, at a height that descends from +sz.
+    // The height parameter is the RADIAL overhang distance, so the wall
+    // spans the same arc-length parameter the grid's outer rows sample.
+    const float q = std::max(std::fabs(x) / sx_, std::fabs(y) / sy_);
+    if (q <= 1.0f) {
+        // --- THE TOP FACE ---------------------------------------------------
+        // Flat: z = +sz, normal +Z. No rim margin, no edge extension: the
+        // walls are the continuation, and they are handled below.
+        return { Vec3{x, y, sz_}, Vec3{0.f, 0.f, 1.f} };
+    }
+    // --- THE WALLS ----------------------------------------------------------
+    // Outside the footprint. Clamp to the edge: the wall point is directly
+    // below the clamped (x,y) at the edge. The overhang parameter t in
+    // [0, wall] measures how far down the wall we are, as a fraction of
+    // the box's height sz. The grid's outer rows sample t in (0, wall].
+    //
+    // The CLAMP must be per-axis, not radial: a box's wall is a PLANE per
+    // face, so the clamped point is (clamp(x, -sx, +sx), clamp(y, -sy, +sy))
+    // -- for a corner overshoot both axes clamp, which lands on the
+    // corner EDGE. That is the honest projection: the wall's corners are
+    // real corners, and the grid's outer rows land there.
+    const float cx = std::max(-sx_, std::min(sx_, x));
+    const float cy = std::max(-sy_, std::min(sy_, y));
+    // The overhang distance: how far OUTSIDE the footprint (x,y) is. On a
+    // face's wall it is the one-axis overshoot; at a corner it is the
+    // larger of the two (the corner is shared by two walls). The
+    // normalisation maps a one-axis overshoot of `reach` to t = 1 (the
+    // bottom of the wall), where reach is the grid step the sheet is
+    // sampled at -- the caller samples the wall band with rows spaced
+    // `reach` apart, so the wall's height is `wall * reach` worth of
+    // arc length. Using the OVERSHOOT as the parameter keeps the wall's
+    // sample spacing equal to the top face's.
+    // The overhang fraction of the footprint, normalised by the WALL BAND
+    // (Domain's declared reach, 18% of the footprint). The band's outermost
+    // row lands at o = 1 -- the seam (z = 0) -- so the wall descends the
+    // FULL half-height across the band and the two sheets' walls MEET at
+    // the seam with AGREEING normals (both outward-horizontal; the flip is
+    // in Z, the wall normal is in XY). This is the same rim-agreement
+    // property the ellipsoid's rim has, and it is what makes the wall a
+    // SURFACE (several rows) rather than a one-row sliver.
+    //
+    // o is also the wall_ test: a SetWallDepth(f) of 0.5 now means "half
+    // the band", i.e. half the descent -- the wall stops halfway down. The
+    // semantic is the same as before (1.0 = reach the seam), expressed in
+    // the band's own units.
+    const float ox = (sx_ > 1e-9f)
+        ? (std::fabs(x) - sx_) / (sx_ * kWallBand) : 0.f;
+    const float oy = (sy_ > 1e-9f)
+        ? (std::fabs(y) - sy_) / (sy_ * kWallBand) : 0.f;
+    const float o  = std::max(ox, oy);        // the wall parameter, >= 0
+    // THE SEAM ROW MUST SURVIVE. The band's outermost row lands at o = 1
+    // exactly (x = sx*(1+band) is the domain's edge), but the division
+    // computes 1.0000001 in floating point, so a strict `o > wall_` test
+    // REJECTED the one row that reaches the seam (z = 0) -- the wall then
+    // stopped at the second-to-last row (measured: the sheet's z range was
+    // [+0.1395, +0.5], a 0.28-unit gap at the seam where neither sheet has
+    // a surface, and the closed box was hollow in the middle band). A small
+    // epsilon keeps the seam row; anything genuinely past the band is still
+    // rejected.
+    constexpr float kWallEps = 1e-4f;
+    if (o > wall_ + kWallEps)
+        return { Vec3{x, y, 0.f}, Vec3{0.f, 0.f, 1.f}, false };
+    // The wall point: the clamped XY, descending from +sz to 0 across the
+    // band (o: 0 -> 1). The mirrored sheet's wall takes over below the
+    // seam.
+    const float z = sz_ * (1.f - o);
+    // THE WALL'S NORMAL is the OUTWARD HORIZONTAL direction of the face
+    // the wall belongs to: the axis the overshoot happened on, pointing
+    // away from the box.
+    Vec3 n{0.f, 0.f, 0.f};
+    if (ox >= oy) n.x = (x > 0.f) ? 1.f : -1.f;
+    else          n.y = (y > 0.f) ? 1.f : -1.f;
+    return { Vec3{cx, cy, z}, vnorm(n) };
 }
 
 SubstancePoint GaussianSystemSubstance::Eval(float x, float y) const {
@@ -1148,14 +1248,39 @@ bool ElementSystem::Bake(const Element& root, int grid_n, float extent,
     SheetDomain(*sheets[si].el, extent, phx, phy);
     for (int j = 0; j < npatch; ++j) {
         for (int i = 0; i < npatch; ++i) {
-            // corner ordering matches the renderer bilinear: A0(0,0) A1(1,0) A2(1,1) A3(0,1)
-            // The layer's base offset shifts every index into this layer's
-            // own anchor block.
+            // CORNER ORDER -- THE WINDING FIX (the cube's finding).
+            //
+            // The renderer's convention A is: u runs along A0->A3 and v
+            // along A0->P1, and the patch normal is cross(dPdu, dPdv).
+            // With the OLD order (A1=(i+1,j), A3=(i,j+1)) that cross is
+            // -Z on every flat +Z patch -- MEASURED on the model cube:
+            // 1521 of 1521 top patches had an INWARD normal, and the
+            // smooth-normal field (which accumulates EvaluateNormal)
+            // inherited it -- the top face shaded dark because its
+            // shading normal pointed into the body.
+            //
+            // The fix swaps slots 1 and 3 (A1=(i,j+1), A3=(i+1,j)):
+            // the bilinear's SHAPE is identical (the same four corners,
+            // the same quad -- only which edge is "u" and which is "v"
+            // changes), but the cross flips to OUTWARD. The recorded
+            // anchor normals (the substance's outward directions) then
+            // agree with the geometric cross, and the smooth-normal
+            // field points out of the body everywhere.
+            //
+            // WHO ELSE READS THIS TABLE: the splat kernel's bilinear
+            // (psf_splat.cl: pl=mix(A0,A3,u), pr=mix(A1,A2,u)) and the
+            // CPU mirror (Patch.cpp). Both parameterise by the SAME
+            // slots, so swapping the slots changes only the (u,v)
+            // LABELLING inside each patch -- the displacement
+            // coefficients are refit against the swapped corners in
+            // this same block, so the surface is unchanged. The
+            // validate_eval / validate_reconstruction gates cover the
+            // CPU side; render_paths covers the kernel side.
             const uint16_t base = (uint16_t)(si * per);
             const uint16_t a00 = (uint16_t)(base + (size_t)j * N + i);
-            const uint16_t a10 = (uint16_t)(base + (size_t)j * N + i + 1);
+            const uint16_t a10 = (uint16_t)(base + (size_t)(j + 1) * N + i);
             const uint16_t a11 = (uint16_t)(base + (size_t)(j + 1) * N + i + 1);
-            const uint16_t a01 = (uint16_t)(base + (size_t)(j + 1) * N + i);
+            const uint16_t a01 = (uint16_t)(base + (size_t)j * N + i + 1);
             // skip patches with any out-of-support corner: fitting them would
             // target the phantom origin (FieldAt's zero-weight collapse) and
             // produce degenerate/huge-coef patches (the "flat card + bump"
@@ -1453,6 +1578,30 @@ std::unique_ptr<Element> ProceduralElementGenerator::Build(const std::string& se
         lower->origin = {0.f, 0.f, 0.f};
         lower->scale = {1.f, 1.f, -1.f};   // the flip
         root->AddChild(std::move(lower));
+        return root;
+    }
+    // A BOX: the top face + walls from one sheet, the bottom from the
+    // mirrored sheet -- the same closed-body rule the torus uses. The
+    // cube is the engine's SHARPEST diagnostic: axis-aligned normals and
+    // hard 90-degree edges expose a winding, normal-interpolation or
+    // tangent-fit defect that a sphere hides.
+    if (semantic.find("box") != std::string::npos ||
+        semantic.find("cube") != std::string::npos ||
+        semantic.find("block") != std::string::npos) {
+        root->kind = "box_body";
+        auto top = std::make_unique<Element>();
+        top->kind = "box_top";
+        top->substance = std::make_unique<BoxSubstance>(0.4f, 0.4f, 0.4f);
+        top->color = {0.75f, 0.7f, 0.6f};
+        root->AddChild(std::move(top));
+
+        auto bottom = std::make_unique<Element>();
+        bottom->kind = "box_bottom";
+        bottom->substance = std::make_unique<BoxSubstance>(0.4f, 0.4f, 0.4f);
+        bottom->color = {0.75f, 0.7f, 0.6f};
+        bottom->origin = {0.f, 0.f, 0.f};
+        bottom->scale = {1.f, 1.f, -1.f};   // the flip: the bottom face
+        root->AddChild(std::move(bottom));
         return root;
     }
     if (semantic.find("orb") != std::string::npos ||
