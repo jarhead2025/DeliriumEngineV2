@@ -676,3 +676,14 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/examples/make_cube_asset/seam_diag.cpp")
   add_executable(seam_diag examples/make_cube_asset/seam_diag.cpp)
   target_link_libraries(seam_diag PRIVATE delirium_engine_lib)
 endif()
+
+# -----------------------------------------------------------------------
+# ellipsoid_diag - why does the ellipsoid's sampling waste rise when the
+# sheet domain grows to include the rim?  Are the extra cells VALID rim
+# anchors (the overlap mechanism doing its job) or placeholders (waste)?
+#   ./build_delirium/ellipsoid_diag
+# -----------------------------------------------------------------------
+if(EXISTS "${CMAKE_SOURCE_DIR}/examples/ellipsoid_diag/main.cpp")
+  add_executable(ellipsoid_diag examples/ellipsoid_diag/main.cpp)
+  target_link_libraries(ellipsoid_diag PRIVATE delirium_engine_lib)
+endif()

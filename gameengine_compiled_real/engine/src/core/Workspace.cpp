@@ -248,6 +248,13 @@ void Workspace::ComputeLayout(int w, int h) {
     L.right    = Rect{ w - right, body_top, right, body_h };
     L.console  = Rect{ 0, body_top + body_h, w, L.console_h };
     layout_ = L;
+    // The gizmo's rect is DERIVED from the viewport, so it must be
+    // recomputed whenever the layout is -- otherwise the gizmo's position
+    // and the viewport's disagree (the gizmo would still be where the
+    // PREVIOUS layout put it). Doing it here also means the geometry is
+    // available before the first draw, so the input decision and the
+    // draw can never disagree about where the gizmo is.
+    LayoutGizmo();
 }
 
 // =============================================================================
@@ -829,7 +836,14 @@ void Workspace::OnFrame() {
 // the checks are against the viewport rect, not the whole window.
 // =============================================================================
 void Workspace::HandleCameraInput() {
-    const bool over_viewport = layout_.viewport.Contains(mouse_x_, mouse_y_);
+    // THE UI-DECIDES-FIRST RULE applies to the CONTINUOUS camera inputs
+    // too, not just the click: the wheel over a slider or a number field
+    // that pokes into the viewport rect must scroll THAT widget, not
+    // dolly the camera. And a middle-button drag that started on the
+    // viewport but wandered over a panel must keep panning (a drag that
+    // started is owned by the viewport), while a middle-button drag that
+    // STARTED on a panel must never pan.
+    const bool over_viewport = ClickReachesViewport(mouse_x_, mouse_y_);
     hover_viewport_ = over_viewport;
 
     // --- dolly: the wheel over the viewport zooms ------------------------
@@ -1591,6 +1605,19 @@ void Workspace::AddProcedural(const char* semantic) {
 // =============================================================================
 // Input
 // =============================================================================
+bool Workspace::ClickReachesViewport(int x, int y) const {
+    // The gizmo is a viewport ACTION (it is not a UI widget), so it wins.
+    if (OverGizmo(x, y)) return true;
+    // Outside the viewport: not a viewport action.
+    if (!layout_.viewport.Contains(x, y)) return false;
+    // Inside the viewport, but inside a UI WIDGET's rect: the UI consumed
+    // the click. The widget rects are the PREVIOUS frame's (immediate mode
+    // is one frame stale by design) -- so a widget that only just appeared
+    // cannot veto this frame's click. That is why the map is double-buffered.
+    if (ui_.HotTest(x, y)) return false;
+    return true;
+}
+
 bool Workspace::OnInput(const void* ev) {
 #if defined(DELIRIUM_HAS_SDL) && DELIRIUM_HAS_SDL
     const SDL_Event& e = *static_cast<const SDL_Event*>(ev);
@@ -1619,7 +1646,18 @@ bool Workspace::OnInput(const void* ev) {
                 }
                 // A click inside the viewport applies the tool; a click on a
                 // panel is consumed by the UI pass.
-                if (layout_.viewport.Contains(mouse_x_, mouse_y_)) {
+                //
+                // THE UI-DECIDES-FIRST RULE: the panels TOUCH the viewport's
+                // edges (the tool strip, the render-path row, the console's
+                // generate button), so a click aimed at a button can land 1px
+                // inside the viewport rect -- and the old code applied the
+                // tool AND fired the button (or started an orbit that ate the
+                // button's click). The UI pass runs later in the frame, too
+                // late to veto. HotTest() reads the PREVIOUS frame's widget
+                // rects (immediate mode: the layout is one frame stale by
+                // design), and any widget rect wins over the viewport. The
+                // gizmo is still tested first -- it is not a UI widget.
+                if (ClickReachesViewport(mouse_x_, mouse_y_)) {
                     if (tool_ == Tool::Navigate) {
                         // Navigation mode: the drag looks around, and NO
                         // tool is applied -- not even on release.
@@ -1646,9 +1684,16 @@ bool Workspace::OnInput(const void* ev) {
                 mouse_right_clicked_ = true;
             } else if (e.button.button == SDL_BUTTON_MIDDLE) {
                 mouse_middle_down_ = true;
-                panning_ = true;
-                pan_last_x_ = e.button.x;
-                pan_last_y_ = e.button.y;
+                // A middle-button drag that STARTS on a panel must never
+                // pan -- the panel owns that click. (Once a pan has
+                // started over the viewport it keeps panning even if the
+                // cursor wanders over a panel: a drag belongs to whoever
+                // started it.)
+                if (ClickReachesViewport(mouse_x_, mouse_y_)) {
+                    panning_ = true;
+                    pan_last_x_ = e.button.x;
+                    pan_last_y_ = e.button.y;
+                }
             }
             break;
         case SDL_MOUSEBUTTONUP:

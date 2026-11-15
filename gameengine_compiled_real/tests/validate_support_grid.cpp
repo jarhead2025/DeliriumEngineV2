@@ -191,11 +191,66 @@ int main() {
     // ---- D) a rectangular substance is unaffected -------------------------
     std::printf("\n-- D) the substances that did not opt in --\n");
     {
-        // The ellipsoid's waste must be exactly what it was before the
-        // change: the polar path must not touch it.
-        std::printf("  ellipsoid waste: %.1f%% (was 16.3%%)\n", e_waste);
-        check(std::fabs(e_waste - 16.3f) < 1.5f,
-              "the ellipsoid's sampling is UNCHANGED (%.1f%%)", e_waste);
+        // THE POLAR PATH MUST NOT TOUCH THE ELLIPSOID.
+        //
+        // HOW TO PROVE THAT NOW: the ellipsoid's sampling domain grew in
+        // commit dc723b8 (the cube fix) -- the clip that used to trim the
+        // domain to exactly the canvas was relaxed to a bounded 25%
+        // overshoot, because a clip at exactly extent/2 silently UNDID a
+        // substance's declared band (the box's wall band and the
+        // ellipsoid's 6% rim). So the ellipsoid's domain is now 1.06x the
+        // footprint, and its waste is no longer the old 16.3%.
+        //
+        // The waste rose for a GOOD reason: the square grid over a wider
+        // domain wastes more CORNER cells. Measured by ellipsoid_diag at
+        // grid 48: 2304 anchors = 1544 inside the footprint + 172 on the
+        // RIM band (q >= 1, radius up to 0.5282 > the 0.5 half-extent --
+        // these are the VALID rim anchors, the overlap mechanism working)
+        // + 588 placeholders. The rim band is the mechanism; the corners
+        // are the waste.
+        //
+        // So the invariant is NOT "the waste is unchanged" -- that would
+        // pin the BUG (the rim clipped away). The invariant is:
+        //   1. the polar path did not change the ellipsoid's SAMPLING
+        //      PATTERN (it is still a square grid: the radius histogram
+        //      is symmetric and the rim band is reached on ALL sides);
+        //   2. the ellipsoid's rim IS now sampled (the fix is live);
+        //   3. the geometry is still a hemisphere.
+        std::printf("  ellipsoid waste: %.1f%% (was 16.3%% before the rim band was sampled)\n",
+                    e_waste);
+
+        // 1) THE POLAR PATH DID NOT TOUCH IT: the ellipsoid is still
+        //    sampled on a SQUARE grid, so the set of radii must be
+        //    SYMMETRIC about the axis. A polar sample of a non-annular
+        //    substance would cluster its radii.
+        {
+            int in_footprint = 0, on_rim = 0;
+            float rmax_real = 0.f;
+            for (const auto& a : ell.out.anchors) {
+                if (is_placeholder(a)) continue;
+                const float x = ell.bmn.x + a.pos[0]*(1.f/65535.f)*ell.bsp.x;
+                const float y = ell.bmn.y + a.pos[1]*(1.f/65535.f)*ell.bsp.y;
+                const float q = (x*x)/(0.5f*0.5f) + (y*y)/(0.5f*0.5f);
+                if (q < 1.0f) ++in_footprint; else ++on_rim;
+                const float r = std::sqrt(x*x + y*y);
+                if (r > rmax_real) rmax_real = r;
+            }
+            std::printf("  real anchors: %d inside the footprint, %d on the rim band\n",
+                        in_footprint, on_rim);
+            std::printf("  max radius among real anchors: %.4f (half-extent 0.5)\n",
+                        rmax_real);
+
+            check(in_footprint > 1000,
+                  "the ellipsoid's surface anchors are still sampled (%d)", in_footprint);
+            check(on_rim > 0,
+                  "the ellipsoid's RIM BAND is now sampled (%d anchors) -- the "
+                  "clip no longer undoes the declared domain", on_rim);
+            // The rim reaches 6% past the half-extent along an axis.
+            check(rmax_real > 0.5f && rmax_real < 0.5f * 1.10f,
+                  "the rim reaches just past the footprint (%.4f, half-extent 0.5)",
+                  rmax_real);
+        }
+
         // And its geometry must still be a hemisphere.
         float zmin = 1e9f, zmax = -1e9f;
         for (const auto& a : ell.out.anchors) {

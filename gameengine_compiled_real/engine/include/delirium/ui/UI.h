@@ -193,6 +193,27 @@ public:
     bool MouseClicked(const Rect& r) const { return mouse_clicked && MouseOver(r); }
     bool KeyHit(const std::string& id, int key) const;
 
+    // --- THE HOT-RECT MAP (the UI-decides-first rule) ---
+    //
+    // WHY: the workspace's MOUSEBUTTONDOWN handler ran BEFORE the UI pass,
+    // from raw geometry -- so a click aimed at a button that sat 1px inside
+    // the viewport rect started an orbit/apply-tool AND fired the button.
+    // The UI must VETO the viewport action, and the only information the
+    // event handler has is the PREVIOUS frame's widget rects (immediate
+    // mode: the layout is one frame stale, which is exactly what ImGui's
+    // IsItemHovered uses).
+    //
+    // Every interactive widget registers its rect during the pass
+    // (Hot()); HotTest(x, y) reports whether the point is inside any of
+    // the LAST frame's rects. The workspace's event handler asks it
+    // BEFORE starting an orbit/tool/object-drag.
+    void Hot(const Rect& r) { hot_rects_next_.push_back(r); }
+    bool HotTest(int x, int y) const {
+        for (const Rect& r : hot_rects_) if (r.Contains(x, y)) return true;
+        return false;
+    }
+    bool HotEmpty() const { return hot_rects_.empty(); }
+
 private:
     struct DrawCmd {
         enum Kind { Fill, Border, Text, TextClip } kind;
@@ -221,6 +242,11 @@ private:
     // widgets that are drawn in a different order than they update.
     struct WidgetState { Rect r; bool hovered = false; bool focused = false; };
     std::vector<std::pair<std::string, WidgetState>> states_;
+    // The hot-rect map: what the widgets registered THIS pass, and what the
+    // event handler reads (LAST pass). Double-buffered so a rect registered
+    // after BeginFrame is not visible to HotTest until the next frame.
+    std::vector<Rect> hot_rects_;
+    std::vector<Rect> hot_rects_next_;
 
 public:
     // Internal: used by the widget functions.

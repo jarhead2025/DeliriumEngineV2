@@ -98,6 +98,11 @@ void Context::BeginFrame(SDL_Renderer* r, const BitmapFont* f, int w, int h) {
     states_.clear();
     popup_.active = false;
     popup_owner_.clear();
+    // THE HOT-RECT SWAP: what the previous pass registered becomes what the
+    // event handler reads; this pass starts with an empty next-buffer. See
+    // UI.h for why the map is one frame stale by design.
+    hot_rects_ = hot_rects_next_;
+    hot_rects_next_.clear();
     // A drag ends when the button comes up. While it is held, the capture
     // owner keeps the drag even if the cursor leaves its rect.
     if (mouse_released) ReleaseDrag();
@@ -250,6 +255,7 @@ bool Context::KeyHit(const std::string& id, int key) const {
 
 // --- widgets ---------------------------------------------------------------
 bool Context::Button(const Rect& r, const std::string& label) {
+    Hot(r);
     const bool hover = MouseOver(r);
     const bool clicked = mouse_clicked && hover;
     const unsigned char* bg = hover ? theme->bg_hover : theme->bg_button;
@@ -261,6 +267,7 @@ bool Context::Button(const Rect& r, const std::string& label) {
 }
 
 bool Context::ToggleButton(const Rect& r, const std::string& label, bool* state) {
+    Hot(r);
     const bool hover = MouseOver(r);
     const bool clicked = mouse_clicked && hover;
     FillRect(r, *state ? theme->bg_active : (hover ? theme->bg_hover : theme->bg_button));
@@ -272,6 +279,7 @@ bool Context::ToggleButton(const Rect& r, const std::string& label, bool* state)
 }
 
 bool Context::IconButton(const Rect& r, const char glyph) {
+    Hot(r);
     const bool hover = MouseOver(r);
     const bool clicked = mouse_clicked && hover;
     FillRect(r, hover ? theme->bg_hover : theme->bg_button);
@@ -284,6 +292,7 @@ bool Context::IconButton(const Rect& r, const char glyph) {
 bool Context::TextField(const Rect& r, const std::string& id, std::string* text,
                         const std::string& placeholder) {
     if (!text) return false;
+    Hot(r);
     const bool hover = MouseOver(r);
     const bool focused = (focused_field == id);
     bool changed = false;
@@ -342,6 +351,7 @@ bool Context::TextField(const Rect& r, const std::string& id, std::string* text,
 bool Context::NumberField(const Rect& r, const std::string& id, float* value,
                           float step, float min_v, float max_v, int decimals) {
     if (!value) return false;
+    Hot(r);
     bool changed = false;
 
     // DRAG CAPTURE: this widget owns the drag only if it started it.
@@ -387,6 +397,7 @@ bool Context::NumberField(const Rect& r, const std::string& id, float* value,
 bool Context::Slider(const Rect& r, const std::string& id, float* value,
                      float min_v, float max_v) {
     if (!value || max_v <= min_v) return false;
+    Hot(r);
     bool changed = false;
     const Rect track{ r.x, r.y + r.h/2 - 2, r.w, 4 };
 
@@ -416,6 +427,7 @@ bool Context::Slider(const Rect& r, const std::string& id, float* value,
 bool Context::CheckBox(const Rect& r, const std::string& id, bool* state,
                        const std::string& label) {
     if (!state) return false;
+    Hot(r);
     const bool hover = MouseOver(r);
     const bool clicked = mouse_clicked && hover;
     const int box = 11;
@@ -435,6 +447,11 @@ bool Context::CheckBox(const Rect& r, const std::string& id, bool* state,
 bool Context::ComboBox(const Rect& r, const std::string& id,
                        const std::vector<std::string>& items, int* selected) {
     if (!selected || items.empty()) return false;
+    Hot(r);
+    // AN OPEN POPUP IS HOT TOO: its item rows consume the click that
+    // selects them, so the viewport must not act on a click inside the
+    // popup's rect.
+    if (popup_.active) Hot(popup_.r);
     const bool hover = MouseOver(r);
     bool changed = false;
 
@@ -481,6 +498,7 @@ bool Context::ComboBox(const Rect& r, const std::string& id,
 int Context::TabBar(const Rect& r, const std::string& id,
                     const std::vector<std::string>& labels, int current) {
     if (labels.empty()) return -1;
+    Hot(r);
     const int tw = std::max(40, r.w / int(labels.size()));
     int result = -1;
     for (size_t i = 0; i < labels.size(); ++i) {
@@ -498,6 +516,7 @@ int Context::TabBar(const Rect& r, const std::string& id,
 }
 
 int Context::ScrollArea(const Rect& r, const std::string& id, int* scroll, int content_h) {
+    Hot(r);
     if (!scroll) return 0;
     const int max_scroll = std::max(0, content_h - r.h);
     int s = *scroll;

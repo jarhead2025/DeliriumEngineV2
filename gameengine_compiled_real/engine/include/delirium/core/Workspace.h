@@ -113,6 +113,24 @@ public:
     // the panels shrink proportionally on a small window.
     void ComputeLayout(int w, int h);
 
+    // --- THE UI-DECIDES-FIRST DECISION -------------------------------------
+    // Would a click at (x, y) reach the VIEWPORT (and therefore apply a
+    // tool, start an orbit, or drag an object)?
+    //
+    // This is the decision the user's bug lived in, extracted so it can be
+    // TESTED directly. The rule:
+    //   - the gizmo wins (it is not a UI widget -- it IS a viewport action);
+    //   - a point outside the viewport rect is not a viewport action;
+    //   - a point inside a UI WIDGET's rect is consumed by the UI, even if
+    //     the widget pokes into the viewport rect (the panels touch the
+    //     viewport's edges).
+    //
+    // The widget rects come from the PREVIOUS frame's pass (immediate mode
+    // is one frame stale by design -- the same discipline ImGui's
+    // IsItemHovered uses), so a widget that only just appeared cannot veto
+    // this frame's click. That is why the map is double-buffered.
+    bool ClickReachesViewport(int x, int y) const;
+
     // Pull the orbit camera back until the whole scene fits in the view.
     // Computed from the world bounds of every object (each object's
     // Transform included, since placement lives outside the frozen
@@ -185,6 +203,13 @@ public:
     // Where the gizmo is drawn, in window pixels. Public so a test can
     // reason about it without a window.
     const UI::Rect& GizmoRect() const { return gizmo_rect_; }
+
+    // The UI context. Public so a test can register a widget rect and
+    // then assert that the workspace's input decision honours it -- the
+    // UI-DECIDES-FIRST contract spans both sides, and each side needs to
+    // be drivable from a test.
+    UI::Context& GetUI() { return ui_; }
+    const UI::Context& GetUI() const { return ui_; }
 
     // ======================================================================
     // DOCUMENT MODE (G15)
