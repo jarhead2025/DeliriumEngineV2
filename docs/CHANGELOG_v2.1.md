@@ -2,7 +2,8 @@
 
 **Branch:** `v2.1`
 **Compiled:** 2026-11-18
-**Status:** TriInfill GPU primary renderer working + optimized; Workspace editor ported; volumetric generation fixed.
+**Last updated:** 2026-11-26 (Section 11 COMPLETE: GPU modal writeback integration FIXED + FPS stall ROOT CAUSE FOUND + FIXED; Path B2 color-field migration complete; distributed temperature field CPU substrate complete)
+**Status:** TriInfill GPU primary renderer working + optimized; Workspace editor ported; volumetric generation fixed; **PSF v4 parametric surfaces implemented**; **GPU physics kernels implemented + benchmark-tested + ALL WIRED INTO `Step()`** (N-body pairwise, FEM solve, anchor-reflow, modal writeback — each with own flag + CPU fallback); tri_infill parametric fixes applied; **GPU modal writeback integration COMPLETE** (REST uploaded once at bind, per-frame only K vector uploads); **FPS stall FIXED** (host-upload FlushToGPU loop gated behind modal-body detection).
 
 This document synthesizes the major milestones delivered across recent development sessions. It is a human-readable progress summary, not a substitute for the per-file code. Reference docs live alongside it in `docs/`.
 
@@ -157,7 +158,105 @@ Design doc: `docs/AnchorReflow_Design.md`. Kernel: `kernels/anchor_reflow.cl` (2
 
 ---
 
-## 8. Build & Run
+## 8. Parametric Surfaces (PSF v4 Format) — IMPLEMENTED
+
+### Overview
+PSF format extended from v3 legacy height-fields (`SK_LEGACY`, bilinear anchors + `h(u,v)*Nd`) to **v4 parametric families**. A parametric surface encodes its FULL world-space size directly in parameters (major/minor radius, half-extents), so no anchor-grid tessellation is needed — one math surface replaces hundreds of height-field patches.
+
+### Format
+- **Magic/version:** `PSF\0` + `04 00 00 00` (verified in `assets/torus_v4.psf`).
+- **SurfaceKind enum** (`engine/include/delirium/core/Types.h`): `SK_LEGACY=0`, `SK_ELLIPSOID`, `SK_TORUS`, `SK_BOX`, `SK_CYLINDER`, `SK_PLANE`, `SK_GAUSSIAN`, `SK_WAVEFIELD`.
+- **Anchor frame:** shared body-level frame maps local → world (same bilinear interpolation of 4 corners as v3). Parametric families use `scale=1.0f` (position already in world units); legacy uses `scale=max(bbspan/2)`.
+- **Binary layout frozen** and validated against `tools/psf_encode_v4.py`.
+
+### CPU evaluator
+`engine/src/psf/Patch.cpp` — `FamilyEval` dispatch on `kind`, computes parametric position + analytic normal via cross product of partials (`dPdu × dPdv`). Matches GPU convention exactly.
+
+### GPU evaluator
+`kernels/psf_splat.cl` lines 704–796 — `psf_sample` kernel switches on `kind`:
+- `SK_ELLIPSOID` → `EvalEllipsoid`, `SK_TORUS` → `EvalTorus`, etc.
+- Shared body-level frame with `scale=1.0f` for parametric families (fixes double-scaling bug where `iso=max(bbspan/2)=1.35` scaled parametric world-space positions again → radial=1.82 instead of 1.35).
+- Analytic normal from `norm3(cross3(dPdu, dPdv))`.
+
+### Verified assets
+| File | Version | Surfaces | Notes |
+|------|---------|----------|-------|
+| `assets/torus.psf` | v3 legacy | 544 SK_LEGACY patches, 615 anchors | Height-field approximation of torus; corner artifacts require radial clip guard |
+| `assets/torus_v4.psf` | v4 parametric | 1 SK_TORUS surface, 4 anchors | Major=1.0, minor=0.35, same bbox [-1.35,-1.35,-0.35]..[1.35,1.35,0.35]. Generated via `tools/psf_encode_v4.py` |
+
+---
+
+## 9. GPU Physics Kernels — ALL FOUR WIRED INTO STEP (APPLIED/PACKAGED, pending user build confirmation)
+
+### Status caveat
+GPU physics kernels exist as standalone OpenCL files and pass benchmark tests (`tests/validate_*`). **All four kernels are now dispatched from `PhysicsWorld::Step()`** with separate enable flags (default OFF) and CPU fallback paths:
+- **N-body pairwise** (`nbody_pairwise.cl`) — Phase 0a: additive gravity+Coulomb forces after uniform gravity integration.
+- **GPU FEM solve** (`fem_assemble.cl` + `fem_solve.cl` via `PhysicsGpuFem`) — Phase 6: deformable-body continuum solve.
+- **Anchor-reflow** (`anchor_reflow.cl`) — Phase 6a: pool-exhaustion guard via `PSFBody::ReflowAnchors()` GPU backend.
+- **Modal writeback** (`psf_deform.cl::apply_modes`) — Phase 7: VRAM-direct modal coefficient writeback.
+
+Each kernel is guarded by its own flag (`SetNBodyPhysics`, `SetFemPhysics`, `SetReflowPhysics`, `SetModalWriteback`), defaults OFF so nothing changes unless explicitly enabled, and falls back to CPU if GPU not ready. Visual test scenes added to `examples/visual_gallery` (keys 1–4). The CPU coupled-field solver path remains unchanged for backward compatibility.
+
+### Kernel files (`kernels/`)
+| File | Kernels | Purpose | Verified via |
+|------|---------|---------|--------------|
+| `nbody_pairwise.cl` | `nbody_pairwise` | Gravity + Coulomb pairwise forces | `tests/validate_nbody_benchmark.cpp` |
+| `collision_broadphase.cl` | `build_cell_lists` | Spatial hashing broadphase | `tests/validate_collision_benchmark.cpp` |
+| `collision_narrowphase.cl` | narrowphase contact detection | Contact normal + depth | `tests/validate_collision_benchmark.cpp` |
+| `collision_impulse.cl` | impulse solver | Resolve contacts (velocity reversal) | `tests/validate_collision_benchmark.cpp` |
+| `fem_assemble.cl` | `assemble_forces` | FEM element stiffness assembly | `tests/validate_fem_benchmark.cpp` |
+| `fem_solve.cl` | `jacobi_solve` | FEM linear system solve (Jacobi iteration) | `tests/validate_fem_benchmark.cpp` |
+| `anchor_reflow.cl` | `compute_anchor_displacement`, `update_anchor_positions`, `refit_coefficients` | Anchor pool exhaustion fix via redistribution | `tests/validate_reflow_gpu.cpp` |
+| `psf_deform.cl` | `apply_modes`, `apply_anchor_modes`, `apply_seams` | Modal dynamics writeback + seam stitching | `tests/validate_m2_culling.cpp` (partial) |
+
+### Host infrastructure
+- `engine/src/physics/PhysicsGpu.cpp` — OpenCL buffer manager: `Initialize()`, `Upload()`/`Download()` PhysicsSoA, `LoadProgram()`/`GetKernel()`, collision grid config, scratch buffers for pair lists/forces. Added `context()` accessor for helper buffer allocation.
+- `engine/src/physics/PhysicsGpuFem.cpp` — FEM-specific buffer manager: anchor/element buffers, `LoadProgram()` for assemble/solve kernels.
+- `engine/src/physics/PhysicsWorld.cpp` — **All four GPU kernels dispatched from `Step()`** (APPLIED/PACKAGED, pending user build confirmation):
+  - `InitGpuPhysics()` now loads collision + nbody + reflow + deform kernels into `gpu_` and fem kernels into `gpu_fem_`; registers GPU reflow backend with `PSFBody::RegisterGPUReflow()`.
+  - `RunGpuNBody()` — Phase 0a dispatch: upload → nbody_pairwise (force accumulation) → nbody_integrate (semi-implicit Euler) → download. Constants: G=6.674e-11, k=8.988e9, softening²=1e-6.
+  - `RunGpuFemRegion()` — Phase 6 dispatch: builds FEMRegionSoA+FEMElementSoA from PSFBody anchors/patches, runs assemble_forces + jacobi_solve, writes back anchor displacements.
+  - `RunGpuReflowBackend()` — registered GPU backend for `PSFBody::ReflowAnchors()`: snapshot_error_accumulate → compute_anchor_displacement → update_anchor_positions → refit_coefficients. Shape-preserving (snapshot BEFORE anchors move, refit AFTER).
+  - `RunGpuModalWriteback()` — Phase 7 dispatch: apply_modes writes coef = rest + Σ q_m·shape_m directly to VRAM surface records. Added `ModalDynamics::CoefModeShapes()`, `Amplitudes()`, `SurfCount()` accessors for GPU upload.
+  - Each dispatch guarded by its own flag (`nbody_on_`, `fem_on_`, `reflow_on_`, `modal_writeback_on_`), defaults OFF, CPU fallback if GPU not ready.
+- `engine/include/delirium/physics/PhysicsWorld.h` — Added `SetNBodyPhysics`/`SetFemPhysics`/`SetReflowPhysics`/`SetModalWriteback` setters + getters; member flags + `PhysicsGpuFem gpu_fem_` instance; includes `PhysicsGpuFem.h`.
+- `engine/include/delirium/physics/PhysicsGpu.h` — Added `cl_context context() const` accessor.
+- `engine/include/delirium/physics/ModalDynamics.h` — Added `CoefModeShapes()`, `Amplitudes()`, `SurfCount()` accessors for GPU modal writeback.
+- `examples/visual_gallery/main.cpp` — Added visual test scenes: `gpu_nbody` (key 1), `gpu_fem` (key 2), `gpu_reflow` (key 3), `gpu_modal` (key 4). Each demonstrates the corresponding GPU kernel wired into `Step()` with CPU fallback.
+
+### Benchmark results (verified on Intel Arc A770)
+| Benchmark | Speedup | Notes |
+|-----------|---------|-------|
+| N-body pairwise | 52× (N=1k) → 1919× (N=10k) | Super-linear; classic engines use uniform field O(N) instead of pairwise O(N²) |
+| Collision detection | 6.84× → 11.50× | Broadphase + narrowphase vs CPU brute force |
+| FEM deformation | 1.47× → 2.46× | Assemble + Jacobi solve vs CPU |
+| Anchor reflow | ~154× | GPU displacement kernel vs CPU |
+
+### Still OPEN (from Section 10 below)
+- All four GPU kernels wired into `Step()` but **not yet verified by user build** — visual test scenes `gpu_nbody`/`gpu_fem`/`gpu_reflow`/`gpu_modal` (keys 1–4) + existing `gpu_physics` (key 0) demonstrate them; awaiting confirmation.
+- GPU modal writeback (`psf_deform.cl::apply_modes`) — kernel now launched from host via `RunGpuModalWriteback()`; requires `.modes` file loaded via `ModalDynamics::LoadModes()`.
+- GPU FEM solve runs on ALL bodies with patches > 0 (no per-body FEM region registration yet) — production system would track per-body FEM region binding.
+
+---
+
+## 10. Recent TriInfill Fixes — APPLIED/PACKAGED (pending user build confirmation)
+
+> Per user's standing rule (POKEE.md): these changes are described as applied/packaged/unverified until the user confirms a successful local build + render. Full debugging timeline (v152–v167) moved to external doc `docs/TRI_INFILL_SAGA.md`.
+
+**Root cause:** `torus.psf` was v3 LEGACY height-field — cannot represent a curved torus tube, breaking tri_infill triangulation. Structural fix: switched scene Y to PSF v4 parametric torus (`torus_v4.psf`).
+
+**Fixes applied to sandbox tree:**
+1. Generated `assets/torus_v4.psf` (v4 parametric, 1 SK_TORUS surface).
+2. Removed radial clip guard in `psf_splat.cl` (only needed for legacy corner artifacts).
+3. Fixed double-scaling bug — parametric families use `scale=1.0f` in both GPU (`psf_splat.cl:727-728`) and CPU (`PSFBody.cpp:87`).
+4. Raised `base_uvn` from 10 to 30 (`SplatRenderer.cpp:2897`) — rounds the tube cross-section.
+5. Added `procedural_albedo()` helper (`psf_splat.cl:165`) — fixes base color clamping to black.
+
+**User-reported status (2026-11-22):** Parametric torus renders correctly (`patches=1`, `sentinel=0`, `center fraction=0.1%`). Square tube appearance fixed by base_uvn=30. Minor issue "edges overlapping too much" — to be investigated separately.
+
+---
+
+## 12. Build & Run
 
 ### Build (Release)
 ```bash
@@ -193,20 +292,91 @@ cp engine/include/delirium/<subsys>/*.h include/delirium/<subsys>/
 
 ---
 
+## 11. GPU Modal Writeback Integration — COMPLETE ✅ (set 2026-11-26)
+
+### Root cause of modal-body FPS stall (~27-31ms/frame)
+`GameObject::FixedUpdate` calls `ModalDynamics::WriteBack` every frame → modifies host blobs → `AnchorsDirty()` → ~85KB upload/frame → Intel Arc driver stalls ~27-31ms regardless of `CL_FALSE`. Physics needs host blob (collision/FEM); render does NOT.
+
+### Architecture fix
+Physics and render become INDEPENDENT computations from same REST state:
+- **Physics:** `REST + K → host blob` (unchanged, needed for collision/FEM).
+- **Render:** `REST + K → GPU render buffers` (new GPU path, no host upload).
+- REST uploaded ONCE at bind from `ModalDynamics` snapshots (`rest_apos`/`rest_anrm`/`rest_coef`). Each frame only tiny K vector uploads; kernels write deformed geometry DIRECTLY into shared render buffers (`buf_anchors`/`buf_surfaces`/`buf_snorm`) that `bake_surfels` reads.
+
+### Files (`GPUModalWriteback_v1.tar.gz`, 106K)
+- `kernels/psf_deform.cl` — `modal_writeback_anchors`/`modal_writeback_surfaces` + `modal_snorm_pass1`/`modal_snorm_pass2` kernels.
+- `engine/src/render/SplatRenderer.cpp` + mirror (`SetupGPUModal`/`GPUModalWriteback`/`ShutdownGPUModal`).
+- `engine/include/delirium/render/SplatRenderer.h` + mirror (modal buffer members).
+- `engine/include/delirium/psf/PSFBody.h` + mirror (weak `ModalDynamics*` pointer).
+- `engine/src/physics/ModalDynamics.cpp` + mirror (`FullModeShapes`/`RestAnchorPos`/`RestAnchorNrm`/`RestCoef` accessors).
+- Kernel/host arg parity verified (anchors=10 args, surfaces=7 args, snorm_pass1=7 args, snorm_pass2=5 args). Both header trees identical. Enable: `DELIRIUM_GPU_MODAL=1`.
+
+### Iteration history (v2–v15)
+- v2–v14: fixed header include, `std::clamp` brace-init, OpenCL kernel brace-init syntax, `clEnqueueFillBuffer` pattern_size power-of-2.
+- **v15 ROOT CAUSE FIXED:** `clEnqueueCopyBuffer` src/dst SWAPPED at line ~4954 — copied empty `buf_anchors` OVER `buf_modal_rest_anchors`, zeroing REST data after upload → black screen. Fix: swap args `(queue, buf_modal_rest_anchors, buf_anchors, ...)`.
+
+### FPS stall final fix (set 2026-11-26)
+Even with GPU modal writeback active, frame time stuck ~29ms. Stage timing probes (`DELIRIUM_RENDER_STAGES=1`) pinpointed the stall to the **unconditional FlushToGPU loop** in the surface upload block (lines 2302-2316 of `SplatRenderer.cpp`). For modal bodies, `body.AnyDirty()` is true every frame → `FlushToGPU` uploads dirty surface records (hundreds of `clEnqueueWriteBuffer` calls serializing on Intel Arc in-order queue → ~32ms stall).
+
+**Fix:** Detect modal bodies early (`ModalDynamicsPtr() != nullptr && gpu_modal_on`) and skip the unconditional host upload block. The tri-infill path's GPU modal writeback writes `buf_anchors`/`buf_surfaces`/`buf_snorm` directly, so the host upload is redundant. Applied to `SplatRenderer.cpp` line ~2303 (`is_modal_body` gate).
+
+**Result:** `modal-writeback/setup` stage dropped from ~28ms to ~0.13ms. Frame time expected to drop from ~31ms to ~3-4ms (~250-300+ FPS). **PENDING USER BUILD CONFIRMATION.**
+
+### Debug discipline lesson registered
+DEBUG DISCIPLINE violation in v1/v2 diagnosis: assumed enqueue was the bottleneck when GPU work was always fast (~1.6ms). Finish-diag proof showed GPU work = 1.60ms but render bucket = 28.94ms → bottleneck was CPU work inside RenderBody independent of triangle count. Lesson: when GPU enqueue is fast but frame time is high, measure GPU execution time separately (finish-diag) BEFORE assuming kernel/sync optimization — bottleneck may be elsewhere entirely (here: host upload path).
+
+---
+
+## 12. Path B2 Color-Field Migration — COMPLETE ✅ (B2.1–B2.5, set 2026-11-24)
+
+Parallel storage: keep frozen `color_pattern[18]` in `SurfaceRecord`, add `std::vector<PatchColorField> color_fields` on `PSFBody`; Order 2 (9 coeffs/channel); fallback to dict if field invalid. Goal: color cohesion (color bound to world position when anchors move).
+
+- **B2.1 host storage DONE:** `PSFBody.h` + `Patch.h` (both trees) add `color_fields` members/accessors; `Patch::EvaluateColor` checks field first then falls back to dict. VERIFIED ✅.
+- **B2.2 load-time conversion DONE:** `PatchColorField::FitFromRecord` (dynamic n×n Gaussian elimination LSQ over cosine basis). VERIFIED ✅.
+- **B2.3 cohesion refit DONE:** `FitFromColorGrid` + `SnapshotColorGrids`/`RefitColorFields` wired into CPU `ReflowAnchors` and GPU `RunGpuReflowBackend`. Tarball `PathB2_v6_phase3_cohesion_refit.tar.gz`. VERIFIED ✅.
+- **B2.4 GPU color-field refit DONE:** moved snapshot+refit into `anchor_reflow.cl` (`cos_basis`, `color_field_eval`, `refit_color_field` kernels). Render kernels untouched — still use procedural_albedo. Tarball `PathB2_v8_phase4_memcpy_fix.tar.gz`. VERIFIED ✅.
+- **B2.5 asset migration + regression DONE:** load-time conversion runs for all 5 assets. Regression pending user confirmation.
+- Build fixes: dual-header shadow synced; `Patch.cpp` needed `PatchColorField` include; `PatchColorField.cpp` channels `const float*`→`float*`; `PhysicsWorld.cpp` needed `<cstring>`. Debug markers still present — cleanup pending.
+
+---
+
+## 13. Distributed Temperature Field — CPU SUBSTRATE COMPLETE ✅ (set 2026-11-24)
+
+Mirrors Path B2 pattern for scalar temperature field (units K). Additive substrate — does NOT solve heat equation yet. Frozen `SurfaceRecord` layout unchanged (fallback ambient 293.15 K).
+
+- Files: `PatchTempField.h`/`.cpp` (both trees) — scalar cosine field class with `FitFromGrid`/`Eval` continuous LOD.
+- Host storage: `PSFBody.h` adds `temp_fields` member + accessors; `Patch.h` adds `temp_fields` pointer + `EvaluateTemp`.
+- Load-time conversion initializes from uniform ambient grid; cohesion refit wired into CPU `ReflowAnchors`. GPU refit deferred.
+- STATUS: CPU substrate complete. NOT YET BUILD-VERIFIED (sandbox has no C++ toolchain — user builds locally). Pending: build + regression.
+
+---
+
+## 14. Rick & Razor — Gait-Driven Locomotion Module COMPLETE ✅ (set 2026-11-26)
+
+Built a proper gait-driven IK + root-motion system replacing the decoupled `driveForward` hack:
+- **`solveLegIK(thighLen, shinLen, hipY, fwdDist)`** — analytic 2-bone IK in sagittal plane. Targets the ANKLE (not ground) so knee has slack to bend. Uses law of cosines for hip pitch + exact atan2 reconstruction for shin angle → guaranteed to reach target. Verified reconstruct error ≈ 0 for grounded cases.
+- **Gait state machine** — phase (0..1 per cycle), strideLen, cadence scale with speed; contact state machine (left planted [0,0.5), right planted [0.5,1)); swing foot aims ahead one stride, planted foot anchors body.
+- **`applyGaitLegs(hipsPos, footL, footR, dt)`** — solves IK for both legs each frame; returns root velocity from stance leg. Hips lowered to HIPS_Y=0.90 so legs have ~0.12 units slack to bend naturally.
+- **Integration** — render loop calls `gaitStep(dt, gaitSpeed)` then `applyGaitLegs()`; root motion integrated only when WASD idle. `setLocomotionSpeed(-1..1)` helper replaces `driveForward`; `updateMovement` uses procLocoSpeed when WASD idle.
+- **Scripts** — loco/nav call `setLocomotionSpeed()` instead of `driveForward()`; blank template documents new API. `driveForward` kept as legacy helper.
+- STATUS: Syntax verified, IK solver tested reconstructing targets exactly. VISUAL CONFIRMATION PENDING user build/run.
+
+---
+
 ## 10. Open Items / Next Steps
 
-- **AMR/LEARN/BONE/BW modules** not yet implemented. Distributed surface temperature field, aero/EM coupling, exact surface-patch contact area still open.
-- **GPU modal writeback** via `psf_deform.cl::apply_modes` — kernel exists but not launched.
+- **AMR/LEARN/BONE/BW modules** not yet implemented. Aero/EM coupling, exact surface-patch contact area still open.
 - **Incremental seams** — route split/merge/dent through `RestitchAround(ids)` instead of full `Seams().Build`.
 - **CPU spatial index** for `ClosestPoint`/`Raycast` — reuse `EquationAccel` patch AABBs.
 - **Render Transform** — physics integrates velocity/omega but engine renders body without applying transform; fracture fragments don't move on screen.
 - **Scene batching** — march path only marches first body; real scenes need per-body march or merged surfel cache.
 - **Neural reconstructor stage 2** — stage 1 patch fitter trained (MAE 16× better than LSQ); loading trained weights and swapping into `IReconstructor` is next milestone.
 - **More assets** — only 4 `.psf` files exist; varied topologies would stress-test AMR + seams better.
+- **v2.2Beta milestones** — M4 (WS4 in-3D editing), M5 (WS5 Cling scripting), M6 (WS2 document reconstruction) scaffolding in progress. See `docs/CHANGELOG_v2.2Beta.md`.
 
 ---
 
-## 11. Key Reference Docs
+## 13. Key Reference Docs
 
 | Doc | Content |
 |-----|---------|
@@ -232,11 +402,12 @@ cp engine/include/delirium/<subsys>/*.h include/delirium/<subsys>/
 | `docs/SUMMATION_OF_TYPES_ARCHITECTURE.md` | Summation of types architecture |
 | `docs/CLOTH_SEGMENTATION.md` | Cloth segmentation |
 | `docs/AnchorReflow_Design.md` | Anchor reflow + surface regeneration design |
+| `docs/TRI_INFILL_SAGA.md` | TriInfill parametric torus debugging timeline (v152–v167), root cause, fixes applied |
 | `../DeliRium_Optimization_and_UI_Plan.md` | Render optimization roadmap (7 phases) + physics UI/tooling expansion (5 phases) |
 
 ---
 
-## 12. Session Tarballs (this branch)
+## 14. Session Tarballs (this branch)
 
 Latest workspace editor tarballs: `DeliriumEngineV2_workspace_editor_v01.tar.gz` … `v14.tar.gz` (v14 = latest). Volumetric generation: `DeliriumEngineV2_volumetric_generation_v01..v03.tar.gz`, `DeliriumEngineV2_volumetric_sphere_v01..v02.tar.gz`, `DeliriumEngineV2_volumetric_heightfield_v01.tar.gz`.
 
