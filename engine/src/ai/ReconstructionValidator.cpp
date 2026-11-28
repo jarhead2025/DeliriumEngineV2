@@ -10,7 +10,7 @@
 #include "delirium/ai/ReconstructionValidator.h"
 #include "delirium/ai/DocumentIngestor.h"
 #include "delirium/psf/PSFBody.h"
-#include "delirium/math/float3.h"
+#include "delirium/core/Types.h"
 
 #include <sstream>
 #include <iostream>
