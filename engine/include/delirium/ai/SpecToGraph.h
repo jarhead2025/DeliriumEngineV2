@@ -45,6 +45,7 @@ struct GraphConstraint {
     double confidence;      // Confidence score [0..1]
     std::string unit;       // Physical unit
     std::string source;     // Source constraint name from DocumentSpec
+    std::string description; // Human-readable description (e.g. material name)
 
     GraphConstraint() : type(BondDistance), element_a(-1), element_b(-1),
                         value(0.0), tolerance(0.0), confidence(0.0) {}
