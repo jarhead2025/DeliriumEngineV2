@@ -3195,6 +3195,39 @@ bool SplatRenderer::RenderBody(PSFBody& body, const Camera& cam, bool clear, boo
     if (const char* e = std::getenv("DELIRIUM_TRI_UVN")) {
         int v = 0; if (std::sscanf(e, "%d", &v) == 1 && v >= 2 && v <= 256) base_uvn = v;
     }
+    // PHASE 4 DISTANCE LOD: scale base_uvn by projected screen-space size of
+    // the body. Far bodies get fewer samples (coarser), near bodies keep full
+    // resolution. OPT-IN via DELIRIUM_TRI_DIST_LOD=1 (default off to preserve
+    // the verified uniform-sampling quality). Bounds via DELIRIUM_TRI_DIST_LOD_RANGE.
+    // Projection: body AABB center projected to screen space gives pixel extent
+    // proportional to (body_span / distance). UVN scales linearly with extent.
+    if (std::getenv("DELIRIUM_TRI_DIST_LOD") && std::strcmp(std::getenv("DELIRIUM_TRI_DIST_LOD"), "1") == 0) {
+        int dist_min = 4, dist_max = 30;
+        if (const char* e = std::getenv("DELIRIUM_TRI_DIST_LOD_RANGE")) {
+            if (std::sscanf(e, "%d %d", &dist_min, &dist_max) != 2) { dist_min = 4; dist_max = 30; }
+            if (dist_min < 2) dist_min = 2; if (dist_max > 256) dist_max = 256;
+        }
+        // Project body AABB center to screen space to get distance.
+        Vec3 bmn = body.BBoxMin(), bsp = body.BBoxSpan();
+        if (bsp.x < 1e-8f && bsp.y < 1e-8f && bsp.z < 1e-8f) { bmn = {-1.f,-1.f,-1.f}; bsp = {2.f,2.f,2.f}; }
+        Vec3 ctr{0.5f*(bmn.x+bmn.x+bsp.x), 0.5f*(bmn.y+bmn.y+bsp.y), 0.5f*(bmn.z+bmn.z+bsp.z)};
+        // Apply model matrix to world-space center.
+        Vec3 wctr = ctr;
+        if (model) {
+            wctr.x = model[0]*ctr.x + model[1]*ctr.y + model[2]*ctr.z + model[3];
+            wctr.y = model[4]*ctr.x + model[5]*ctr.y + model[6]*ctr.z + model[7];
+            wctr.z = model[8]*ctr.x + model[9]*ctr.y + model[10]*ctr.z + model[11];
+        }
+        float dist = std::sqrt(wctr.x*wctr.x + wctr.y*wctr.y + wctr.z*wctr.z);
+        if (dist < 1e-3f) dist = 1e-3f;
+        // UVN scales inversely with distance: closer = higher UVN, farther = lower.
+        // Normalize against a reference distance of ~2.0 units (torus radius ~1.35).
+        float ref_dist = 2.0f;
+        int scaled = int(base_uvn * ref_dist / dist + 0.5f);
+        if (scaled < dist_min) scaled = dist_min;
+        if (scaled > dist_max) scaled = dist_max;
+        base_uvn = scaled;
+    }
     // Disable adaptive LOD by default to match March's uniform sampling.
     // Set DELIRIUM_TRI_LOD=1 to re-enable adaptive per-patch UVN.
     const bool lod_mode = (std::getenv("DELIRIUM_TRI_LOD") != nullptr &&
