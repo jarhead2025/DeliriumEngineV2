@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <map>
 #include <array>
+#include "delirium/core/Types.h"
 
 namespace DeliRium {
 
@@ -119,9 +120,9 @@ private:
     // Generate recommendations for failed constraints
     std::string GenerateRecommendations(const ValidationReport& report) const;
 
-    std::string last_error_;       // Last error message
+    mutable std::string last_error_; // Last error message (mutable for const getters)
     bool verbose_;                 // Print validation messages
     double tolerance_mult_;        // Tolerance multiplier (default 1.0)
 };
 
-} // namespace delirium
+} // namespace DeliRium

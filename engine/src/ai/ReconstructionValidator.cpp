@@ -44,29 +44,31 @@ std::map<std::string, double> ReconstructionValidator::MeasureProperties(PSFBody
 
 double ReconstructionValidator::MeasureMass(PSFBody* body) const {
     if (!body) return 0.0;
-    return body->mass();
+    // PSFBody has no mass member — mass lives on GameObject::Rigid().
+    // Return 0 (unavailable) rather than crash; validator reports it as missing.
+    return 0.0;
 }
 
 double ReconstructionValidator::MeasureVolume(PSFBody* body) const {
     if (!body) return 0.0;
-    return body->volume();
+    return body->Volume();
 }
 
 std::array<double, 3> ReconstructionValidator::MeasureInertia(PSFBody* body) const {
     std::array<double, 3> inertia = {0.0, 0.0, 0.0};
     if (!body) return inertia;
-    inertia[0] = body->inertia(0, 0);
-    inertia[1] = body->inertia(1, 1);
-    inertia[2] = body->inertia(2, 2);
+    // PSFBody has no inertia member — inertia lives on GameObject::Rigid().
+    // Return zeros (unavailable); validator reports it as missing.
     return inertia;
 }
 
-void ReconstructionValidator::MeasureBoundingBox(PSFBody* body, float3& min, float3& max) const {
+void ReconstructionValidator::MeasureBoundingBox(PSFBody* body, Vec3& min, Vec3& max) const {
     min = {1e30f, 1e30f, 1e30f};
     max = {-1e30f, -1e30f, -1e30f};
     if (!body) return;
-    // Placeholder: compute bbox from body surface points
-    // In production, this would iterate over PSF surface anchors
+    // Use body's stored bbox (frozen quantized bbox in PSFBody)
+    min = body->BBoxMin();
+    max = body->BBoxMin() + body->BBoxSpan();
 }
 
 ValidationResult ReconstructionValidator::ValidateConstraint(
