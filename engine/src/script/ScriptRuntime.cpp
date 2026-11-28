@@ -17,7 +17,7 @@
 #include <iostream>
 #include <algorithm>
 
-namespace delirium {
+namespace DeliRium {
 
 ScriptRuntime::ScriptRuntime(PhysicsWorld* world)
     : world_(world), current_line_(0), running_(false), paused_(false), verbose_(false) {
@@ -31,8 +31,22 @@ ScriptRuntime::~ScriptRuntime() {
 }
 
 Scene* ScriptRuntime::GetScene() const {
-    if (!world_) return nullptr;
-    return world_->GetScene();
+    // PhysicsWorld owns GameObjects directly (no Scene wrapper).
+    // Return nullptr — Scene is a separate concept for editor/visualization.
+    (void)world_;
+    return nullptr;
+}
+
+bool ScriptRuntime::LoadScriptFromString(const std::string& content) {
+    script_path_ = "<string>";
+    script_content_ = content;
+    if (!ParseScript(script_content_)) {
+        return false;
+    }
+    if (verbose_) {
+        std::cout << "[script] Loaded " << commands_.size() << " commands from string" << std::endl;
+    }
+    return true;
 }
 
 bool ScriptRuntime::LoadScript(const std::string& file_path) {

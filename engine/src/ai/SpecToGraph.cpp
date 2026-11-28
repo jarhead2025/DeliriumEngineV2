@@ -15,7 +15,7 @@
 #include <iostream>
 #include <algorithm>
 
-namespace delirium {
+namespace DeliRium {
 
 SpecToGraph::SpecToGraph() : verbose_(false) {}
 

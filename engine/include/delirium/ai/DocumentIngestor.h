@@ -13,8 +13,9 @@
 #include <memory>
 #include <cstdint>
 #include <map>
+#include <array>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PSFBody;
@@ -68,10 +69,10 @@ struct DocumentSpec {
 // MeshData — raw mesh data from STL/OBJ/PLY import
 // ============================================================================
 struct MeshData {
-    std::vector<float3> vertices;   // Vertex positions
-    std::vector<int3> triangles;    // Triangle indices
-    std::vector<float3> normals;    // Vertex normals (optional)
-    std::vector<float2> uvs;        // UV coordinates (optional)
+    std::vector<Vec3> vertices;   // Vertex positions
+    std::vector<std::array<int,3>> triangles;    // Triangle indices
+    std::vector<Vec3> normals;    // Vertex normals (optional)
+    std::vector<std::array<float,2>> uvs;        // UV coordinates (optional)
     std::string name;               // Mesh name
     std::string material;           // Material name (optional)
 
@@ -119,6 +120,20 @@ public:
 
     // Set verbose mode
     void SetVerbose(bool verbose) { verbose_ = verbose; }
+
+    // --- Public extraction wrappers (for testing) --------------------------
+    std::vector<SpecConstraint> ExtractDimensionsPublic(const std::string& text) {
+        return ExtractDimensions(text);
+    }
+    std::vector<SpecConstraint> ExtractMaterialsPublic(const std::string& text) {
+        return ExtractMaterials(text);
+    }
+    std::vector<SpecConstraint> ExtractTolerancesPublic(const std::string& text) {
+        return ExtractTolerances(text);
+    }
+    std::vector<SpecConstraint> ExtractLoadsPublic(const std::string& text) {
+        return ExtractLoads(text);
+    }
 
 private:
     // Extract dimensions from parsed text

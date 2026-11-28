@@ -14,7 +14,7 @@
 #include <memory>
 #include <functional>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PhysicsWorld;
@@ -62,6 +62,9 @@ public:
 
     // Load a script file (.drs)
     bool LoadScript(const std::string& file_path);
+
+    // Load a script from a string (for testing / inline scripts)
+    bool LoadScriptFromString(const std::string& content);
 
     // Run the loaded script from start
     bool Run();

@@ -17,7 +17,7 @@
 #include <cmath>
 #include <algorithm>
 
-namespace delirium {
+namespace DeliRium {
 
 ReconstructionValidator::ReconstructionValidator()
     : verbose_(false), tolerance_mult_(1.0) {}
@@ -34,7 +34,7 @@ std::map<std::string, double> ReconstructionValidator::MeasureProperties(PSFBody
     props["inertia_xx"] = inertia[0];
     props["inertia_yy"] = inertia[1];
     props["inertia_zz"] = inertia[2];
-    float3 min, max;
+    Vec3 min, max;
     MeasureBoundingBox(body, min, max);
     props["bbox_x"] = max.x - min.x;
     props["bbox_y"] = max.y - min.y;

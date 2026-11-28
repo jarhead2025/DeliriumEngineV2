@@ -15,7 +15,7 @@
 #include <cstdint>
 #include <map>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class StructuralGraph;

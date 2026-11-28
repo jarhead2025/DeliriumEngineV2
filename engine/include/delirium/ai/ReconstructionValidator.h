@@ -16,7 +16,7 @@
 #include <map>
 #include <array>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PSFBody;
@@ -96,7 +96,7 @@ public:
     std::array<double, 3> MeasureInertia(PSFBody* body) const;
 
     // Measure bounding box
-    void MeasureBoundingBox(PSFBody* body, float3& min, float3& max) const;
+    void MeasureBoundingBox(PSFBody* body, Vec3& min, Vec3& max) const;
 
     // Get last error message
     const std::string& LastError() const { return last_error_; }

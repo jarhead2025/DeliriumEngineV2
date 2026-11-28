@@ -17,7 +17,7 @@
 #include <chrono>
 #include <iostream>
 
-namespace delirium {
+namespace DeliRium {
 
 ClingInterpreter::ClingInterpreter(PhysicsWorld* world)
     : world_(world), available_(false), verbose_(false), cling_instance_(nullptr) {

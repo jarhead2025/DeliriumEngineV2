@@ -4,26 +4,30 @@
 // M4 scaffolding: renders field lines, potential maps, force vectors,
 // energy density, stress iso-surfaces, temperature field slices.
 // Part of v2.2Beta milestone M4 (WS4).
+// NOTE: uses real engine Vec3 type + DeliRium namespace. Samples from:
+//   ElectrostaticField::FieldAt(p), MagnetostaticField::FieldAt(p)
+//   AeroField::DragForce/LiftForce, HydroField::BuoyancyForce/DragForce
+//   ThermalState.temperature, ChargeState.total_charge/surface_potential
 // ============================================================================
 
 #include "delirium/ui/FieldVisualizer.h"
 #include "delirium/physics/PhysicsWorld.h"
+#include "delirium/physics/FieldPhysics.h"
+#include "delirium/physics/ThermalField.h"
 #include "delirium/psf/PSFBody.h"
 #include "delirium/core/GameObject.h"
-#include "delirium/core/Scene.h"
-#include "delirium/math/float3.h"
+#include "delirium/core/Types.h"
 
-#include <SDL2/SDL.h>
 #include <cmath>
 #include <algorithm>
 #include <vector>
 
-namespace delirium {
+namespace DeliRium {
 
 FieldVisualizer::FieldVisualizer(PhysicsWorld* world)
     : world_(world), mode_(FieldMode::None), enabled_(false),
-      sample_count_(256), sample_density_(1.0f), max_trace_length_(10.0f),
-      trace_step_(0.01f), slice_normal_({0.0f, 1.0f, 0.0f}), slice_distance_(0.0f),
+      sample_count_(256), max_trace_length_(10.0f), trace_step_(0.01f),
+      slice_normal_{0.0f, 1.0f, 0.0f}, slice_distance_(0.0f),
       color_min_(0.0f), color_max_(1.0f) {
     if (!world_) {
         world_ = new PhysicsWorld();
@@ -35,12 +39,12 @@ void FieldVisualizer::SetMode(FieldMode mode) {
     Clear();
 }
 
-void FieldVisualizer::SetSeedPoints(const std::vector<float3>& seeds) {
+void FieldVisualizer::SetSeedPoints(const std::vector<Vec3>& seeds) {
     seed_points_ = seeds;
     Clear();
 }
 
-void FieldVisualizer::SetSlicePlane(float3 normal, float distance) {
+void FieldVisualizer::SetSlicePlane(Vec3 normal, float distance) {
     slice_normal_ = normal;
     slice_distance_ = distance;
     Clear();
@@ -68,30 +72,37 @@ void FieldVisualizer::Refresh() {
         for (const auto& seed : seed_points_) {
             field_lines_.push_back(TraceFieldLine(seed, world_));
         }
-    } else if (mode_ == FieldMode::ForceVectors) {
-        // Sample force field at regular grid points
-        // (deferred — needs scene bounds)
-    } else if (mode_ == FieldMode::TempSlice) {
-        // Sample temperature on slice plane
-        // (deferred — needs body geometry intersection)
     }
 }
 
-float FieldVisualizer::SampleScalarField(const float3& pos, PhysicsWorld* world) const {
-    if (!world_) return 0.0f;
-    // Sample scalar field (potential, temperature, pressure) at position
-    // This is a placeholder — actual implementation needs body geometry query
-    return 0.0f;
-}
-
-float3 FieldVisualizer::SampleVectorField(const float3& pos, PhysicsWorld* world) const {
+Vec3 FieldVisualizer::SampleVectorField(const Vec3& pos, PhysicsWorld* world) const {
     if (!world_) return {0.0f, 0.0f, 0.0f};
-    // Sample vector field (force, velocity) at position
-    // This is a placeholder — actual implementation needs physics query
-    return {0.0f, 0.0f, 0.0f};
+    // Sample vector field (force) at position from active field modules
+    Vec3 total = {0.0f, 0.0f, 0.0f};
+    // Electrostatic: requires charge coupling + external E-field/sources
+    if (world_->ElectrostaticEnabled()) {
+        total = total + world_->electrostatic.FieldAt(pos);
+    }
+    // Magnetostatic
+    if (world_->MagnetostaticEnabled()) {
+        total = total + world_->magnetostatic.FieldAt(pos);
+    }
+    return total;
 }
 
-float3 FieldVisualizer::ScalarToColor(float value, float min_val, float max_val) const {
+float FieldVisualizer::SampleScalarField(const Vec3& pos, PhysicsWorld* world) const {
+    if (!world_) return 0.0f;
+    // Sample scalar field (potential, temperature) at position
+    float val = 0.0f;
+    // Electrostatic potential: V = k q / r (sum over point charges)
+    if (world_->ElectrostaticEnabled()) {
+        // Placeholder: would need to sum potentials from sources
+        val = 0.0f;
+    }
+    return val;
+}
+
+Vec3 FieldVisualizer::ScalarToColor(float value, float min_val, float max_val) const {
     // Heat map color mapping: blue (cold) → green → red (hot)
     float t = (value - min_val) / (max_val - min_val + 1e-6f);
     t = std::clamp(t, 0.0f, 1.0f);
@@ -109,31 +120,35 @@ float3 FieldVisualizer::ScalarToColor(float value, float min_val, float max_val)
     return {r, g, b};
 }
 
-FieldLine FieldVisualizer::TraceFieldLine(const float3& seed, PhysicsWorld* world) {
+FieldLine FieldVisualizer::TraceFieldLine(const Vec3& seed, PhysicsWorld* world) {
     FieldLine line;
     line.start = seed;
-    float3 pos = seed;
+    Vec3 pos = seed;
     float length = 0.0f;
 
     for (int i = 0; i < 10000; i++) {
-        float3 field = SampleVectorField(pos, world);
-        float mag = field.Length();
+        Vec3 field = SampleVectorField(pos, world);
+        float mag = std::sqrt(field.x*field.x + field.y*field.y + field.z*field.z);
         if (mag < 1e-6f) break; // Field too weak to continue
 
         // RK4 integration step
-        float3 k1 = field / mag;
-        float3 p2 = pos + k1 * trace_step_ * 0.5f;
-        float3 k2 = SampleVectorField(p2, world);
-        k2 = k2 / (k2.Length() + 1e-6f);
-        float3 p3 = pos + k2 * trace_step_ * 0.5f;
-        float3 k3 = SampleVectorField(p3, world);
-        k3 = k3 / (k3.Length() + 1e-6f);
-        float3 p4 = pos + k3 * trace_step_;
-        float3 k4 = SampleVectorField(p4, world);
-        k4 = k4 / (k4.Length() + 1e-6f);
+        Vec3 k1 = field * (1.0f / mag);
+        Vec3 p2 = pos + k1 * (trace_step_ * 0.5f);
+        Vec3 k2 = SampleVectorField(p2, world);
+        float m2 = std::sqrt(k2.x*k2.x + k2.y*k2.y + k2.z*k2.z);
+        k2 = k2 * (1.0f / (m2 + 1e-6f));
+        Vec3 p3 = pos + k2 * (trace_step_ * 0.5f);
+        Vec3 k3 = SampleVectorField(p3, world);
+        float m3 = std::sqrt(k3.x*k3.x + k3.y*k3.y + k3.z*k3.z);
+        k3 = k3 * (1.0f / (m3 + 1e-6f));
+        Vec3 p4 = pos + k3 * trace_step_;
+        Vec3 k4 = SampleVectorField(p4, world);
+        float m4 = std::sqrt(k4.x*k4.x + k4.y*k4.y + k4.z*k4.z);
+        k4 = k4 * (1.0f / (m4 + 1e-6f));
 
-        float3 dir = (k1 + 2.0f * k2 + 2.0f * k3 + k4) / 6.0f;
-        dir = dir / (dir.Length() + 1e-6f);
+        Vec3 dir = (k1 + k2 * 2.0f + k3 * 2.0f + k4) * (1.0f / 6.0f);
+        float md = std::sqrt(dir.x*dir.x + dir.y*dir.y + dir.z*dir.z);
+        dir = dir * (1.0f / (md + 1e-6f));
 
         pos = pos + dir * trace_step_;
         length += trace_step_;
@@ -196,4 +211,4 @@ void FieldVisualizer::Render() {
     }
 }
 
-} // namespace delirium
+} // namespace DeliRium

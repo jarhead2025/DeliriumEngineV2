@@ -4,23 +4,26 @@
 // M4 scaffolding: displays editable physical properties grouped by module.
 // Units displayed for every field. Assumptions documented per field.
 // Part of v2.2Beta milestone M4 (WS4).
+// NOTE: property access maps to real engine API:
+//   mass/inertia/velocity/omega → GameObject::Rigid() (RigidState)
+//   density/youngs/poisson → GameObject::Mat() (Material)
+//   charge → PhysicsWorld::ChargeOf(obj) / SetBodyCharge()
+//   temperature → PhysicsWorld::ThermalOf(obj)
 // ============================================================================
 
 #pragma once
 
 #include <string>
 #include <vector>
-#include <memory>
 #include <cstdint>
 #include <functional>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PhysicsWorld;
 class PSFBody;
 class GameObject;
-class FieldVisualizer;
 
 // ============================================================================
 // PropertyField — a single editable physical property
@@ -30,7 +33,7 @@ struct PropertyField {
     std::string unit;        // Physical unit (e.g. "kg", "C")
     double value;            // Current value
     double min;              // Lower bound for editing
-    double max;              // Upper bound for upper bound
+    double max;              // Upper bound
     bool is_dirty;           // Has been modified since last commit
     std::string assumption;  // Documented assumption for this field
 
@@ -44,8 +47,8 @@ struct PropertyField {
 // PropertyGroup — grouped properties for one physics module
 // ============================================================================
 struct PropertyGroup {
-    std::string title;                       // Module name (e.g. "Mass & Inertia")
-    std::vector<PropertyField> fields;       // Editable fields in this group
+    std::string title;
+    std::vector<PropertyField> fields;
 
     PropertyGroup() = default;
     explicit PropertyGroup(const std::string& t) : title(t) {}
@@ -61,17 +64,17 @@ struct PropertyGroup {
 //
 // Usage:
 //   InspectorPanel panel(world);
-//   panel.SelectObject(obj_handle);
-//   panel.Render();        // Draw panel UI
-//   panel.CommitChanges(); // Apply edits, check conservation ledger
+//   panel.SelectObject(obj);
+//   panel.Refresh();
+//   panel.CommitChanges();
 // ============================================================================
 class InspectorPanel {
 public:
     explicit InspectorPanel(PhysicsWorld* world);
     ~InspectorPanel() = default;
 
-    // Select an object to inspect (by GameObject handle)
-    void SelectObject(uint32_t handle);
+    // Select an object to inspect (by pointer)
+    void SelectObject(GameObject* obj);
 
     // Clear selection
     void ClearSelection();
@@ -79,37 +82,32 @@ public:
     // Refresh property values from current PhysicsWorld state
     void Refresh();
 
-    // Render the panel UI (SDL rendering calls)
-    void Render();
+    // Get the currently selected object (nullptr if none)
+    GameObject* SelectedObject() const { return selected_obj_; }
+
+    // Check if any field has pending edits
+    bool HasPendingEdits() const;
+
+    // Get property groups (for UI rendering)
+    const std::vector<PropertyGroup>& Groups() const { return groups_; }
 
     // Commit pending edits — checks conservation ledger before applying
     // Returns true if changes were applied, false if rejected by ledger
     bool CommitChanges();
-
-    // Get the currently selected object handle (0 = none)
-    uint32_t SelectedHandle() const { return selected_handle_; }
-
-    // Get the selected object (nullptr if none)
-    GameObject* SelectedObject() const;
-
-    // Check if any field has pending edits
-    bool HasPendingEdits() const;
 
 private:
     // Populate property groups from selected object's physics state
     void BuildPropertyGroups();
 
     // Check conservation ledger before committing a field change
-    // Returns true if the change is physically valid
     bool CheckConservation(const PropertyField& field, double old_value) const;
 
     // Apply a single field edit to PhysicsWorld state
     void ApplyFieldEdit(PropertyField& field);
 
     PhysicsWorld* world_;              // Physics world (read/write state)
-    uint32_t selected_handle_;         // Selected GameObject handle (0 = none)
+    GameObject* selected_obj_;         // Selected GameObject (nullptr = none)
     std::vector<PropertyGroup> groups_; // Property groups for selected object
-    bool needs_refresh_;               // Rebuild groups on next Refresh()
 };
 
-} // namespace delirium
+} // namespace DeliRium

@@ -14,7 +14,7 @@
 #include <cstdint>
 #include <functional>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PhysicsWorld;

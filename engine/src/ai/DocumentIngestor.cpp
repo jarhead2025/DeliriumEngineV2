@@ -8,7 +8,7 @@
 
 #include "delirium/ai/DocumentIngestor.h"
 #include "delirium/psf/PSFBody.h"
-#include "delirium/math/float3.h"
+#include "delirium/core/Types.h"
 
 #include <fstream>
 #include <sstream>
@@ -16,7 +16,7 @@
 #include <regex>
 #include <cmath>
 
-namespace delirium {
+namespace DeliRium {
 
 DocumentIngestor::DocumentIngestor()
     : pdf_available_(false), cad_available_(false), verbose_(false) {

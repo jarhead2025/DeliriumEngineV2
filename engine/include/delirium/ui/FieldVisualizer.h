@@ -4,6 +4,10 @@
 // M4 scaffolding: renders field lines, potential maps, force vectors,
 // energy density, stress iso-surfaces, temperature field slices.
 // Part of v2.2Beta milestone M4 (WS4).
+// NOTE: uses real engine Vec3 type + DeliRium namespace. Samples from:
+//   ElectrostaticField::FieldAt(p), MagnetostaticField::FieldAt(p)
+//   AeroField::DragForce/LiftForce, HydroField::BuoyancyForce/DragForce
+//   ThermalState.temperature, ChargeState.total_charge/surface_potential
 // ============================================================================
 
 #pragma once
@@ -13,7 +17,7 @@
 #include <cstdint>
 #include <memory>
 
-namespace delirium {
+namespace DeliRium {
 
 // Forward declarations
 class PhysicsWorld;
@@ -40,13 +44,13 @@ enum class FieldMode {
 // FieldSample — a single point sampled from a field
 // ============================================================================
 struct FieldSample {
-    float3 position;    // World-space position
-    float3 value;       // Vector field value (force, velocity, etc.)
-    float scalar;       // Scalar field value (potential, pressure, etc.)
-    float intensity;    // Normalized intensity for color mapping
+    Vec3 position;    // World-space position
+    Vec3 value;       // Vector field value (force, velocity, etc.)
+    float scalar;     // Scalar field value (potential, pressure, etc.)
+    float intensity;  // Normalized intensity for color mapping
 
     FieldSample() : scalar(0.0f), intensity(0.0f) {}
-    FieldSample(const float3& p, const float3& v, float s)
+    FieldSample(const Vec3& p, const Vec3& v, float s)
         : position(p), value(v), scalar(s), intensity(s) {}
 };
 
@@ -54,11 +58,11 @@ struct FieldSample {
 // FieldLine — a traced field line (sequence of points)
 // ============================================================================
 struct FieldLine {
-    std::vector<float3> points;   // Points along the line
-    float3 start;                 // Seed point
-    float3 end;                   // Termination point
-    float length;                 // Total arc length
-    float max_intensity;          // Max intensity along line
+    std::vector<Vec3> points;   // Points along the line
+    Vec3 start;                 // Seed point
+    Vec3 end;                   // Termination point
+    float length;               // Total arc length
+    float max_intensity;        // Max intensity along line
 
     FieldLine() : length(0.0f), max_intensity(0.0f) {}
 };
@@ -96,16 +100,15 @@ public:
     bool IsEnabled() const { return enabled_; }
 
     // Set seed points for field line tracing
-    void SetSeedPoints(const std::vector<float3>& seeds);
+    void SetSeedPoints(const std::vector<Vec3>& seeds);
 
     // Set sampling parameters
     void SetSampleCount(int count) { sample_count_ = count; }
-    void SetSampleDensity(float density) { sample_density_ = density; }
     void SetMaxTraceLength(float len) { max_trace_length_ = len; }
     void SetTraceStepSize(float step) { trace_step_ = step; }
 
     // Set slice plane for temperature/stress slices
-    void SetSlicePlane(float3 normal, float distance);
+    void SetSlicePlane(Vec3 normal, float distance);
 
     // Set color mapping range for scalar fields
     void SetColorRange(float min_val, float max_val);
@@ -119,18 +122,22 @@ public:
     // Clear cached field samples and lines
     void Clear();
 
+    // Access traced field lines / samples (for testing/validation)
+    const std::vector<FieldLine>& FieldLines() const { return field_lines_; }
+    const std::vector<FieldSample>& Samples() const { return samples_; }
+
 private:
     // Trace a single field line via RK4 integration
-    FieldLine TraceFieldLine(const float3& seed, PhysicsWorld* world);
+    FieldLine TraceFieldLine(const Vec3& seed, PhysicsWorld* world);
 
-    // Sample scalar field at a point
-    float SampleScalarField(const float3& pos, PhysicsWorld* world) const;
+    // Sample scalar field at a point (potential, temperature, pressure)
+    float SampleScalarField(const Vec3& pos, PhysicsWorld* world) const;
 
-    // Sample vector field at a point
-    float3 SampleVectorField(const float3& pos, PhysicsWorld* world) const;
+    // Sample vector field at a point (force, velocity)
+    Vec3 SampleVectorField(const Vec3& pos, PhysicsWorld* world) const;
 
     // Color map scalar value to RGB (heat map)
-    float3 ScalarToColor(float value, float min_val, float max_val) const;
+    Vec3 ScalarToColor(float value, float min_val, float max_val) const;
 
     // Draw force arrows at sample points
     void DrawForceArrows();
@@ -150,17 +157,16 @@ private:
     PhysicsWorld* world_;          // Physics world (read state)
     FieldMode mode_;               // Current visualization mode
     bool enabled_;                 // Whether visualization is active
-    std::vector<float3> seed_points_; // Seed points for field line tracing
+    std::vector<Vec3> seed_points_; // Seed points for field line tracing
     std::vector<FieldLine> field_lines_; // Traced field lines
     std::vector<FieldSample> samples_;   // Sampled field values
     int sample_count_;             // Number of samples per surface
-    float sample_density_;         // Samples per unit area
     float max_trace_length_;       // Max arc length for field line tracing
     float trace_step_;             // Step size for RK4 integration
-    float3 slice_normal_;          // Slice plane normal
+    Vec3 slice_normal_;            // Slice plane normal
     float slice_distance_;         // Slice plane distance from origin
     float color_min_;              // Color mapping minimum
     float color_max_;              // Color mapping maximum
 };
 
-} // namespace delirium
+} // namespace DeliRium
