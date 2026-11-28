@@ -39,10 +39,6 @@ void InspectorPanel::ClearSelection() {
     groups_.clear();
 }
 
-GameObject* InspectorPanel::SelectedObject() const {
-    return selected_obj_;
-}
-
 bool InspectorPanel::HasPendingEdits() const {
     for (const auto& group : groups_) {
         for (const auto& field : group.fields) {
