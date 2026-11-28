@@ -125,6 +125,11 @@ MeshData DocumentIngestor::ParseMesh(const std::string& file_path) {
         mesh.name = line.substr(6, line.find_last_not_of(" \t\r\n") - 6 + 1);
 
         while (std::getline(file, line)) {
+            size_t fpos = line.find("facet");
+            if (fpos != std::string::npos) {
+                // Each facet = one triangle
+                mesh.triangles.push_back({0, 0, 0}); // placeholder connectivity
+            }
             size_t vpos = line.find("vertex");
             if (vpos != std::string::npos) {
                 float x, y, z;
