@@ -117,8 +117,10 @@ ScriptResult ClingInterpreter::Evaluate(const std::string& expression) {
 }
 
 Scene* ClingInterpreter::GetScene() const {
-    if (!world_) return nullptr;
-    return world_->GetScene();
+    // PhysicsWorld owns GameObjects directly (no Scene wrapper).
+    // Return nullptr — Scene is a separate concept for editor/visualization.
+    (void)world_;
+    return nullptr;
 }
 
 void ClingInterpreter::RegisterFunction(const std::string& name, std::function<void()> fn) {
