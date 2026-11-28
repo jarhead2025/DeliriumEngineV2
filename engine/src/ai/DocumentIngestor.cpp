@@ -188,7 +188,7 @@ PSFBody* DocumentIngestor::BuildPSFBody(const MeshData& mesh) {
     }
 
     PSFBody* body = new PSFBody();
-    body->SetName("ingested_mesh");
+    // PSFBody has no name member — name lives on GameObject. Skip.
 
     // Fit PSF surface to mesh vertices
     FitSurfaceToMesh(body, mesh);

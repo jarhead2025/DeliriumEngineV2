@@ -14,6 +14,7 @@
 #include <cstdint>
 #include <map>
 #include <array>
+#include "delirium/core/Types.h"
 
 namespace DeliRium {
 
