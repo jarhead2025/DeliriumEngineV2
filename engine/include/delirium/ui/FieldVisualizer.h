@@ -16,6 +16,7 @@
 #include <vector>
 #include <cstdint>
 #include <memory>
+#include "delirium/core/Types.h"
 
 namespace DeliRium {
 
