@@ -34,6 +34,10 @@ struct SpecConstraint {
     std::string description;   // Human-readable description
 
     SpecConstraint() : value(0.0), tolerance(0.0), confidence(0.0) {}
+    SpecConstraint(std::string n, std::string u, double v, double tol, double conf,
+                   std::string src, std::string desc)
+        : name(std::move(n)), unit(std::move(u)), value(v), tolerance(tol),
+          confidence(conf), source(std::move(src)), description(std::move(desc)) {}
 };
 
 // ============================================================================
