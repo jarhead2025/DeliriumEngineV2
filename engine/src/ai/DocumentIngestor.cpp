@@ -125,9 +125,10 @@ MeshData DocumentIngestor::ParseMesh(const std::string& file_path) {
         mesh.name = line.substr(6, line.find_last_not_of(" \t\r\n") - 6 + 1);
 
         while (std::getline(file, line)) {
-            if (line.find("vertex") == 0) {
+            size_t vpos = line.find("vertex");
+            if (vpos != std::string::npos) {
                 float x, y, z;
-                std::istringstream iss(line.substr(7));
+                std::istringstream iss(line.substr(vpos + 6));
                 iss >> x >> y >> z;
                 mesh.vertices.push_back({x, y, z});
             }
