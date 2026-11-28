@@ -165,4 +165,4 @@ private:
     bool verbose_;                   // Print parse messages
 };
 
-} // namespace delirium
+} // namespace DeliRium
